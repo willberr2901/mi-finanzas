@@ -11,6 +11,7 @@ import ToastProvider from './components/ToastProvider';
 import WelcomeModal from './components/WelcomeModal';
 import TutorialGuide from './components/TutorialGuide';
 import TermsModal from './components/TermsModal';
+import InstallPwaPrompt from './components/InstallPwaPrompt';
 
 const NavBar = () => {
   const location = useLocation();
@@ -113,6 +114,8 @@ function App() {
         {showTutorial && <TutorialGuide onDismiss={handleTutorialDismiss} />}
         
         {showTerms && <TermsModal onAccept={handleTermsAccept} />}
+        
+        <InstallPwaPrompt />
       </div>
     </BrowserRouter>
   );
