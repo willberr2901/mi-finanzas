@@ -12,7 +12,7 @@ import WelcomeModal from './components/WelcomeModal';
 import TutorialGuide from './components/TutorialGuide';
 import TermsModal from './components/TermsModal';
 
-// Variable global para guardar el evento de instalación
+// Variable global para el evento de instalación
 let deferredPrompt: any;
 
 const NavBar = () => {
@@ -20,14 +20,14 @@ const NavBar = () => {
   const [installable, setInstallable] = useState(false);
 
   useEffect(() => {
-    // Escuchar el evento de instalación
+    // Escuchar evento de instalación
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      setInstallable(true); // Mostrar botón de instalar
+      setInstallable(true);
     });
 
-    // Verificar si ya está instalada
+    // Si ya está instalada, no mostrar botón
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setInstallable(false);
     }
@@ -42,7 +42,7 @@ const NavBar = () => {
       }
       deferredPrompt = null;
     } else {
-      alert('Para instalar: Abre el menú de tu navegador (⋮) y selecciona "Instalar aplicación" o "Agregar a pantalla de inicio".');
+      alert('Para instalar: Toca el menú (⋮) y selecciona "Agregar a la pantalla principal"');
     }
   };
 
@@ -59,7 +59,7 @@ const NavBar = () => {
     <nav className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 px-2 py-2 z-50 pb-safe">
       <div className="max-w-4xl mx-auto flex justify-around items-center">
         
-        {/* Botón de Instalar (Solo si es instalable) */}
+        {/* Botón de Instalar - Solo aparece si es instalable */}
         {installable && (
           <button
             onClick={handleInstallClick}
@@ -72,7 +72,7 @@ const NavBar = () => {
           </button>
         )}
 
-        {/* Menú Normal */}
+        {/* Menú de navegación */}
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;

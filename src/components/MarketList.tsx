@@ -12,6 +12,7 @@ function parsePrice(str: string): number {
   return parseInt(cleaned) || 0;
 }
 
+// Diccionario de categorías
 const KEYWORDS: Record<string, string[]> = {
   'Plaza': ['tomate', 'cebolla', 'papa', 'lechuga', 'zanahoria', 'banano', 'mango', 'limon', 'limón', 'cilantro', 'perejil', 'apio', 'ajo'],
   'Granos': ['arroz', 'lenteja', 'frijol', 'garbanzo', 'avena', 'panela', 'azucar', 'azúcar', 'harina', 'sal', 'pimienta'],
@@ -40,7 +41,7 @@ export default function MarketList() {
 
   useEffect(() => {
     loadItems();
-  }, []);
+  }, [loadItems]);
 
   const total = getTotal();
   const countWithPrice = getCountWithPrice();
@@ -60,6 +61,7 @@ export default function MarketList() {
       completed: false,
     });
 
+    // Notificación al agregar
     if (price > 0) {
       notifyMarketItemAdded(newItem.trim(), price);
     }
@@ -74,6 +76,7 @@ export default function MarketList() {
 
     const newPriceValue = parsePrice(editingPrice);
     
+    // Notificación al cambiar precio
     if (item.price !== newPriceValue && item.price > 0) {
       notifyPriceChange(item.name, item.price, newPriceValue);
     }

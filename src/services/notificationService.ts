@@ -1,123 +1,69 @@
 import { toast } from 'react-toastify';
 
-export type NotificationType = 'success' | 'error' | 'info' | 'warning';
-
-interface NotificationOptions {
-  title: string;
-  message?: string;
-  type?: NotificationType;
-  duration?: number;
-}
-
-// Notificaciones específicas por tipo de acción
+// Notificaciones específicas
 export const notifyMarketItemAdded = (itemName: string, price: number) => {
-  toast.success(
-    `🛒 ${itemName}\n$${price.toLocaleString('es-CO')}`,
-    { toastId: 'market-add' }
-  );
+  toast.success(`🛒 ${itemName}\n$${price.toLocaleString('es-CO')}`);
 };
 
 export const notifyMarketCompleted = (total: number, items: number) => {
-  toast.success(
-    `✅ ¡Compra finalizada!\n${items} productos - Total: $${total.toLocaleString('es-CO')}`,
-    { toastId: 'market-complete' }
-  );
+  toast.success(`✅ ¡Compra finalizada!\n${items} productos - Total: $${total.toLocaleString('es-CO')}`);
 };
 
 export const notifyExpenseAdded = (category: string, amount: number) => {
-  toast.info(
-    `💸 Gasto registrado\n${category}: $${amount.toLocaleString('es-CO')}`,
-    { toastId: 'expense-add' }
-  );
+  toast.info(`💸 Gasto registrado\n${category}: $${amount.toLocaleString('es-CO')}`);
 };
 
 export const notifyIncomeAdded = (source: string, amount: number) => {
-  toast.success(
-    `📈 Ingreso registrado\n${source}: $${amount.toLocaleString('es-CO')}`,
-    { toastId: 'income-add' }
-  );
+  toast.success(`📈 Ingreso registrado\n${source}: $${amount.toLocaleString('es-CO')}`);
 };
 
 export const notifyBudgetAlert = (category: string, percentage: number) => {
-  toast.warning(
-    `⚠️ Alerta de presupuesto\nHas usado el ${percentage}% de ${category}`,
-    { toastId: 'budget-alert', autoClose: 5000 }
-  );
+  toast.warning(`⚠️ Alerta de presupuesto\nHas usado el ${percentage}% de ${category}`, { autoClose: 5000 });
 };
 
 export const notifyPriceChange = (itemName: string, oldPrice: number, newPrice: number) => {
   const diff = newPrice - oldPrice;
   const percentage = ((diff / oldPrice) * 100).toFixed(1);
   const arrow = diff > 0 ? '📈' : '📉';
-  
-  toast.info(
-    `${arrow} Precio actualizado\n${itemName}: $${oldPrice.toLocaleString()} → $${newPrice.toLocaleString()} (${diff > 0 ? '+' : ''}${percentage}%)`,
-    { toastId: 'price-change' }
-  );
+  toast.info(`${arrow} Precio actualizado\n${itemName}: $${oldPrice.toLocaleString()} → $${newPrice.toLocaleString()} (${diff > 0 ? '+' : ''}${percentage}%)`);
 };
 
 // Función genérica
-export const notify = ({ title, message, type = 'info', duration = 3000 }: NotificationOptions) => {
-  const toastConfig = {
-    toastId: `${type}-${Date.now()}`,
-    autoClose: duration
-  };
-
+export const notify = ({ 
+  title, 
+  message, 
+  type = 'info', 
+  duration = 3000 
+}: { 
+  title: string; 
+  message?: string; 
+  type?: 'success' | 'error' | 'info' | 'warning'; 
+  duration?: number;
+}) => {
   const fullMessage = message ? `${title}\n${message}` : title;
-
+  const id = `${type}-${Date.now()}`;
+  
   switch (type) {
-    case 'success':
-      toast.success(`✅ ${fullMessage}`, toastConfig);
-      break;
-    case 'error':
-      toast.error(`❌ ${fullMessage}`, toastConfig);
-      break;
-    case 'warning':
-      toast.warning(`⚠️ ${fullMessage}`, toastConfig);
-      break;
-    default:
-      toast.info(`ℹ️ ${fullMessage}`, toastConfig);
+    case 'success': toast.success(`✅ ${fullMessage}`, { toastId: id, autoClose: duration }); break;
+    case 'error': toast.error(`❌ ${fullMessage}`, { toastId: id, autoClose: duration }); break;
+    case 'warning': toast.warning(`⚠️ ${fullMessage}`, { toastId: id, autoClose: duration }); break;
+    default: toast.info(`ℹ️ ${fullMessage}`, { toastId: id, autoClose: duration });
   }
 };
 
-// Solicitar permiso para notificaciones push
+// Permisos y Push nativo
 export const requestNotificationPermission = async (): Promise<boolean> => {
-  if (!('Notification' in window)) {
-    console.warn('Este navegador no soporta notificaciones');
-    return false;
-  }
-
+  if (!('Notification' in window)) return false;
   const permission = await Notification.requestPermission();
   return permission === 'granted';
 };
 
-/// Enviar notificación push
 export const sendPushNotification = async (title: string, body: string, icon?: string) => {
   if ('Notification' in window && Notification.permission === 'granted') {
-    const notificationOptions: any = {
+    new Notification(title, {
       body,
       icon: icon || '/icon-192.png',
-      badge: '/icon-192.png',
       tag: 'mi-finanzas-notification'
-    };
-    
-    // vibrate solo funciona en navegadores que lo soportan
-    if ('vibrate' in Notification.prototype) {
-      (notificationOptions as any).vibrate = [200, 100, 200];
-    }
-    
-    new Notification(title, notificationOptions);
+    });
   }
-};
-
-export default {
-  notify,
-  notifyMarketItemAdded,
-  notifyMarketCompleted,
-  notifyExpenseAdded,
-  notifyIncomeAdded,
-  notifyBudgetAlert,
-  notifyPriceChange,
-  requestNotificationPermission,
-  sendPushNotification
 };
