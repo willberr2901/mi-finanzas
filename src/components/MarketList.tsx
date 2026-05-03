@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, ShoppingCart, Check } from 'lucide-react';
+import { Plus, Trash2, ShoppingCart, Check, DollarSign } from 'lucide-react';
 import { useMarketStore } from '../store/marketStore';
 import { notifyMarketItemAdded, notifyMarketCompleted, notifyPriceChange } from '../services/notificationService';
 
@@ -12,7 +12,6 @@ function parsePrice(str: string): number {
   return parseInt(cleaned) || 0;
 }
 
-// Diccionario de categorías
 const KEYWORDS: Record<string, string[]> = {
   'Plaza': ['tomate', 'cebolla', 'papa', 'lechuga', 'zanahoria', 'banano', 'mango', 'limon', 'limón', 'cilantro', 'perejil', 'apio', 'ajo'],
   'Granos': ['arroz', 'lenteja', 'frijol', 'garbanzo', 'avena', 'panela', 'azucar', 'azúcar', 'harina', 'sal', 'pimienta'],
@@ -30,6 +29,13 @@ function getCategory(item: string): string {
   }
   return 'Otros';
 }
+
+const GLASS_STYLE = {
+  background: 'rgba(255, 255, 255, 0.05)',
+  backdropFilter: 'blur(16px)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+};
 
 export default function MarketList() {
   const { items, loadItems, addItem, updatePrice, deleteItem, completePurchase, getTotal, getCountWithPrice } = useMarketStore();
@@ -61,11 +67,7 @@ export default function MarketList() {
       completed: false,
     });
 
-    // Notificación al agregar
-    if (price > 0) {
-      notifyMarketItemAdded(newItem.trim(), price);
-    }
-
+    if (price > 0) notifyMarketItemAdded(newItem.trim(), price);
     setNewItem('');
     setNewPrice('');
   };
@@ -75,8 +77,6 @@ export default function MarketList() {
     if (!item) return;
 
     const newPriceValue = parsePrice(editingPrice);
-    
-    // Notificación al cambiar precio
     if (item.price !== newPriceValue && item.price > 0) {
       notifyPriceChange(item.name, item.price, newPriceValue);
     }
@@ -86,15 +86,6 @@ export default function MarketList() {
     setEditingPrice('');
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteItem(id);
-  };
-
-  const startEdit = (item: typeof items[0]) => {
-    setEditingId(item.id);
-    setEditingPrice(item.price > 0 ? item.price.toString() : '');
-  };
-
   const grouped = items.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
     acc[item.category].push(item);
@@ -102,103 +93,115 @@ export default function MarketList() {
   }, {} as Record<string, typeof items>);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between bg-gray-800 p-4 rounded-xl border border-gray-700 sticky top-4 z-40 shadow-xl">
+    <div className="max-w-4xl mx-auto p-4 space-y-5 pb-24">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-[0_0_15px_rgba(34,197,94,0.4)]">
+          <ShoppingCart className="w-6 h-6 text-white" />
+        </div>
         <div>
-          <p className="text-gray-400 text-sm font-medium">MERCADO TOTAL</p>
-          <p className="text-xs text-gray-500">{countWithPrice} de {items.length} con precio</p>
+          <h1 className="text-2xl font-bold text-white">Mi Mercado</h1>
+          <p className="text-xs text-gray-400">Lista inteligente de compras</p>
         </div>
-        <div className="text-right">
-          <p className="text-3xl font-bold text-green-400">${formatPrice(total)}</p>
+      </div>
+
+      <div className="rounded-2xl p-5 relative overflow-hidden" style={GLASS_STYLE}>
+        <div className="flex items-center justify-between relative z-10">
+          <div>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Estimado</p>
+            <p className="text-3xl font-extrabold text-green-400 text-shadow-glow">${formatPrice(total)}</p>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20">
+            <DollarSign className="w-6 h-6 text-green-400" />
+          </div>
         </div>
+        <div className="w-full bg-white/5 h-1.5 rounded-full mt-4 overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-green-400 to-cyan-400 transition-all duration-500" 
+            style={{ width: `${items.length > 0 ? (countWithPrice / items.length) * 100 : 0}%` }}
+          ></div>
+        </div>
+        <p className="text-right text-[10px] text-gray-500 mt-1">{countWithPrice} de {items.length} con precio</p>
       </div>
 
       <form onSubmit={handleAdd} className="flex gap-2">
         <input
           type="text"
-          placeholder="Producto (ej: Arroz, Jabón...)"
+          placeholder="Agregar producto..."
           value={newItem}
           onChange={e => setNewItem(e.target.value)}
-          className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-green-500 outline-none"
+          className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-green-400/50 transition-all"
         />
         <input
           type="text"
           placeholder="$0"
           value={newPrice}
           onChange={e => setNewPrice(e.target.value)}
-          className="w-28 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white text-right focus:ring-2 focus:ring-green-500 outline-none"
+          className="w-24 px-3 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-center placeholder-gray-500 focus:outline-none focus:border-green-400/50 transition-all"
         />
-        <button type="submit" className="bg-green-600 hover:bg-green-700 text-white px-5 rounded-xl font-bold">
+        <button type="submit" className="bg-gradient-to-br from-green-400 to-emerald-600 text-black p-3 rounded-xl font-bold shadow-lg hover:scale-105 transition-transform">
           <Plus className="w-6 h-6" />
         </button>
       </form>
 
-      <div className="space-y-4">
-        {items.length === 0 ? (
-          <div className="text-center text-gray-500 py-12 bg-gray-800/30 rounded-2xl border-2 border-dashed border-gray-700">
-            <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="text-lg">Tu lista está vacía</p>
-          </div>
-        ) : (
-          Object.entries(grouped).map(([cat, catItems]) => {
-            const catTotal = catItems.reduce((s, i) => s + (i.price || 0), 0);
-            return (
-              <div key={cat} className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
-                <div className="px-4 py-3 bg-gray-700/50 border-b border-gray-700 flex justify-between items-center">
-                  <h4 className="font-bold text-white">{cat} <span className="text-xs bg-gray-600 px-2 py-1 rounded-full ml-2">{catItems.length}</span></h4>
-                  <span className="text-green-400 font-bold text-sm">${formatPrice(catTotal)}</span>
-                </div>
-                <div className="divide-y divide-gray-700/50">
-                  {catItems.map(item => (
-                    <div key={item.id} className="p-3 flex items-center gap-3 hover:bg-gray-700/30 transition-colors">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white capitalize font-medium truncate">{item.name}</p>
-                      </div>
-                      
-                      {editingId === item.id ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editingPrice}
-                            onChange={e => setEditingPrice(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') handleSavePrice(item.id);
-                              if (e.key === 'Escape') { setEditingId(null); setEditingPrice(''); }
-                            }}
-                            onBlur={() => handleSavePrice(item.id)}
-                            autoFocus
-                            className="w-24 px-2 py-1 bg-gray-700 border border-green-500 rounded text-white text-right font-bold text-sm outline-none"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => startEdit(item)} className="w-24 px-2 py-1 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded text-right text-sm transition-colors truncate">
-                            {item.price > 0 ? <span className="text-white font-bold">${formatPrice(item.price)}</span> : <span className="text-gray-500">$0</span>}
-                          </button>
-                          <button onClick={() => handleDelete(item.id)} className="p-1 text-gray-400 hover:text-red-400">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+      <div className="space-y-3">
+        {Object.entries(grouped).map(([cat, catItems]) => {
+          const catTotal = catItems.reduce((s, i) => s + (i.price || 0), 0);
+          return (
+            <div key={cat} className="rounded-xl overflow-hidden border border-white/5 bg-black/20 backdrop-blur-sm">
+              <div className="px-4 py-2 bg-white/5 border-b border-white/5 flex justify-between items-center">
+                <h4 className="text-xs font-bold text-gray-400 uppercase">{cat}</h4>
+                <span className="text-xs font-bold text-green-400">${formatPrice(catTotal)}</span>
               </div>
-            );
-          })
-        )}
+              <div className="divide-y divide-white/5">
+                {catItems.map(item => (
+                  <div key={item.id} className="p-3 flex items-center justify-between group">
+                    <div className="flex-1">
+                      <p className="text-white font-medium capitalize">{item.name}</p>
+                    </div>
+                    
+                    {editingId === item.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editingPrice}
+                          onChange={e => setEditingPrice(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') handleSavePrice(item.id);
+                            if (e.key === 'Escape') { setEditingId(null); setEditingPrice(''); }
+                          }}
+                          onBlur={() => handleSavePrice(item.id)}
+                          autoFocus
+                          className="w-20 px-2 py-1 bg-white/10 border border-green-400 rounded text-white text-right text-sm outline-none"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => { setEditingId(item.id); setEditingPrice(item.price.toString()); }} className="text-gray-400 hover:text-green-400 text-sm font-mono transition-colors">
+                          ${formatPrice(item.price)}
+                        </button>
+                        <button onClick={() => deleteItem(item.id)} className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {items.length > 0 && (
+         {items.length > 0 && (
         <button 
           onClick={async () => {
             await completePurchase();
             notifyMarketCompleted(items.length, total);
           }}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 rounded-xl text-lg flex items-center justify-center gap-2"
+          className="w-full bg-gradient-to-r from-green-500 to-cyan-500 text-black font-extrabold py-4 rounded-2xl text-lg shadow-[0_0_25px_rgba(34,197,94,0.5)] hover:scale-[1.03] active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-6 border border-green-400/30"
         >
           <Check className="w-6 h-6" />
-          Finalizar Compra - ${formatPrice(total)}
+          Finalizar Compra • ${formatPrice(total)}
         </button>
       )}
     </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, ShoppingCart, PieChart, History, Receipt, Scan } from 'lucide-react';
+import { Menu, X, ShoppingCart, PieChart, History, Receipt } from 'lucide-react';
 
 interface HeaderMenuProps {
   currentView: string;
