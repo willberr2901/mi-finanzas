@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Wallet, CreditCard, Wind, Scan, MapPin, TrendingUp, TrendingDown, Settings } from 'lucide-react';
 import { useFinanceStore } from '../store/financeStore';
@@ -6,9 +7,22 @@ import { useTheme } from '../contexts/ThemeContext';
 export default function HomePage() {
   const { getBalance, getTotalIncome, getTotalExpense } = useFinanceStore();
   const { theme } = useTheme();
+  
+  // Estado para el nombre del usuario
+  const [userName, setUserName] = useState('Usuario');
+
+  // Leer el nombre al cargar la página
+  useEffect(() => {
+    const savedName = localStorage.getItem('miFinanzasUserName');
+    if (savedName) {
+      setUserName(savedName);
+    }
+  }, []);
+
   const balance = getBalance();
   const income = getTotalIncome();
   const expense = getTotalExpense();
+  
   const isDark = theme === 'dark';
   const bgCard = isDark ? 'bg-white/5' : 'bg-white';
   const textPrimary = isDark ? 'text-white' : 'text-gray-900';
@@ -32,11 +46,11 @@ export default function HomePage() {
       <div className={`${bgCard} backdrop-blur-md border-b ${borderColor} p-4`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className={`text-sm ${textSecondary}`}>¡Hola, Juan! 👋</p>
+            <p className={`text-sm ${textSecondary}`}>¡Hola, {userName}! 👋</p>
             <h1 className={`text-xl font-bold ${textPrimary}`}>Mi Finanzas</h1>
           </div>
-          <Link to="/ajustes" className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
-            <Settings className="w-5 h-5 text-white" />
+          <Link to="/ajustes" className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
+            <Settings className={`w-5 h-5 ${isDark ? 'text-white' : 'text-gray-700'}`} />
           </Link>
         </div>
 

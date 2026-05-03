@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Trash2, Check, Search, Edit3, Settings } from 'lucide-react'; // Agregado Settings
+import { Plus, Trash2, Check, Search, Edit3, Settings } from 'lucide-react';
 import { useMarketStore } from '../store/marketStore';
 import { notifyMarketItemAdded, notifyMarketCompleted } from '../services/notificationService';
 import { useTheme } from '../contexts/ThemeContext';
@@ -110,8 +110,10 @@ export default function MarketList() {
             <p className={`text-[10px] ${textSecondary}`}>Lista inteligente</p>
           </div>
         </div>
-        <Link to="/ajustes" className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-          <Settings className="w-4 h-4 text-white" />
+        
+        {/* Botón de Ajustes - Visible en modo claro y oscuro */}
+        <Link to="/ajustes" className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>
+          <Settings className={`w-4 h-4 ${isDark ? 'text-white' : 'text-gray-700'}`} />
         </Link>
       </div>
 

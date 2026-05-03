@@ -9,13 +9,19 @@ export default function UpdatePrompt() {
   useEffect(() => {
     const checkForUpdate = async () => {
       try {
+        // Obtener versión actual guardada en el navegador
         const currentVersion = localStorage.getItem('appVersion') || '1.0.0';
+        
+        // Pedir la versión al servidor (con timestamp para evitar caché)
         const res = await fetch('/version.json?t=' + Date.now());
         if (!res.ok) return;
-        const data = await res.json();
         
-        if (data.version && data.version !== currentVersion) {
-          setNewVersion(data.version);
+        const data = await res.json();
+        const serverVersion = data.version;
+
+        // Solo mostrar si la versión del servidor es diferente a la guardada
+        if (serverVersion && serverVersion !== currentVersion) {
+          setNewVersion(serverVersion);
           setShowUpdate(true);
         }
       } catch (e) {
@@ -24,7 +30,8 @@ export default function UpdatePrompt() {
     };
 
     checkForUpdate();
-    // Verificar cada 5 minutos
+    
+    // Verificar cada 5 minutos por si acaso
     const interval = setInterval(checkForUpdate, 5 * 60 * 1000);
 
     // Escuchar cambios en Service Worker
@@ -55,56 +62,41 @@ export default function UpdatePrompt() {
     setIsUpdating(true);
     
     try {
-      // 1. Limpiar TODOS los caches
+      // 1. Guardar la nueva versión como la actual en el navegador
+      localStorage.setItem('appVersion', newVersion);
+      
+      // 2. Limpiar caches viejos
       const cacheNames = await caches.keys();
       await Promise.all(cacheNames.map(name => caches.delete(name)));
-      
-      // 2. Guardar nueva versión
-      localStorage.setItem('appVersion', newVersion);
       
       // 3. Forzar actualización del Service Worker
       if ('serviceWorker' in navigator) {
         const reg = await navigator.serviceWorker.getRegistration();
-        if (reg?.waiting) {
-          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-        }
-        if (reg?.active) {
-          reg.active.postMessage({ type: 'SKIP_WAITING' });
-        }
+        if (reg?.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        if (reg?.active) reg.active.postMessage({ type: 'SKIP_WAITING' });
       }
-      
-      // 4. Limpiar localStorage de datos temporales (NO borrar datos del usuario)
-      // Mantener solo datos importantes del usuario
-      const userData = {
-        userName: localStorage.getItem('miFinanzasUserName'),
-        welcomeDone: localStorage.getItem('miFinanzasWelcomeDone'),
-        termsAccepted: localStorage.getItem('miFinanzasTermsAccepted'),
-        theme: localStorage.getItem('miFinanzasTheme'),
-        marketBudget: localStorage.getItem('marketBudget'),
-      };
-      
-      // Borrar todo y restaurar datos del usuario
-      localStorage.clear();
-      Object.entries(userData).forEach(([key, value]) => {
-        if (value !== null) localStorage.setItem(key, value);
-      });
       
     } catch (e) {
       console.error('Update failed:', e);
     }
 
-    // 5. Recargar la página
+    // 4. Recargar
     setTimeout(() => {
       window.location.reload();
     }, 500);
+  };
+
+  const handleDismiss = () => {
+    // Al cerrar, guardamos la versión actual para que no vuelva a salir en esta sesión
+    // Opcional: podrías guardar 'dismissed' si quieres que no salga hasta reiniciar el navegador
+    setShowUpdate(false);
   };
 
   if (!showUpdate) return null;
 
   return (
     <div className="fixed top-12 left-3 right-3 z-[100]">
-      <div className="bg-gradient-to-r from-green-600 via-cyan-600 to-blue-600 p-4 rounded-2xl shadow-2xl border border-white/20">
-        {/* Barra superior */}
+      <div className="bg-gradient-to-r from-green-600 via-cyan-600 to-blue-600 p-4 rounded-2xl shadow-2xl border border-white/20 animate-slide-down">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             {isUpdating ? (
@@ -117,40 +109,37 @@ export default function UpdatePrompt() {
                 {isUpdating ? 'Actualizando...' : '¡Nueva versión disponible!'}
               </p>
               <p className="text-xs text-white/80">
-                {isUpdating ? 'Limpiando caché y descargando...' : `Versión ${newVersion} lista para instalar`}
+                {isUpdating ? 'Limpiando caché...' : `Versión ${newVersion} lista`}
               </p>
             </div>
           </div>
           {!isUpdating && (
-            <button onClick={() => setShowUpdate(false)} className="text-white/60 hover:text-white p-1">
+            <button onClick={handleDismiss} className="text-white/60 hover:text-white p-1">
               <X className="w-4 h-4" />
             </button>
           )}
         </div>
         
-        {/* Contenido del update */}
         {!isUpdating && (
           <div className="bg-black/30 rounded-xl p-3 mb-3">
             <p className="text-xs text-white/90">
-              📋 <strong>Esta actualización incluye:</strong><br/>
-              • Mejoras en el módulo de Mercado<br/>
-              • Corrección de créditos y préstamos<br/>
-              • Nuevo historial de facturas<br/>
-              • Optimización general
+              📋 <strong>Mejoras en esta versión:</strong><br/>
+              • Escáner de facturas funcional<br/>
+              • Ajustes de tema (Claro/Oscuro)<br/>
+              • Correcciones de visibilidad
             </p>
           </div>
         )}
 
-        {/* Botones */}
         <div className="flex gap-2">
           {!isUpdating ? (
             <>
               <button onClick={handleUpdate}
                 className="flex-1 bg-white text-green-600 font-bold py-2.5 rounded-xl text-sm hover:bg-gray-100 transition-all flex items-center justify-center gap-2">
                 <Download className="w-4 h-4" />
-                Actualizar ahora
+                Actualizar
               </button>
-              <button onClick={() => setShowUpdate(false)}
+              <button onClick={handleDismiss}
                 className="px-4 py-2.5 rounded-xl text-white/80 text-sm border border-white/30 hover:bg-white/10">
                 Después
               </button>
@@ -158,7 +147,7 @@ export default function UpdatePrompt() {
           ) : (
             <div className="w-full bg-white/20 rounded-xl h-10 flex items-center justify-center">
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-              <span className="text-white text-sm">Actualizando...</span>
+              <span className="text-white text-sm">Procesando...</span>
             </div>
           )}
         </div>
