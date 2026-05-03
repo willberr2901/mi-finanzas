@@ -10,9 +10,9 @@ import CreditPage from './pages/CreditPage';
 import RoutesPage from './pages/RoutesPage';
 import HomePage from './pages/HomePage';
 import SettingsPage from './pages/SettingsPage';
+import ReceiptHistoryPage from './pages/ReceiptHistoryPage'; // Importado correctamente
 import ToastProvider from './components/ToastProvider';
 import WelcomeModal from './components/WelcomeModal';
-import TutorialGuide from './components/TutorialGuide';
 import TermsModal from './components/TermsModal';
 import UpdatePrompt from './components/UpdatePrompt';
 
@@ -28,7 +28,7 @@ function NavBar() {
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50">
-      <div className="flex justify-around items-center px-1 py-2 bg-black/90 backdrop-blur-md border-t border-white/10">
+      <div className="flex justify-around items-center px-1 py-2 bg-black/90 backdrop-blur-md border-t border-white/10 safe-area-bottom">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
@@ -39,7 +39,7 @@ function NavBar() {
             </Link>
           );
         })}
-        <button onClick={() => window.location.href = '/'} className="fixed bottom-14 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-cyan-400 flex items-center justify-center text-black shadow-lg">
+        <button onClick={() => window.location.href = '/'} className="fixed bottom-14 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-cyan-400 flex items-center justify-center text-black shadow-[0_0_20px_rgba(34,197,94,0.6)] z-50">
           <Plus className="w-6 h-6" />
         </button>
       </div>
@@ -50,16 +50,18 @@ function NavBar() {
 function App() {
   const [userName, setUserName] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
 
   useEffect(() => {
+    const welcomeDone = localStorage.getItem('miFinanzasWelcomeDone');
     const savedName = localStorage.getItem('miFinanzasUserName');
-    const hasSeenWelcome = sessionStorage.getItem('miFinanzasWelcomeSeen');
-    if (!savedName || !hasSeenWelcome) {
+    
+    if (!welcomeDone) {
       setShowWelcome(true);
-      sessionStorage.setItem('miFinanzasWelcomeSeen', 'true');
+    } else if (savedName) {
+      setUserName(savedName);
     }
+
     const termsAccepted = localStorage.getItem('miFinanzasTermsAccepted');
     if (termsAccepted !== 'true') setShowTerms(true);
     if ('Notification' in window) Notification.requestPermission();
@@ -84,11 +86,11 @@ function App() {
             <Route path="/aire" element={<AirQualityPage />} />
             <Route path="/rutas" element={<RoutesPage />} />
             <Route path="/ajustes" element={<SettingsPage />} />
+            <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
           </Routes>
           <NavBar />
           <ToastProvider />
-          {showWelcome && <WelcomeModal onDismiss={() => { setShowWelcome(false); setShowTutorial(true); }} userName={userName} setUserName={setUserName} />}
-          {showTutorial && <TutorialGuide onDismiss={() => setShowTutorial(false)} />}
+          {showWelcome && <WelcomeModal onDismiss={() => setShowWelcome(false)} userName={userName} setUserName={setUserName} />}
           {showTerms && <TermsModal onAccept={() => setShowTerms(false)} />}
         </div>
       </BrowserRouter>
