@@ -14,6 +14,7 @@ import TutorialGuide from './components/TutorialGuide';
 import TermsModal from './components/TermsModal';
 import NavBar from './components/NavBar';
 import UpdatePrompt from './components/UpdatePrompt';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
   const [userName, setUserName] = useState<string | null>(null);
@@ -72,6 +73,7 @@ function App() {
             <Route path="/creditos" element={<CreditPage />} />
             <Route path="/aire" element={<AirQualityPage />} />
             <Route path="/rutas" element={<RoutesPage />} />
+            <Route path="/ajustes" element={<SettingsPage />} />
           </Routes>
           
           <NavBar />

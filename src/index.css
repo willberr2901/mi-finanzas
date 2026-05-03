@@ -207,3 +207,21 @@
     box-shadow: 0 0 15px rgba(0, 255, 163, 0.2);
   }
 }
+/* Prevenir zoom en inputs en iOS */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Prevenir scroll horizontal */
+body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+/* Contenedor principal responsive */
+#root {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}

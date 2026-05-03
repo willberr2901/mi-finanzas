@@ -1,12 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Scan, CreditCard, PieChart, MapPin, Plus } from 'lucide-react';
+import { Home, ShoppingCart, Scan, CreditCard, PieChart, MapPin, Plus, Settings } from 'lucide-react';
 
 export default function NavBar() {
   const location = useLocation();
 
   const menuItems = [
-    { path: '/finanzas', icon: PieChart, label: 'Finanzas' },
-    { path: '/', icon: ShoppingCart, label: 'Mercado' },
+    { path: '/', icon: Home, label: 'Inicio' },
+    { path: '/mercado', icon: ShoppingCart, label: 'Mercado' },
     { path: '/escaner', icon: Scan, label: 'Escáner' },
     { path: '/creditos', icon: CreditCard, label: 'Créditos' },
     { path: '/aire', icon: PieChart, label: 'Aire' },
@@ -20,7 +20,7 @@ export default function NavBar() {
         <div 
           className="flex justify-around items-center px-2 py-3 mx-auto max-w-4xl"
           style={{
-            background: 'rgba(6, 26, 26, 0.8)',
+            background: 'rgba(6, 26, 26, 0.95)',
             backdropFilter: 'blur(16px)',
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
             boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.3)'
@@ -43,20 +43,23 @@ export default function NavBar() {
               </Link>
             );
           })}
+          
+          {/* Botón Central "+" - Redirige a Inicio */}
+          <button
+            onClick={() => window.location.href = '/'}
+            className="fixed bottom-16 left-1/2 -translate-x-1/2 z-50 w-14 h-14 rounded-full flex items-center justify-center text-black font-bold text-2xl shadow-[0_0_30px_rgba(0,255,163,0.6)] hover:scale-110 transition-transform bg-gradient-to-r from-green-400 to-cyan-400"
+          >
+            <Plus className="w-8 h-8" />
+          </button>
         </div>
       </nav>
 
-      {/* Botón FAB central flotante */}
+      {/* Botón de Ajustes (arriba a la derecha) */}
       <button
-        className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 w-16 h-16 rounded-full flex items-center justify-center text-black font-bold text-2xl shadow-[0_0_30px_rgba(0,255,163,0.6)] hover:scale-110 transition-transform"
-        style={{
-          background: 'linear-gradient(135deg, #00FFA3, #00D1FF)',
-        }}
-        onClick={() => {
-          window.location.href = '/';
-        }}
+        onClick={() => alert('Menú de Ajustes - Próximamente')}
+        className="fixed top-4 right-4 z-50 w-10 h-10 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
       >
-        <Plus className="w-8 h-8" />
+        <Settings className="w-5 h-5" />
       </button>
     </>
   );

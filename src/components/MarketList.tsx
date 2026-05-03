@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, ShoppingCart, Check, DollarSign, Search, X } from 'lucide-react';
+import { Plus, Trash2, ShoppingCart, Check, DollarSign, Search } from 'lucide-react';
 import { useMarketStore } from '../store/marketStore';
 import { notifyMarketItemAdded, notifyMarketCompleted } from '../services/notificationService';
 import { useTheme } from '../contexts/ThemeContext';
@@ -10,11 +10,12 @@ function formatPrice(num: number): string {
 
 const KEYWORDS: Record<string, string[]> = {
   'Granos': ['arroz', 'lenteja', 'frijol', 'garbanzo', 'avena', 'pasta'],
-  'Aseo': ['jabón', 'shampoo', 'detergente', 'suavizante', 'blanqueador'],
-  'Lácteos': ['leche', 'yogurt', 'mantequilla', 'queso'],
-  'Carnes': ['pollo', 'carne', 'pescado', 'huevo'],
-  'Verduras': ['tomate', 'cebolla', 'papa', 'lechuga'],
-  'Bebidas': ['gaseosa', 'jugo', 'agua', 'cerveza']
+  'Aseo': ['jabón', 'shampoo', 'detergente', 'suavizante', 'blanqueador', 'soflan'],
+  'Lácteos': ['leche', 'yogurt', 'mantequilla', 'queso', 'kumis'],
+  'Carnes': ['pollo', 'carne', 'pescado', 'huevo', 'jamón', 'salchicha'],
+  'Verduras': ['tomate', 'cebolla', 'papa', 'lechuga', 'zanahoria'],
+  'Bebidas': ['gaseosa', 'jugo', 'agua', 'cerveza', 'café'],
+  'Panaderia': ['pan', 'galletas', 'torta', 'quesitos']
 };
 
 function getCategory(item: string): string {
@@ -30,10 +31,12 @@ export default function MarketList() {
   const { items, loadItems, addItem, deleteItem, completePurchase, getTotal } = useMarketStore();
   
   const [newItem, setNewItem] = useState('');
-  const [newPrice, setNewPrice] = useState('');
-  const [budget, setBudget] = useState(200000);
+  const [quantity, setQuantity] = useState(1);
+  const [unitPrice, setUnitPrice] = useState('');
+  const [budget] = useState(200000);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadItems();
@@ -47,20 +50,24 @@ export default function MarketList() {
     e.preventDefault();
     if (!newItem.trim()) return;
 
-    const price = newPrice ? parseInt(newPrice.replace(/[^0-9]/g, '')) : 0;
+    const unitPriceNum = parseInt(unitPrice.replace(/[^0-9]/g, '')) || 0;
+    const totalPrice = unitPriceNum * quantity;
     const category = getCategory(newItem);
 
     await addItem({
       name: newItem.trim(),
-      price,
+      price: totalPrice,
       category,
       date: new Date().toISOString(),
       completed: false,
+      quantity: quantity,
+      unitPrice: unitPriceNum,
     });
 
-    notifyMarketItemAdded(newItem.trim(), price);
+    notifyMarketItemAdded(`${newItem.trim()} x${quantity}`, totalPrice);
     setNewItem('');
-    setNewPrice('');
+    setUnitPrice('');
+    setQuantity(1);
   };
 
   const confirmDelete = (id: string) => {
@@ -72,6 +79,16 @@ export default function MarketList() {
       await deleteItem(showDeleteConfirm);
       setShowDeleteConfirm(null);
     }
+  };
+
+  const toggleItemSelection = (id: string) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
   };
 
   const filteredItems = items.filter(item =>
@@ -105,18 +122,18 @@ export default function MarketList() {
             </div>
           </div>
           
-          <div className="flex gap-4 text-right">
+          <div className="flex gap-3 text-right">
             <div>
               <p className={`text-[10px] uppercase font-bold ${textSecondary}`}>Comprado</p>
-              <p className="text-green-400 font-bold">${formatPrice(total * 0.4)}</p>
+              <p className="text-green-400 font-bold text-sm">$0</p>
             </div>
             <div>
-              <p className={`text-[10px] uppercase font-bold ${textSecondary}`}>Total Lista</p>
-              <p className={`font-bold ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>${formatPrice(total)}</p>
+              <p className={`text-[10px] uppercase font-bold ${textSecondary}`}>Lista Total</p>
+              <p className={`font-bold ${isDark ? 'text-purple-400' : 'text-purple-600'} text-sm`}>${formatPrice(total)}</p>
             </div>
             <div>
               <p className={`text-[10px] uppercase font-bold ${textSecondary}`}>Disponible</p>
-              <p className={`font-bold ${isDark ? 'text-cyan-400' : 'text-cyan-600'}`}>${formatPrice(remaining)}</p>
+              <p className={`font-bold ${isDark ? 'text-cyan-400' : 'text-cyan-600'} text-sm`}>${formatPrice(remaining)}</p>
             </div>
           </div>
         </div>
@@ -138,7 +155,7 @@ export default function MarketList() {
               <span className={isDark ? 'text-purple-400' : 'text-purple-600'}>100.0%</span>
             </div>
             <div className={`h-2 rounded-full ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>
-              <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
+              <div className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full" style={{ width: `${percentage}%` }}></div>
             </div>
           </div>
         </div>
@@ -157,23 +174,45 @@ export default function MarketList() {
       </div>
 
       {/* Agregar Producto */}
-      <form onSubmit={handleAdd} className="flex gap-2">
+      <form onSubmit={handleAdd} className="space-y-3">
         <input
           type="text"
           placeholder="Nombre del producto"
           value={newItem}
           onChange={e => setNewItem(e.target.value)}
-          className={`flex-1 px-4 py-3 rounded-xl ${bgCard} border ${borderColor} ${textPrimary} placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400/50`}
+          className={`w-full px-4 py-3 rounded-xl ${bgCard} border ${borderColor} ${textPrimary} placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400/50`}
         />
-        <input
-          type="text"
-          placeholder="$0"
-          value={newPrice}
-          onChange={e => setNewPrice(e.target.value)}
-          className={`w-28 px-3 py-3 rounded-xl ${bgCard} border ${borderColor} ${textPrimary} text-center placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400/50`}
-        />
-        <button type="submit" className="bg-gradient-to-br from-green-400 to-cyan-400 text-black p-3 rounded-xl font-bold shadow-lg hover:scale-105 transition-transform">
-          <Plus className="w-6 h-6" />
+        
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="number"
+            placeholder="Cantidad"
+            value={quantity}
+            onChange={e => setQuantity(parseInt(e.target.value) || 1)}
+            min="1"
+            className={`px-4 py-3 rounded-xl ${bgCard} border ${borderColor} ${textPrimary} placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400/50`}
+          />
+          <input
+            type="text"
+            placeholder="Precio unitario $"
+            value={unitPrice}
+            onChange={e => setUnitPrice(e.target.value)}
+            className={`px-4 py-3 rounded-xl ${bgCard} border ${borderColor} ${textPrimary} placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-400/50`}
+          />
+        </div>
+        
+        {quantity > 0 && unitPrice && (
+          <div className={`text-center py-2 rounded-lg ${isDark ? 'bg-green-500/10' : 'bg-green-50'}`}>
+            <p className={`text-sm ${textSecondary}`}>Total del producto:</p>
+            <p className="text-xl font-bold text-green-500">
+              ${formatPrice((parseInt(unitPrice.replace(/[^0-9]/g, '')) || 0) * quantity)}
+            </p>
+          </div>
+        )}
+        
+        <button type="submit" className="w-full bg-gradient-to-br from-green-400 to-cyan-400 text-black py-3 rounded-xl font-bold shadow-lg hover:scale-105 transition-transform flex items-center justify-center gap-2">
+          <Plus className="w-5 h-5" />
+          Agregar Producto
         </button>
       </form>
 
@@ -198,12 +237,19 @@ export default function MarketList() {
                 {catItems.map(item => (
                   <div key={item.id} className={`p-3 flex items-center justify-between group ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'} transition-colors`}>
                     <div className="flex items-center gap-3 flex-1">
-                      <div className={`w-5 h-5 rounded border-2 ${item.completed ? 'bg-green-500 border-green-500' : isDark ? 'border-gray-600' : 'border-gray-300'} flex items-center justify-center`}>
-                        {item.completed && <Check className="w-3 h-3 text-white" />}
+                      <div 
+                        onClick={() => toggleItemSelection(item.id)}
+                        className={`w-5 h-5 rounded border-2 cursor-pointer flex items-center justify-center transition-all ${
+                          selectedItems.has(item.id) 
+                            ? 'bg-green-500 border-green-500' 
+                            : isDark ? 'border-gray-600' : 'border-gray-300'
+                        }`}
+                      >
+                        {selectedItems.has(item.id) && <Check className="w-3 h-3 text-white" />}
                       </div>
                       <div className="flex-1">
-                        <p className={`font-medium ${item.completed ? 'line-through opacity-50' : textPrimary}`}>{item.name}</p>
-                        <p className={`text-xs ${textSecondary}`}>x1 unidad</p>
+                        <p className={`font-medium ${textPrimary}`}>{item.name}</p>
+                        <p className={`text-xs ${textSecondary}`}>x{item.quantity || 1} unidad{(item.quantity || 1) > 1 ? 'es' : ''}</p>
                       </div>
                     </div>
                     

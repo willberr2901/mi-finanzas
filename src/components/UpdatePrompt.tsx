@@ -2,41 +2,36 @@ import { useEffect, useState } from 'react';
 import { RefreshCw, X } from 'lucide-react';
 
 export default function UpdatePrompt() {
-  const [waitingWorker, setWaitingWorker] = useState<any>(null);
   const [showUpdate, setShowUpdate] = useState(false);
 
   useEffect(() => {
-    const listenForInstallable = () => {
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
-      });
-    };
-
-    const checkForUpdates = async () => {
-      if ('serviceWorker' in navigator) {
-        const registration = await navigator.serviceWorker.ready;
-        
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                setWaitingWorker(newWorker);
                 setShowUpdate(true);
               }
             });
           }
         });
-      }
-    };
+      });
 
-    listenForInstallable();
-    checkForUpdates();
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+      });
+    }
   }, []);
 
   const handleUpdate = () => {
-    if (waitingWorker) {
-      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg?.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+      });
       window.location.reload();
     }
   };
