@@ -1,7 +1,7 @@
 {
-  "name": "Mi Finanzas - Gestión Inteligente",
+  "name": "Mi Finanzas PWA",
   "short_name": "MiFinanzas",
-  "description": "App de finanzas personales, mercado, créditos y más. Versión Beta.",
+  "description": "Gestión inteligente de finanzas personales y mercado",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -9,19 +9,11 @@
   "background_color": "#0f172a",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "/icons.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
-  "categories": ["finance", "productivity", "lifestyle"],
-  "screenshots": [],
-  "prefer_related_applications": false
+  "categories": ["finance", "productivity"]
 }
