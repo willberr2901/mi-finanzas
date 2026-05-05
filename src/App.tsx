@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, ShoppingCart, Scan, CreditCard, Plus, Shield, Settings, History } from 'lucide-react';
+// Importamos los iconos necesarios, incluyendo PieChart para Rentabilidad
+import { Home, ShoppingCart, Scan, CreditCard, Plus, Shield, Settings, History, PieChart } from 'lucide-react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
+
+// Páginas principales
 import FinancePage from './pages/FinancePage';
 import MarketPage from './pages/MarketPage';
 import ReceiptScannerPage from './pages/ReceiptScannerPage';
@@ -10,22 +13,29 @@ import CreditPage from './pages/CreditPage';
 import HomePage from './pages/HomePage';
 import SettingsPage from './pages/SettingsPage';
 import ReceiptHistoryPage from './pages/ReceiptHistoryPage';
+// ✅ NUEVA PÁGINA DE RENTABILIDAD
+import ProfitabilityPage from './pages/ProfitabilityPage';
+
+// Componentes UI
 import SecurityLock from './components/SecurityLock';
 import ToastProvider from './components/ToastProvider';
 import WelcomeModal from './components/WelcomeModal';
 import TermsModal from './components/TermsModal';
+
+// Servicios
 import { notify, setAuditLogFunction, type AuditEntry } from './services/notificationService';
 
 function NavBar() {
   const location = useLocation();
   const { lockNow } = useSecurity();
   
-  // ✅ SOLO 6 MÓDULOS - Sin Aire ni Rutas
+  // ✅ MENÚ ACTUALIZADO CON RENTABILIDAD (6 módulos + Historial)
   const menuItems = [
     { path: '/', icon: Home, label: 'Inicio' },
     { path: '/mercado', icon: ShoppingCart, label: 'Mercado' },
     { path: '/escaner', icon: Scan, label: 'Escáner' },
     { path: '/creditos', icon: CreditCard, label: 'Créditos' },
+    { path: '/rentabilidad', icon: PieChart, label: 'Rentabilidad' }, // ← NUEVO ÍCONO
     { path: '/ajustes', icon: Settings, label: 'Ajustes' },
     { path: '/historial-facturas', icon: History, label: 'Historial' },
   ];
@@ -75,7 +85,7 @@ function AppContent() {
   const [showTerms, setShowTerms] = useState(false);
   const { isLocked, isSetup } = useSecurity();
 
-  // Auditoría (ejecuta 1 sola vez)
+  // Configurar auditoría (ejecuta 1 sola vez al inicio)
   useEffect(() => {
     const logFunction = (entry: Omit<AuditEntry, 'id' | 'timestamp'>) => {
       const newEntry: AuditEntry = {
@@ -94,7 +104,7 @@ function AppContent() {
     setAuditLogFunction(logFunction);
   }, []);
 
-  // Notificación de bienvenida (SOLO UNA VEZ por sesión)
+  // Manejar estado inicial y notificaciones (ejecuta 1 sola vez)
   useEffect(() => {
     const NOTIFIED_FLAG = 'miFinanzas_WelcomeNotified_v2';
     const welcomeDone = localStorage.getItem('miFinanzasWelcomeDone');
@@ -120,7 +130,7 @@ function AppContent() {
     if (termsAccepted !== 'true') setShowTerms(true);
     
     if (typeof window !== 'undefined' && 'Notification' in window) {
-      Notification.requestPermission().catch(() => {});
+      Notification.requestPermission().catch(console.warn);
     }
   }, []);
 
@@ -128,12 +138,16 @@ function AppContent() {
     <>
       {isSetup && isLocked && <SecurityLock />}
       <div className="pb-20 min-h-screen relative">
+        {/* <UpdatePrompt /> */}
+        
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/finanzas" element={<FinancePage />} />
           <Route path="/mercado" element={<MarketPage />} />
           <Route path="/escaner" element={<ReceiptScannerPage />} />
           <Route path="/creditos" element={<CreditPage />} />
+          {/* ✅ NUEVA RUTA PARA RENTABILIDAD */}
+          <Route path="/rentabilidad" element={<ProfitabilityPage />} />
           <Route path="/ajustes" element={<SettingsPage />} />
           <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
         </Routes>
