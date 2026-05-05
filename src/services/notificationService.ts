@@ -33,7 +33,6 @@ export const notify = ({
   log?: boolean;
   module?: string;
 }) => {
-  // SANITIZAR TODOS LOS INPUTS (previene XSS)
   const safeTitle = sanitizeInput(title);
   const safeMessage = message ? sanitizeInput(message) : '';
   const safeModule = sanitizeInput(module);
@@ -65,7 +64,6 @@ export const notify = ({
       toast.info(`ℹ️ ${fullMessage}`, toastOptions);
   }
 
-  // Auditoría
   if (log && auditLogFn) {
     const actionMap: Record<string, AuditEntry['action']> = {
       'agregado': 'CREATE',
@@ -89,7 +87,6 @@ export const notify = ({
     });
   }
 
-  // Notificación nativa (solo si es seguro)
   if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
     try {
       new Notification(safeTitle, {
@@ -106,7 +103,27 @@ export const notify = ({
   return toastId;
 };
 
-// Notificaciones específicas con validación
+// ✅ NUEVAS FUNCIONES QUE FALTABAN PARA TransactionForm.tsx
+export const notifyExpenseAdded = (name: string, amount: number, module = 'Finanzas') => {
+  return notify({ 
+    title: '💸 Gasto registrado', 
+    message: `${sanitizeInput(name)}: $${amount.toLocaleString('es-CO')}`, 
+    type: 'success',
+    module,
+    log: true
+  });
+};
+
+export const notifyIncomeAdded = (name: string, amount: number, module = 'Finanzas') => {
+  return notify({ 
+    title: '💰 Ingreso registrado', 
+    message: `${sanitizeInput(name)}: $${amount.toLocaleString('es-CO')}`, 
+    type: 'success',
+    module,
+    log: true
+  });
+};
+
 export const notifyMarketItemAdded = (itemName: string, price: number, module = 'Market') => {
   if (!itemName || typeof itemName !== 'string' || itemName.length > 100) {
     console.error('Nombre de producto inválido');

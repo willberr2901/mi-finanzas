@@ -136,3 +136,66 @@ export const secureStorage = {
     localStorage.clear();
   }
 };
+// ✅ FUNCIONES DE BACKUP PARA SettingsPage.tsx
+
+export const createBackup = async (): Promise<Blob | null> => {
+  try {
+    const data: Record<string, any> = {};
+    
+    // Recopilar todos los datos de localStorage que empiecen con 'miFinanzas'
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('miFinanzas')) {
+        data[key] = localStorage.getItem(key);
+      }
+    }
+    
+    if (Object.keys(data).length === 0) {
+      return null;
+    }
+    
+    // Cifrar los datos antes de guardar
+    const encryptedData = encryptData(data);
+    const blob = new Blob([encryptedData], { type: 'application/json' });
+    
+    return blob;
+  } catch (e) {
+    console.error('Error creando backup:', e);
+    return null;
+  }
+};
+
+export const restoreBackup = async (file: File): Promise<boolean> => {
+  try {
+    const text = await file.text();
+    
+    // Intentar descifrar
+    let data: Record<string, any>;
+    try {
+      const decrypted = decryptData(text);
+      if (!decrypted || typeof decrypted !== 'object') {
+        throw new Error('Datos inválidos');
+      }
+      data = decrypted;
+    } catch (e) {
+      // Si falla el descifrado, intentar como JSON normal (backup antiguo sin cifrado)
+      try {
+        data = JSON.parse(text);
+      } catch (e2) {
+        throw new Error('Archivo de backup inválido o corrupto');
+      }
+    }
+    
+    // Restaurar datos
+    for (const [key, value] of Object.entries(data)) {
+      if (key.startsWith('miFinanzas') && typeof value === 'string') {
+        localStorage.setItem(key, value);
+      }
+    }
+    
+    return true;
+  } catch (e) {
+    console.error('Error restaurando backup:', e);
+    return false;
+  }
+};
