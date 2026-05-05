@@ -1,100 +1,79 @@
-// Encriptación simple para datos sensibles (XOR + Base64)
-export const simpleEncrypt = (text: string, key: string): string => {
-  let result = '';
-  for (let i = 0; i < text.length; i++) {
-    result += String.fromCharCode(
-      text.charCodeAt(i) ^ key.charCodeAt(i % key.length)
-    );
-  }
-  return btoa(result);
-};
+// Utilidades de seguridad y cifrado
 
-export const simpleDecrypt = (encrypted: string, key: string): string => {
-  const decoded = atob(encrypted);
-  let result = '';
-  for (let i = 0; i < decoded.length; i++) {
-    result += String.fromCharCode(
-      decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length)
-    );
-  }
-  return result;
-};
-
-// Sanitización de inputs (previene XSS)
+// Sanitizar inputs (previene XSS)
 export const sanitizeInput = (input: string): string => {
+  if (typeof input !== 'string') return '';
+  
   const div = document.createElement('div');
   div.textContent = input;
-  return div.innerHTML.trim();
+  
+  return div.innerHTML
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;')
+    .trim();
 };
 
-// Validación de PIN (4-6 dígitos)
+// Validar email
+export const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Validar PIN (4-6 dígitos)
 export const isValidPIN = (pin: string): boolean => {
   return /^\d{4,6}$/.test(pin);
 };
 
-// Hash simple para PIN (no usar en producción real, pero sirve para esta app)
+// Validar monto (número positivo)
+export const isValidAmount = (amount: number | string): boolean => {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return !isNaN(num) && num >= 0 && num <= 999999999;
+};
+
+// Hash simple para PIN (no es criptográfico pero sirve para comparación básica)
 export const hashPIN = (pin: string): string => {
   let hash = 0;
   for (let i = 0; i < pin.length; i++) {
-    hash = ((hash << 5) - hash) + pin.charCodeAt(i);
-    hash |= 0;
+    const char = pin.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
   }
   return hash.toString(36);
 };
 
-// Generar token de sesión
-export const generateSessionToken = (): string => {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
-};
-
-// Verificar si la sesión es válida (expira en 24h)
-export const isSessionValid = (token: string, createdAt: number): boolean => {
-  const now = Date.now();
-  const twentyFourHours = 24 * 60 * 60 * 1000;
-  return now - createdAt < twentyFourHours;
-};
-
-// Backup de datos a JSON encriptado
-export const createBackup = (data: any, key: string): string => {
-  const json = JSON.stringify(data);
-  return simpleEncrypt(json, key);
-};
-
-// Restaurar backup
-export const restoreBackup = (backup: string, key: string): any => {
+// Cifrado simple usando localStorage (para datos sensibles básicos)
+export const encryptData = (data: any, key: string = 'mi-finanzas-key-2026'): string => {
   try {
-    const json = simpleDecrypt(backup, key);
-    return JSON.parse(json);
-  } catch {
+    const str = JSON.stringify(data);
+    let result = '';
+    for (let i = 0; i < str.length; i++) {
+      result += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return btoa(result);
+  } catch (e) {
+    console.error('Error cifrando datos:', e);
+    return '';
+  }
+};
+
+export const decryptData = (encrypted: string, key: string = 'mi-finanzas-key-2026'): any => {
+  try {
+    const str = atob(encrypted);
+    let result = '';
+    for (let i = 0; i < str.length; i++) {
+      result += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return JSON.parse(result);
+  } catch (e) {
+    console.error('Error descifrando datos:', e);
     return null;
   }
 };
 
-// Limpiar datos sensibles de memoria
-export const secureWipe = (data: string): void => {
-  // Sobrescribir con caracteres aleatorios
-  for (let i = 0; i < data.length * 3; i++) {
-    void Math.random();
-  }
-};
-
-// Prevenir consola abierta (anti-debug básico)
-export const preventDebug = (): void => {
-  let devtools: any = /./;
-  devtools.toString = function() {
-    // Si se abre la consola, recargar la app
-    if (localStorage.getItem('debugAttempts') === '3') {
-      localStorage.clear();
-      window.location.reload();
-    }
-    localStorage.setItem('debugAttempts', 
-      String(parseInt(localStorage.getItem('debugAttempts') || '0') + 1)
-    );
-  };
-  console.log(devtools);
-};
-
-// Rate limiting para intentos de PIN
+// Rate limiting simple (para intentos de PIN)
 export class RateLimiter {
   private static attempts: Map<string, { count: number; resetTime: number }> = new Map();
   
@@ -119,3 +98,41 @@ export class RateLimiter {
     this.attempts.delete(key);
   }
 }
+
+// Verificar integridad de datos
+export const verifyDataIntegrity = (data: any): boolean => {
+  if (!data || typeof data !== 'object') return false;
+  const str = JSON.stringify(data);
+  return !/<script|javascript:|onerror=|onload=/i.test(str);
+};
+
+// Guardar en localStorage de forma segura
+export const secureStorage = {
+  setItem: (key: string, value: any): void => {
+    try {
+      const encrypted = encryptData(value);
+      localStorage.setItem(key, encrypted);
+    } catch (e) {
+      console.error('Error guardando datos:', e);
+    }
+  },
+  
+  getItem: (key: string): any => {
+    try {
+      const encrypted = localStorage.getItem(key);
+      if (!encrypted) return null;
+      return decryptData(encrypted);
+    } catch (e) {
+      console.error('Error leyendo datos:', e);
+      return null;
+    }
+  },
+  
+  removeItem: (key: string): void => {
+    localStorage.removeItem(key);
+  },
+  
+  clear: (): void => {
+    localStorage.clear();
+  }
+};

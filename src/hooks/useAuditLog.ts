@@ -64,4 +64,4 @@ export const useAuditLog = () => {
   }, []);
 
   return { log, getLogs, clearLogs };
-};
+};  
