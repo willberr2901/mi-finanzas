@@ -16,20 +16,11 @@ import WelcomeModal from './components/WelcomeModal';
 import TermsModal from './components/TermsModal';
 import { notify, setAuditLogFunction, type AuditEntry } from './services/notificationService';
 
-// ✅ PWA: Registrar service worker para actualizaciones
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(err => {
-      console.warn('SW registration failed:', err);
-    });
-  });
-}
-
 function NavBar() {
   const location = useLocation();
   const { lockNow } = useSecurity();
   
-  // ✅ Menú SIN módulo de Aire ni Rutas
+  // ✅ SOLO 6 MÓDULOS - Sin Aire ni Rutas
   const menuItems = [
     { path: '/', icon: Home, label: 'Inicio' },
     { path: '/mercado', icon: ShoppingCart, label: 'Mercado' },
@@ -82,40 +73,9 @@ function AppContent() {
   const [userName, setUserName] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
-  const [updateAvailable, setUpdateAvailable] = useState(false);
   const { isLocked, isSetup } = useSecurity();
 
-  // ✅ PWA: Detectar actualización disponible (SOLO UNA VEZ)
-  useEffect(() => {
-    if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;
-    
-    const UPDATE_FLAG = 'miFinanzas_UpdateNotified_v1';
-    
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      const alreadyNotified = sessionStorage.getItem(UPDATE_FLAG);
-      if (!alreadyNotified) {
-        notify({
-          title: '🔄 Nueva versión disponible',
-          message: 'Actualizando automáticamente...',
-          type: 'info',
-          duration: 3000,
-          module: 'PWA'
-        });
-        sessionStorage.setItem(UPDATE_FLAG, 'true');
-        // Recargar después de 2 segundos para aplicar cambios
-        setTimeout(() => window.location.reload(), 2000);
-      }
-    });
-
-    // Verificar si hay nuevo service worker esperando
-    navigator.serviceWorker.ready.then(registration => {
-      if (registration.waiting) {
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-    });
-  }, []);
-
-  // ✅ Auditoría y estado inicial (ejecuta 1 sola vez)
+  // Auditoría (ejecuta 1 sola vez)
   useEffect(() => {
     const logFunction = (entry: Omit<AuditEntry, 'id' | 'timestamp'>) => {
       const newEntry: AuditEntry = {
@@ -134,9 +94,9 @@ function AppContent() {
     setAuditLogFunction(logFunction);
   }, []);
 
-  // ✅ Notificación de bienvenida (SOLO UNA VEZ por sesión)
+  // Notificación de bienvenida (SOLO UNA VEZ por sesión)
   useEffect(() => {
-    const NOTIFIED_FLAG = 'miFinanzas_WelcomeNotified_v1';
+    const NOTIFIED_FLAG = 'miFinanzas_WelcomeNotified_v2';
     const welcomeDone = localStorage.getItem('miFinanzasWelcomeDone');
     const savedName = localStorage.getItem('miFinanzasUserName');
     const alreadyNotified = sessionStorage.getItem(NOTIFIED_FLAG);
@@ -162,19 +122,12 @@ function AppContent() {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       Notification.requestPermission().catch(() => {});
     }
-  }, []); // ← Array vacío = ejecuta SOLO al montar
+  }, []);
 
   return (
     <>
       {isSetup && isLocked && <SecurityLock />}
       <div className="pb-20 min-h-screen relative">
-        {/* ✅ Banner de actualización (solo si hay nueva versión) */}
-        {updateAvailable && (
-          <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-green-500 to-cyan-500 text-white text-center py-2 text-sm font-medium z-50 animate-pulse">
-            🔄 Actualización disponible • Recargando...
-          </div>
-        )}
-        
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/finanzas" element={<FinancePage />} />
