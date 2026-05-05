@@ -16,10 +16,20 @@ import WelcomeModal from './components/WelcomeModal';
 import TermsModal from './components/TermsModal';
 import { notify, setAuditLogFunction, type AuditEntry } from './services/notificationService';
 
+// ✅ PWA: Registrar service worker para actualizaciones
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.warn('SW registration failed:', err);
+    });
+  });
+}
+
 function NavBar() {
   const location = useLocation();
   const { lockNow } = useSecurity();
-
+  
+  // ✅ Menú SIN módulo de Aire ni Rutas
   const menuItems = [
     { path: '/', icon: Home, label: 'Inicio' },
     { path: '/mercado', icon: ShoppingCart, label: 'Mercado' },
@@ -28,7 +38,7 @@ function NavBar() {
     { path: '/ajustes', icon: Settings, label: 'Ajustes' },
     { path: '/historial-facturas', icon: History, label: 'Historial' },
   ];
-
+  
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-50">
@@ -37,9 +47,9 @@ function NavBar() {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
-              <Link
-                key={item.path}
-                to={item.path}
+              <Link 
+                key={item.path} 
+                to={item.path} 
                 className={`flex flex-col items-center py-1 px-2 transition-colors ${isActive ? 'text-green-400' : 'text-gray-500 hover:text-gray-300'}`}
               >
                 <Icon className="w-5 h-5" />
@@ -47,16 +57,16 @@ function NavBar() {
               </Link>
             );
           })}
-          <button
-            onClick={() => window.location.href = '/'}
+          <button 
+            onClick={() => window.location.href = '/'} 
             className="fixed bottom-14 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-cyan-400 flex items-center justify-center text-black shadow-[0_0_20px_rgba(34,197,94,0.6)] z-50 hover:scale-110 transition-transform"
           >
             <Plus className="w-6 h-6" />
           </button>
         </div>
       </nav>
-
-      <button
+      
+      <button 
         onClick={lockNow}
         className="fixed top-4 right-4 z-50 w-9 h-9 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors"
         title="Bloquear app"
@@ -72,9 +82,40 @@ function AppContent() {
   const [userName, setUserName] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
   const { isLocked, isSetup } = useSecurity();
 
-  // Configurar auditoría (ejecuta 1 sola vez al inicio)
+  // ✅ PWA: Detectar actualización disponible (SOLO UNA VEZ)
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;
+    
+    const UPDATE_FLAG = 'miFinanzas_UpdateNotified_v1';
+    
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      const alreadyNotified = sessionStorage.getItem(UPDATE_FLAG);
+      if (!alreadyNotified) {
+        notify({
+          title: '🔄 Nueva versión disponible',
+          message: 'Actualizando automáticamente...',
+          type: 'info',
+          duration: 3000,
+          module: 'PWA'
+        });
+        sessionStorage.setItem(UPDATE_FLAG, 'true');
+        // Recargar después de 2 segundos para aplicar cambios
+        setTimeout(() => window.location.reload(), 2000);
+      }
+    });
+
+    // Verificar si hay nuevo service worker esperando
+    navigator.serviceWorker.ready.then(registration => {
+      if (registration.waiting) {
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    });
+  }, []);
+
+  // ✅ Auditoría y estado inicial (ejecuta 1 sola vez)
   useEffect(() => {
     const logFunction = (entry: Omit<AuditEntry, 'id' | 'timestamp'>) => {
       const newEntry: AuditEntry = {
@@ -93,42 +134,47 @@ function AppContent() {
     setAuditLogFunction(logFunction);
   }, []);
 
-  // Manejar estado inicial y notificaciones (ejecuta 1 sola vez)
+  // ✅ Notificación de bienvenida (SOLO UNA VEZ por sesión)
   useEffect(() => {
+    const NOTIFIED_FLAG = 'miFinanzas_WelcomeNotified_v1';
     const welcomeDone = localStorage.getItem('miFinanzasWelcomeDone');
     const savedName = localStorage.getItem('miFinanzasUserName');
-    const hasNotified = sessionStorage.getItem('sessionNotified');
-
+    const alreadyNotified = sessionStorage.getItem(NOTIFIED_FLAG);
+    
     if (!welcomeDone) {
       setShowWelcome(true);
-    } else if (savedName) {
+    } else if (savedName && !alreadyNotified) {
       setUserName(savedName);
-      if (!hasNotified) {
-        notify({
-          title: '🔓 Sesión iniciada',
-          message: `Bienvenido${savedName ? `, ${savedName}` : ''}`,
-          type: 'success',
-          duration: 2000,
-          log: true,
-          module: 'Auth'
-        });
-        sessionStorage.setItem('sessionNotified', 'true');
-      }
+      notify({
+        title: '🔓 Sesión iniciada',
+        message: `Bienvenido${savedName ? `, ${savedName}` : ''}`,
+        type: 'success',
+        duration: 2000,
+        log: true,
+        module: 'Auth'
+      });
+      sessionStorage.setItem(NOTIFIED_FLAG, 'true');
     }
 
     const termsAccepted = localStorage.getItem('miFinanzasTermsAccepted');
     if (termsAccepted !== 'true') setShowTerms(true);
-
+    
     if (typeof window !== 'undefined' && 'Notification' in window) {
-      Notification.requestPermission().catch(console.warn);
+      Notification.requestPermission().catch(() => {});
     }
-  }, []);
+  }, []); // ← Array vacío = ejecuta SOLO al montar
 
   return (
     <>
       {isSetup && isLocked && <SecurityLock />}
       <div className="pb-20 min-h-screen relative">
-        {/* <UpdatePrompt /> */}
+        {/* ✅ Banner de actualización (solo si hay nueva versión) */}
+        {updateAvailable && (
+          <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-green-500 to-cyan-500 text-white text-center py-2 text-sm font-medium z-50 animate-pulse">
+            🔄 Actualización disponible • Recargando...
+          </div>
+        )}
+        
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/finanzas" element={<FinancePage />} />
@@ -138,13 +184,15 @@ function AppContent() {
           <Route path="/ajustes" element={<SettingsPage />} />
           <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
         </Routes>
+        
         <NavBar />
         <ToastProvider />
+        
         {showWelcome && (
-          <WelcomeModal
-            onDismiss={() => setShowWelcome(false)}
-            userName={userName}
-            setUserName={setUserName}
+          <WelcomeModal 
+            onDismiss={() => setShowWelcome(false)} 
+            userName={userName} 
+            setUserName={setUserName} 
           />
         )}
         {showTerms && <TermsModal onAccept={() => setShowTerms(false)} />}

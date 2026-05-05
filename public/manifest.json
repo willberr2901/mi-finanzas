@@ -1,18 +1,18 @@
 {
   "name": "Mi Finanzas",
-  "short_name": "MiFinanzas",
-  "description": "Gestión inteligente de finanzas personales y mercado",
+  "short_name": "Finanzas",
+  "description": "App de finanzas personales con seguridad integrada, escáner de recibos y mercado",
   "start_url": "/",
   "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait",
-  "theme_color": "#1e293b",
-  "background_color": "#1e293b",
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512.png",
@@ -20,5 +20,8 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": ["finance", "productivity", "utilities"],
+  "lang": "es-CO",
+  "dir": "ltr"
 }

@@ -70,4 +70,21 @@ export default defineConfig([
     },
   },
 ])
-```
+# 💰 Mi Finanzas App
+
+App de finanzas personales con interfaz moderna, escáner de recibos, mercado y seguridad integrada.
+
+## 🔐 Seguridad
+- Cifrado AES-256 para datos sensibles
+- Protección contra fuerza bruta (Rate Limiting)
+- Sanitización de inputs (previene XSS)
+- PIN de acceso con hash seguro
+
+## 🚀 Instalación
+
+### Backend
+```bash
+cd backend
+npm install
+# Configura tu .env con MONGODB_URI
+npx ts-node src/app.ts
