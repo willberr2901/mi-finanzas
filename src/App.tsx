@@ -114,23 +114,38 @@ function AppContent() {
   const { isLocked, isSetup } = useSecurity();
 
   // Configurar auditoría
-  useEffect(() => {
-    const logFunction = (entry: Omit<AuditEntry, 'id' | 'timestamp'>) => {
-      const newEntry: AuditEntry = {
-        ...entry,
-        id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        timestamp: Date.now(),
-      };
-      try {
-        const existing = JSON.parse(localStorage.getItem('miFinanzasAuditLog') || '[]');
-        const updated = [newEntry, ...existing].slice(0, 100);
-        localStorage.setItem('miFinanzasAuditLog', JSON.stringify(updated));
-      } catch (e) {
-        console.warn('Error en auditoría:', e);
-      }
-    };
-    setAuditLogFunction(logFunction);
-  }, []);
+  // Dentro de AppContent en App.tsx
+useEffect(() => {
+  if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    navigator.serviceWorker.register('/sw.js').then(registration => {
+      
+      // Detectar nueva versión instalándose
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Hay una nueva versión lista
+              notify({
+                title: '🔄 Actualización Crítica Disponible',
+                message: 'Se ha detectado una nueva versión con mejoras de seguridad y rendimiento. La app se recargará automáticamente.',
+                type: 'warning',
+                duration: 5000,
+                module: 'System'
+              });
+              
+              // Forzar recarga para limpiar caché viejo y cargar nuevo SW
+              setTimeout(() => {
+                window.location.reload();
+              }, 3000);
+            }
+          });
+        }
+      });
+    });
+  }
+}, []);
 
   // ✅ NOTIFICACIÓN DE BIENVENIDA (SOLO UNA VEZ POR SESIÓN)
   useEffect(() => {

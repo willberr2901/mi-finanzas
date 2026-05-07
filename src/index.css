@@ -225,3 +225,38 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
+/* ✅ FORZAR LEGIBILIDAD EN MODO OSCURO */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-theme="dark"] body {
+  background-color: #0f172a; /* Slate 900 - Fondo oscuro profundo */
+  color: #f8fafc; /* Slate 50 - Texto casi blanco */
+}
+
+[data-theme="dark"] .bg-gray-800\/50,
+[data-theme="dark"] .bg-black\/90 {
+  background-color: rgba(30, 41, 59, 0.9); /* Slate 800 con transparencia */
+}
+
+[data-theme="dark"] h1, 
+[data-theme="dark"] h2, 
+[data-theme="dark"] h3, 
+[data-theme="dark"] p, 
+[data-theme="dark"] span, 
+[data-theme="dark"] label, 
+[data-theme="dark"] button {
+  color: #f1f5f9; /* Slate 100 - Blanco suave para lectura cómoda */
+}
+
+[data-theme="dark"] .text-gray-400,
+[data-theme="dark"] .text-gray-500 {
+  color: #cbd5e1; /* Slate 300 - Gris claro visible */
+}
+
+/* ✅ MODOS CLARO POR DEFECTO */
+body {
+  background-color: #f8fafc; /* Slate 50 */
+  color: #0f172a; /* Slate 900 */
+}

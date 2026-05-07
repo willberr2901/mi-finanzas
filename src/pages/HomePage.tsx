@@ -1,104 +1,157 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Wallet, CreditCard, Wind, Scan, MapPin, TrendingUp, TrendingDown, Settings } from 'lucide-react';
+import { 
+  ShoppingCart, 
+  DollarSign, 
+  CreditCard, 
+  Wind, 
+  ScanLine, 
+  MapPin, 
+  TrendingUp, 
+  TrendingDown, 
+  Shield, 
+  Smartphone, 
+  Lock, 
+  Info, // ✅ IMPORTANTE: Agregamos el icono Info aquí
+  Plus 
+} from 'lucide-react';
 import { useFinanceStore } from '../store/financeStore';
-import { useTheme } from '../contexts/ThemeContext';
+import { notify } from '../services/notificationService';
 
 export default function HomePage() {
-  const { getBalance, getTotalIncome, getTotalExpense } = useFinanceStore();
-  const { theme } = useTheme();
+  const { transactions } = useFinanceStore();
   
-  // Estado para el nombre del usuario
-  const [userName, setUserName] = useState('Usuario');
+  // Calcular totales
+  const totalIncome = transactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+    
+  const totalExpense = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+    
+  const balance = totalIncome - totalExpense;
 
-  // Leer el nombre al cargar la página
-  useEffect(() => {
-    const savedName = localStorage.getItem('miFinanzasUserName');
-    if (savedName) {
-      setUserName(savedName);
-    }
-  }, []);
-
-  const balance = getBalance();
-  const income = getTotalIncome();
-  const expense = getTotalExpense();
-  
-  const isDark = theme === 'dark';
-  const bgCard = isDark ? 'bg-white/5' : 'bg-white';
-  const textPrimary = isDark ? 'text-white' : 'text-gray-900';
-  const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
-  const borderColor = isDark ? 'border-white/10' : 'border-gray-200';
-
-  const formatMoney = (amount: number) =>
-    amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
-
-  const modules = [
-    { path: '/mercado', icon: ShoppingCart, label: 'Mercado', color: 'from-green-400 to-emerald-500' },
-    { path: '/finanzas', icon: Wallet, label: 'Finanzas', color: 'from-blue-400 to-cyan-500' },
-    { path: '/creditos', icon: CreditCard, label: 'Créditos', color: 'from-purple-400 to-pink-500' },
-    { path: '/aire', icon: Wind, label: 'Calidad Aire', color: 'from-teal-400 to-green-500' },
-    { path: '/escaner', icon: Scan, label: 'Escanear', color: 'from-orange-400 to-red-500' },
-    { path: '/rutas', icon: MapPin, label: 'Rutas', color: 'from-gray-400 to-gray-600', badge: 'Próximamente' },
-  ];
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
 
   return (
-    <div className={`min-h-screen pb-24 ${isDark ? '' : 'bg-gray-50'}`}>
-      <div className={`${bgCard} backdrop-blur-md border-b ${borderColor} p-4`}>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className={`text-sm ${textSecondary}`}>¡Hola, {userName}! 👋</p>
-            <h1 className={`text-xl font-bold ${textPrimary}`}>Mi Finanzas</h1>
+    <div className="p-4 pb-24 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Mi Finanzas</h1>
+          <p className="text-gray-400 text-sm">Bienvenido de nuevo 👋</p>
+        </div>
+        <button 
+          onClick={() => notify({ title: '🔒 Seguridad', message: 'Tu app está protegida con PIN.', type: 'info' })}
+          className="bg-gray-800 p-2 rounded-full border border-gray-700"
+        >
+          <Shield size={20} className="text-green-400" />
+        </button>
+      </div>
+
+      {/* Tarjeta de Saldo */}
+      <div className="bg-gradient-to-br from-emerald-900 to-teal-900 p-6 rounded-2xl border border-emerald-700/30 shadow-lg">
+        <p className="text-emerald-300 text-sm font-medium mb-1">Saldo Total</p>
+        <h2 className="text-4xl font-bold text-white mb-4">${formatCurrency(balance)}</h2>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-black/20 p-3 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp size={16} className="text-green-400" />
+              <span className="text-xs text-gray-300">Ingresos</span>
+            </div>
+            <p className="text-lg font-semibold text-green-400">+${formatCurrency(totalIncome)}</p>
           </div>
-          <Link to="/ajustes" className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-colors">
-            <Settings className={`w-5 h-5 ${isDark ? 'text-white' : 'text-gray-700'}`} />
+          
+          <div className="bg-black/20 p-3 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingDown size={16} className="text-red-400" />
+              <span className="text-xs text-gray-300">Gastos</span>
+            </div>
+            <p className="text-lg font-semibold text-red-400">-${formatCurrency(totalExpense)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Accesos Rápidos */}
+      <div>
+        <h3 className="text-white font-bold mb-4">Accesos rápidos</h3>
+        <div className="grid grid-cols-3 gap-3">
+          <Link to="/mercado" className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
+            <ShoppingCart className="text-green-400" size={24} />
+            <span className="text-xs text-gray-300">Mercado</span>
+          </Link>
+          
+          <Link to="/finanzas" className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
+            <DollarSign className="text-blue-400" size={24} />
+            <span className="text-xs text-gray-300">Finanzas</span>
+          </Link>
+          
+          <Link to="/creditos" className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
+            <CreditCard className="text-purple-400" size={24} />
+            <span className="text-xs text-gray-300">Créditos</span>
+          </Link>
+          
+          <Link to="/aire" className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors opacity-50 cursor-not-allowed">
+            <Wind className="text-cyan-400" size={24} />
+            <span className="text-xs text-gray-300">Calidad Aire</span>
+          </Link>
+          
+          <Link to="/escaner" className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
+            <ScanLine className="text-orange-400" size={24} />
+            <span className="text-xs text-gray-300">Escáner</span>
+          </Link>
+          
+          <Link to="/rutas" className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors opacity-50 cursor-not-allowed relative">
+            <MapPin className="text-gray-400" size={24} />
+            <span className="text-xs text-gray-300">Rutas</span>
+            <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[10px] px-1 rounded">Próximamente</span>
           </Link>
         </div>
+      </div>
 
-        <div className={`${isDark ? 'bg-black/30' : 'bg-gray-100'} rounded-xl p-4`}>
-          <p className={`text-xs ${textSecondary} mb-1`}>Saldo total</p>
-          <h2 className={`text-2xl font-bold ${textPrimary} mb-3`}>{formatMoney(balance)}</h2>
-          <div className="grid grid-cols-2 gap-2">
-            <div className={`${isDark ? 'bg-green-500/10' : 'bg-green-50'} p-2 rounded-lg`}>
-              <div className="flex items-center gap-1"><TrendingUp className="w-3 h-3 text-green-500" /><span className={`text-[10px] ${textSecondary}`}>Ingresos</span></div>
-              <p className="text-green-500 font-bold text-sm">{formatMoney(income)}</p>
+      {/* Características Destacadas */}
+      <div>
+        <h3 className="text-white font-bold mb-4">Características</h3>
+        <div className="space-y-3">
+          <div className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex items-center gap-4">
+            <div className="bg-teal-500/20 p-2 rounded-lg">
+              <Smartphone className="text-teal-400" size={20} />
             </div>
-            <div className={`${isDark ? 'bg-red-500/10' : 'bg-red-50'} p-2 rounded-lg`}>
-              <div className="flex items-center gap-1"><TrendingDown className="w-3 h-3 text-red-500" /><span className={`text-[10px] ${textSecondary}`}>Gastos</span></div>
-              <p className="text-red-500 font-bold text-sm">{formatMoney(expense)}</p>
+            <div>
+              <h4 className="text-white font-medium text-sm">PWA Instalable</h4>
+              <p className="text-gray-400 text-xs">Instálala en tu dispositivo como una app nativa.</p>
+            </div>
+          </div>
+          
+          <div className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex items-center gap-4">
+            <div className="bg-purple-500/20 p-2 rounded-lg">
+              <Lock className="text-purple-400" size={20} />
+            </div>
+            <div>
+              <h4 className="text-white font-medium text-sm">100% Privado</h4>
+              <p className="text-gray-400 text-xs">Tus datos se guardan localmente en tu dispositivo.</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="p-4">
-        <h3 className={`text-sm font-bold ${textPrimary} mb-3`}>Accesos rápidos</h3>
-        <div className="grid grid-cols-3 gap-3">
-          {modules.map((mod) => {
-            const Icon = mod.icon;
-            return (
-              <Link key={mod.path} to={mod.path} className={`${bgCard} backdrop-blur-md border ${borderColor} rounded-xl p-3 flex flex-col items-center gap-2 hover:scale-105 transition-transform relative`}>
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${mod.color} flex items-center justify-center`}>
-                  <Icon className="w-5 h-5 text-white" />
-                </div>
-                <span className={`text-xs font-medium ${textPrimary} text-center`}>{mod.label}</span>
-                {mod.badge && <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[8px] font-bold px-1.5 py-0.5 rounded-full">{mod.badge}</span>}
-              </Link>
-            );
-          })}
-        </div>
-
-        <h3 className={`text-sm font-bold ${textPrimary} mt-6 mb-3`}>Características</h3>
-        <div className="space-y-2">
-          <div className={`${bgCard} backdrop-blur-md border ${borderColor} rounded-xl p-3 flex items-center gap-3`}>
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-cyan-400 flex items-center justify-center"><span className="text-sm">📱</span></div>
-            <div><p className={`text-sm font-semibold ${textPrimary}`}>PWA Instalable</p><p className={`text-xs ${textSecondary}`}>Instálala en tu dispositivo</p></div>
-          </div>
-          <div className={`${bgCard} backdrop-blur-md border ${borderColor} rounded-xl p-3 flex items-center gap-3`}>
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center"><span className="text-sm">🔒</span></div>
-            <div><p className={`text-sm font-semibold ${textPrimary}`}>100% Privado</p><p className={`text-xs ${textSecondary}`}>Tus datos se guardan localmente</p></div>
-          </div>
-        </div>
+      {/* ✅ NUEVA SECCIÓN: GUÍA RÁPIDA */}
+      <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700 mt-6">
+        <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+          <Info size={18} className="text-blue-400"/> Guía Rápida
+        </h3>
+        <ul className="text-sm text-gray-300 space-y-2 list-disc pl-5">
+          <li><strong>Mercado:</strong> Controla tus compras diarias.</li>
+          <li><strong>Rentabilidad:</strong> Calcula cuánto gana tu dinero al día.</li>
+          <li><strong>Seguridad:</strong> Activa el PIN en Ajustes para proteger tus datos.</li>
+          <li><strong>Actualizaciones:</strong> La app se actualiza sola. ¡Siempre tendrás la última versión!</li>
+        </ul>
       </div>
+
     </div>
   );
 }
