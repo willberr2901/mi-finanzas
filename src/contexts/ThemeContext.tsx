@@ -1,30 +1,26 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react'; // ✅ Importación correcta de tipo
 
-type Theme = 'dark' | 'light';
-
-const ThemeContext = createContext<{
-  theme: Theme;
+interface ThemeContextType {
+  theme: 'light' | 'dark';
   toggleTheme: () => void;
-}>({
-  theme: 'dark',
-  toggleTheme: () => {},
-});
+}
 
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>('dark');
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('miFinanzasTheme') as Theme;
-    if (saved) setTheme(saved);
-  }, []);
+export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const savedTheme = localStorage.getItem('miFinanzasTheme');
+    return (savedTheme as 'light' | 'dark') || 'dark';
+  });
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('miFinanzasTheme', theme);
-    document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
   return (
@@ -34,4 +30,11 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const useTheme = () => useContext(ThemeContext);
+// Hook personalizado para usar el contexto
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};

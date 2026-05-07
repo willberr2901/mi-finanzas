@@ -27,18 +27,19 @@ export default function HomePage() {
 
   return (
     <div className="p-4 space-y-6 pb-24">
-      {/* Saludo y Perfil */}
+      {/* Saludo */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white">Mi Finanzas</h1>
           <p className="text-slate-400 text-sm">Bienvenido de nuevo 👋</p>
         </div>
+        {/* Avatar pequeño en Home */}
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-bold shadow-lg">
           G
         </div>
       </div>
 
-      {/* Tarjeta Principal de Saldo */}
+      {/* Tarjeta Principal */}
       <div className="glass-panel bg-gradient-to-br from-slate-800 to-slate-900 border-emerald-500/20">
         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Saldo Total</p>
         <h2 className="text-4xl font-bold text-white mb-6 tracking-tight">${formatCurrency(balance)}</h2>

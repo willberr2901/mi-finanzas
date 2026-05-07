@@ -1,146 +1,92 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { secureStorage, hashPIN, RateLimiter } from '../utils/security';
+import { createContext, useContext, useState, useCallback } from 'react';
+import type { ReactNode } from 'react'; // ✅ Importación correcta de solo tipo
 import { notify } from '../services/notificationService';
 
+// Definimos la interfaz del contexto para que TypeScript sepa qué propiedades existen
 interface SecurityContextType {
   isLocked: boolean;
   isSetup: boolean;
   lockNow: () => void;
-  unlock: (pin: string) => boolean;
-  setPIN: (pin: string) => void;
-  changePIN: (oldPin: string, newPin: string) => boolean;
-  hasPIN: () => boolean;
-  resetSecurity: () => void;
+  unlockWithPin: (pin: string) => boolean;
+  setupPin: (pin: string) => void;
 }
 
+// Creamos el contexto con un valor inicial undefined
 const SecurityContext = createContext<SecurityContextType | undefined>(undefined);
 
-export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isLocked, setIsLocked] = useState<boolean>(true);
-  const [isSetup, setIsSetup] = useState<boolean>(false);
+export const SecurityProvider = ({ children }: { children: ReactNode }) => {
+  // Estados locales
+  const [isLocked, setIsLocked] = useState(false);
+  
+  // Verificamos si ya existe un PIN guardado al iniciar
+  const [isSetup, setIsSetup] = useState(() => !!localStorage.getItem('miFinanzasPin'));
+  const [storedPin, setStoredPin] = useState<string>(() => localStorage.getItem('miFinanzasPin') || '');
 
-  useEffect(() => {
-    const setupStatus = secureStorage.getItem('miFinanzasSecuritySetup');
-    setIsSetup(!!setupStatus);
-    if (setupStatus) {
-      setIsLocked(true);
-    } else {
-      setIsLocked(false);
-    }
-  }, []);
-
-  const hasPIN = useCallback(() => {
-    return !!secureStorage.getItem('miFinanzasPIN');
-  }, []);
-
-  const setPIN = useCallback((pin: string) => {
-    if (!pin || pin.length < 4) return;
-    const hashed = hashPIN(pin);
-    secureStorage.setItem('miFinanzasPIN', hashed);
-    secureStorage.setItem('miFinanzasSecuritySetup', true);
-    setIsSetup(true);
-    setIsLocked(false);
-    notify({
-      title: '🔐 PIN Configurado',
-      message: 'Tu app está protegida.',
-      type: 'success',
-      module: 'Security'
+  // Función para bloquear la app inmediatamente
+  const lockNow = useCallback(() => {
+    setIsLocked(true);
+    notify({ 
+      title: '🔒 App bloqueada', 
+      message: 'Requiere PIN para continuar', 
+      type: 'info' 
     });
   }, []);
 
-  const changePIN = useCallback((oldPin: string, newPin: string) => {
-    if (!hasPIN()) return false;
-    const storedHash = secureStorage.getItem('miFinanzasPIN');
-    if (hashPIN(oldPin) !== storedHash) {
-      notify({
-        title: '❌ Error',
-        message: 'PIN actual incorrecto',
-        type: 'error',
-        module: 'Security'
-      });
-      return false;
-    }
-    const newHash = hashPIN(newPin);
-    secureStorage.setItem('miFinanzasPIN', newHash);
-    notify({
-      title: '🔄 PIN Actualizado',
-      message: 'Tu nuevo PIN ha sido guardado.',
-      type: 'success',
-      module: 'Security'
-    });
-    return true;
-  }, [hasPIN]);
-
-  const unlock = useCallback((pin: string): boolean => {
-    if (!RateLimiter.check('unlock_attempts', 5)) {
-      notify({
-        title: '🔒 App Bloqueada',
-        message: 'Demasiados intentos. Espera 15 min.',
-        type: 'error',
-        duration: 5000,
-        module: 'Security'
-      });
-      return false;
-    }
-    const storedHash = secureStorage.getItem('miFinanzasPIN');
-    const inputHash = hashPIN(pin);
-    if (storedHash === inputHash) {
-      RateLimiter.reset('unlock_attempts');
+  // Función para desbloquear con PIN
+  const unlockWithPin = useCallback((pin: string) => {
+    if (pin === storedPin) {
       setIsLocked(false);
-      notify({
-        title: '🔓 Desbloqueado',
-        message: 'Acceso concedido',
-        type: 'success',
-        module: 'Security'
+      notify({ 
+        title: '🔓 Desbloqueado', 
+        message: 'Acceso concedido', 
+        type: 'success' 
       });
       return true;
     } else {
-      notify({
-        title: '❌ PIN Incorrecto',
-        message: 'Intenta de nuevo',
-        type: 'error',
-        module: 'Security'
+      notify({ 
+        title: '❌ PIN Incorrecto', 
+        message: 'Intenta de nuevo', 
+        type: 'error' 
       });
       return false;
     }
-  }, []);
+  }, [storedPin]);
 
-  const lockNow = useCallback(() => {
-    setIsLocked(true);
-  }, []);
-
-  const resetSecurity = useCallback(() => {
-    secureStorage.removeItem('miFinanzasPIN');
-    secureStorage.removeItem('miFinanzasSecuritySetup');
-    setIsSetup(false);
-    setIsLocked(false);
-    notify({
-      title: '⚠️ Seguridad Desactivada',
-      message: 'Se ha eliminado el PIN.',
-      type: 'warning',
-      module: 'Security'
+  // Función para configurar un nuevo PIN por primera vez
+  const setupPin = useCallback((pin: string) => {
+    if (!pin || pin.length !== 4 && pin.length !== 6) {
+      notify({ 
+        title: '⚠️ Error', 
+        message: 'El PIN debe tener 4 o 6 dígitos', 
+        type: 'warning' 
+      });
+      return;
+    }
+    
+    // Guardar en localStorage y estado local
+    localStorage.setItem('miFinanzasPin', pin);
+    setStoredPin(pin);
+    setIsSetup(true);
+    setIsLocked(false); // Al configurar, se desbloquea
+    
+    notify({ 
+      title: '🔐 PIN Configurado', 
+      message: 'Tu app ahora está protegida', 
+      type: 'success' 
     });
   }, []);
 
   return (
-    <SecurityContext.Provider value={{
-      isLocked,
-      isSetup,
-      lockNow,
-      unlock,
-      setPIN,
-      changePIN,
-      hasPIN,
-      resetSecurity
-    }}>
+    <SecurityContext.Provider value={{ isLocked, isSetup, lockNow, unlockWithPin, setupPin }}>
       {children}
     </SecurityContext.Provider>
   );
 };
 
+// Hook personalizado para consumir el contexto fácilmente
 export const useSecurity = () => {
   const context = useContext(SecurityContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useSecurity must be used within a SecurityProvider');
   }
   return context;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, DollarSign, Percent, Save, X, ChevronDown, ChevronUp, TrendingUp } from 'lucide-react';
+import { Plus, Trash2, DollarSign, Percent, Save, X, ChevronDown, ChevronUp, TrendingUp, Calendar } from 'lucide-react';
 import { notify } from '../services/notificationService';
 import { secureStorage } from '../utils/security';
 
@@ -20,6 +20,7 @@ export default function ProfitabilityPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   
+  // Form State
   const [entityName, setEntityName] = useState('');
   const [accountType, setAccountType] = useState('Cuenta de Ahorros');
   const [initialAmount, setInitialAmount] = useState<string>('');
@@ -108,9 +109,12 @@ export default function ProfitabilityPage() {
     return rows;
   };
 
+  // Calcular total diario global
+  const totalDailyInterest = accounts.reduce((sum, acc) => sum + ((acc.initialAmount * (acc.annualRate / 100)) / 365), 0);
+
   return (
     <div className="p-4 space-y-6 pb-24">
-      {/* Header Pro */}
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Rentabilidad</h1>
@@ -124,19 +128,27 @@ export default function ProfitabilityPage() {
         </button>
       </div>
 
-      {/* Tarjeta Resumen Global */}
-      <div className="glass-panel bg-gradient-to-r from-emerald-900/80 to-teal-900/80 border-emerald-500/30">
-        <div className="flex items-center gap-2 mb-2">
-          <TrendingUp size={18} className="text-emerald-400" />
-          <h3 className="text-emerald-300 text-xs font-bold uppercase tracking-wider">Ganancia Estimada HOY</h3>
+      {/* Tarjeta Principal: Interés Diario Acumulado (Estilo Banco) */}
+      <div className="glass-panel bg-gradient-to-br from-emerald-900 to-teal-900 border-emerald-500/30 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar size={16} className="text-emerald-400" />
+            <h3 className="text-emerald-300 text-xs font-bold uppercase tracking-wider">Interés Generado HOY</h3>
+          </div>
+          
+          <p className="text-4xl font-bold text-white tracking-tight mb-1">
+            ${formatCurrency(totalDailyInterest)}
+          </p>
+          
+          <p className="text-xs text-emerald-400/80">
+            Basado en {accounts.length} cuenta(s) activa(s)
+          </p>
         </div>
-        <p className="text-4xl font-bold text-white tracking-tight">
-          ${formatCurrency(accounts.reduce((sum, acc) => sum + ((acc.initialAmount * (acc.annualRate / 100)) / 365), 0))}
-        </p>
-        <p className="text-xs text-emerald-400/80 mt-2">Basado en {accounts.length} cuenta(s) activa(s)</p>
       </div>
 
-      {/* Lista de Cuentas Estilo Banco */}
+      {/* Lista de Cuentas */}
       {accounts.length === 0 ? (
         <div className="text-center py-12 opacity-60">
           <DollarSign size={48} className="mx-auto mb-4 text-slate-600" />
@@ -153,7 +165,6 @@ export default function ProfitabilityPage() {
 
             return (
               <div key={acc.id} className="card-pro group relative overflow-hidden">
-                {/* Header de la Tarjeta */}
                 <div className="flex justify-between items-start mb-4 relative z-10">
                   <div>
                     <h3 className="font-bold text-white text-lg">{acc.entityName}</h3>
@@ -171,7 +182,7 @@ export default function ProfitabilityPage() {
                   </button>
                 </div>
 
-                {/* Métricas Principales */}
+                {/* Métricas Rápidas */}
                 <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/5 my-2">
                   <div className="text-center">
                     <p className="text-[9px] text-slate-500 uppercase mb-1">Diario</p>
