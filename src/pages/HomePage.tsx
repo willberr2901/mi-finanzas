@@ -4,15 +4,13 @@ import {
   ShoppingCart, 
   DollarSign, 
   CreditCard, 
-  Wind, 
   ScanLine, 
-  MapPin, 
   TrendingUp, 
   TrendingDown, 
   Shield, 
   Smartphone, 
   Lock, 
-  Info, // ✅ IMPORTANTE: Agregamos el icono Info aquí
+  Info, 
   Plus 
 } from 'lucide-react';
 import { useFinanceStore } from '../store/financeStore';
@@ -95,20 +93,19 @@ export default function HomePage() {
             <span className="text-xs text-gray-300">Créditos</span>
           </Link>
           
-          <Link to="/aire" className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors opacity-50 cursor-not-allowed">
-            <Wind className="text-cyan-400" size={24} />
-            <span className="text-xs text-gray-300">Calidad Aire</span>
-          </Link>
-          
           <Link to="/escaner" className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
             <ScanLine className="text-orange-400" size={24} />
             <span className="text-xs text-gray-300">Escáner</span>
           </Link>
           
-          <Link to="/rutas" className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors opacity-50 cursor-not-allowed relative">
-            <MapPin className="text-gray-400" size={24} />
-            <span className="text-xs text-gray-300">Rutas</span>
-            <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[10px] px-1 rounded">Próximamente</span>
+          <Link to="/rentabilidad" className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
+            <TrendingUp className="text-yellow-400" size={24} />
+            <span className="text-xs text-gray-300">Rentabilidad</span>
+          </Link>
+          
+          <Link to="/ajustes" className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
+            <Shield className="text-cyan-400" size={24} />
+            <span className="text-xs text-gray-300">Ajustes</span>
           </Link>
         </div>
       </div>
