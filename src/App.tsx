@@ -113,39 +113,36 @@ function AppContent() {
   const [showTerms, setShowTerms] = useState(false);
   const { isLocked, isSetup } = useSecurity();
 
-  // Configurar auditoría
-  // Dentro de AppContent en App.tsx
-useEffect(() => {
-  if ('serviceWorker' in navigator && import.meta.env.PROD) {
-    navigator.serviceWorker.register('/sw.js').then(registration => {
+  // DENTRO DEL useEffect INICIAL EN AppContent
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  navigator.serviceWorker.register('/sw.js').then(registration => {
+    
+    // Detectar nueva versión instalándose
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
       
-      // Detectar nueva versión instalándose
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        
-        if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Hay una nueva versión lista
-              notify({
-                title: '🔄 Actualización Crítica Disponible',
-                message: 'Se ha detectado una nueva versión con mejoras de seguridad y rendimiento. La app se recargará automáticamente.',
-                type: 'warning',
-                duration: 5000,
-                module: 'System'
-              });
-              
-              // Forzar recarga para limpiar caché viejo y cargar nuevo SW
-              setTimeout(() => {
-                window.location.reload();
-              }, 3000);
-            }
-          });
-        }
-      });
+      if (newWorker) {
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // Hay una nueva versión lista
+            notify({
+              title: '🔄 Actualización Crítica Disponible',
+              message: 'Se ha detectado una nueva versión con mejoras de seguridad y rendimiento. La app se recargará automáticamente.',
+              type: 'warning',
+              duration: 5000,
+              module: 'System'
+            });
+            
+            // Forzar recarga para limpiar caché viejo y cargar nuevo SW
+            setTimeout(() => {
+              window.location.reload();
+            }, 3000);
+          }
+        });
+      }
     });
-  }
-}, []);
+  });
+}
 
   // ✅ NOTIFICACIÓN DE BIENVENIDA (SOLO UNA VEZ POR SESIÓN)
   useEffect(() => {

@@ -9,7 +9,7 @@ export default function FeedbackButton() {
   const handleSubmit = () => {
     if (!message.trim()) return;
     
-    // Aquí podrías enviar a un servicio como EmailJS o guardar en localStorage para revisión posterior
+    // Guardar feedback localmente para revisión posterior
     const feedbacks = JSON.parse(localStorage.getItem('userFeedback') || '[]');
     feedbacks.push({ date: new Date().toISOString(), message });
     localStorage.setItem('userFeedback', JSON.stringify(feedbacks));

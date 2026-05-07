@@ -20,7 +20,6 @@ export default function ProfitabilityPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   
-  // Form State
   const [entityName, setEntityName] = useState('');
   const [accountType, setAccountType] = useState('Cuenta de Ahorros');
   const [initialAmount, setInitialAmount] = useState<string>('');
@@ -35,7 +34,7 @@ export default function ProfitabilityPage() {
     if (accounts.length > 0) secureStorage.setItem('miFinanzasProfitAccounts', accounts);
   }, [accounts]);
 
-  // Notificación Diaria
+  // Notificación diaria única
   useEffect(() => {
     const today = new Date().toLocaleDateString('es-CO');
     const key = `profit_notified_${today}`;
@@ -96,7 +95,7 @@ export default function ProfitabilityPage() {
     setAnnualRate('');
   };
 
-  // Generar tabla de proyección mensual simple
+  // Generar proyección mensual con interés compuesto
   const generateProjection = (amount: number, rate: number) => {
     const rows = [];
     let currentBalance = amount;
@@ -115,23 +114,23 @@ export default function ProfitabilityPage() {
   };
 
   return (
-    <div className="p-4 pb-24 space-y-6 relative">
+    <div className="p-4 pb-24 space-y-6 relative z-10">
       {/* Header */}
-      <div className="flex justify-between items-center z-10">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white">Rentabilidad</h1>
           <p className="text-gray-400 text-sm">Proyección de ganancias diarias y mensuales</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-green-500 hover:bg-green-600 text-black p-3 rounded-full shadow-lg transition-transform hover:scale-105 z-20"
+          className="bg-green-500 hover:bg-green-600 text-black p-3 rounded-full shadow-lg transition-transform hover:scale-105"
         >
           <Plus size={24} />
         </button>
       </div>
 
       {/* Resumen Total Diario */}
-      <div className="bg-gradient-to-r from-emerald-900 to-teal-900 p-4 rounded-xl border border-emerald-700/30 z-10">
+      <div className="bg-gradient-to-r from-emerald-900 to-teal-900 p-4 rounded-xl border border-emerald-700/30">
         <h3 className="text-emerald-300 text-sm font-medium mb-2">Ganancia Estimada HOY</h3>
         <p className="text-3xl font-bold text-white">
           ${formatCurrency(accounts.reduce((sum, acc) => sum + ((acc.initialAmount * (acc.annualRate / 100)) / 365), 0))}
@@ -141,12 +140,12 @@ export default function ProfitabilityPage() {
 
       {/* Lista de Cuentas */}
       {accounts.length === 0 ? (
-        <div className="text-center py-10 opacity-50 z-10">
+        <div className="text-center py-10 opacity-50">
           <DollarSign size={48} className="mx-auto mb-4 text-gray-500" />
           <p>No tienes cuentas configuradas.</p>
         </div>
       ) : (
-        <div className="space-y-4 z-10">
+        <div className="space-y-4">
           {accounts.map((acc) => {
             const daily = (acc.initialAmount * (acc.annualRate / 100)) / 365;
             const monthly = (acc.initialAmount * (acc.annualRate / 100)) / 12;
