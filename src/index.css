@@ -2,41 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ✅ CONFIGURACIÓN GLOBAL DE TEMAS */
+/* ✅ VARIABLES DE DISEÑO CONSISTENTES */
 :root {
-  --bg-primary: #f8fafc;
-  --bg-secondary: #ffffff;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --accent-green: #10b981;
-  --accent-blue: #3b82f6;
+  --primary: #10b981;
+  --secondary: #3b82f6;
+  --accent: #8b5cf6;
+  --bg-dark: #0f172a;
+  --bg-card: rgba(30, 41, 59, 0.8);
+  --text-light: #f8fafc;
+  --text-muted: #94a3b8;
 }
 
 [data-theme="dark"] {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
+  color-scheme: dark;
 }
 
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  background: linear-gradient(135deg, var(--bg-dark) 0%, #1e293b 100%);
+  min-height: 100vh;
 }
 
-/* ✅ FORZAR LEGIBILIDAD EN TODOS LOS COMPONENTES */
-.text-gray-400, .text-gray-500 {
-  color: var(--text-secondary) !important;
-}
-
-.bg-gray-800\/50, .bg-black\/90 {
-  background-color: rgba(30, 41, 59, 0.8) !important;
+/* ✅ TARJETAS CON EFECTO GLASSMORPHISM */
+.glass-card {
+  background: var(--bg-card);
   backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-h1, h2, h3, h4, h5, h6, p, span, label, button, li {
-  color: var(--text-primary) !important;
+/* ✅ BOTONES MODERNOS */
+.btn-primary {
+  @apply bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
+}
+
+.btn-secondary {
+  @apply bg-gray-700/50 backdrop-blur-md text-white font-medium py-2 px-4 rounded-lg border border-gray-600 hover:bg-gray-600/50 transition-colors;
+}
+
+/* ✅ INPUTS ESTILIZADOS */
+.input-modern {
+  @apply w-full bg-gray-800/50 border border-gray-700 rounded-lg p-3 text-white placeholder-gray-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all;
 }
 
 /* ✅ SCROLLBAR PERSONALIZADA */

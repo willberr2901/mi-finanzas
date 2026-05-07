@@ -15,41 +15,30 @@ import SecurityLock from './components/SecurityLock';
 import ToastProvider from './components/ToastProvider';
 import WelcomeModal from './components/WelcomeModal';
 import TermsModal from './components/TermsModal';
-import FeedbackButton from './components/FeedbackButton'; // ✅ NUEVO COMPONENTE
+import FeedbackButton from './components/FeedbackButton';
 import { notify, setAuditLogFunction, type AuditEntry } from './services/notificationService';
 
-// ✅ REGISTRO DE SERVICE WORKER PARA ACTUALIZACIONES OBLIGATORIAS
+// Service Worker Registration
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then(registration => {
-      console.log('SW registrado:', registration);
-      
-      // Detectar nueva versión instalándose
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
-        
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Hay una nueva versión lista
               notify({
-                title: '🔄 Actualización Crítica Disponible',
-                message: 'Se ha detectado una nueva versión con mejoras de seguridad y rendimiento. La app se recargará automáticamente.',
+                title: '🔄 Actualización Disponible',
+                message: 'Se ha detectado una nueva versión. Recargando...',
                 type: 'warning',
                 duration: 5000,
                 module: 'System'
               });
-              
-              // Forzar recarga para limpiar caché viejo y cargar nuevo SW
-              setTimeout(() => {
-                window.location.reload();
-              }, 3000);
+              setTimeout(() => window.location.reload(), 3000);
             }
           });
         }
       });
-    }).catch(err => {
-      console.error('Error registrando SW:', err);
     });
   });
 }
@@ -58,7 +47,6 @@ function NavBar() {
   const location = useLocation();
   const { lockNow } = useSecurity();
   
-  // ✅ SOLO MÓDULOS FUNCIONALES (Sin Aire ni Rutas)
   const menuItems = [
     { path: '/', icon: Home, label: 'Inicio' },
     { path: '/mercado', icon: ShoppingCart, label: 'Mercado' },
@@ -80,7 +68,7 @@ function NavBar() {
               <Link 
                 key={item.path} 
                 to={item.path} 
-                className={`flex flex-col items-center py-1 px-2 transition-colors ${isActive ? 'text-green-400' : 'text-gray-500 hover:text-gray-300'}`}
+                className={`flex flex-col items-center py-1 px-2 transition-colors ${isActive ? 'text-emerald-400' : 'text-gray-500 hover:text-gray-300'}`}
               >
                 <Icon className="w-5 h-5" />
                 <span className="text-[9px] mt-0.5">{item.label}</span>
@@ -89,7 +77,7 @@ function NavBar() {
           })}
           <button 
             onClick={() => window.location.href = '/'} 
-            className="fixed bottom-14 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-cyan-400 flex items-center justify-center text-black shadow-[0_0_20px_rgba(34,197,94,0.6)] z-50 hover:scale-110 transition-transform"
+            className="fixed bottom-14 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center justify-center text-black shadow-[0_0_20px_rgba(34,197,94,0.6)] z-50 hover:scale-110 transition-transform"
           >
             <Plus className="w-6 h-6" />
           </button>
@@ -114,7 +102,6 @@ function AppContent() {
   const [showTerms, setShowTerms] = useState(false);
   const { isLocked, isSetup } = useSecurity();
 
-  // Configurar auditoría
   useEffect(() => {
     const logFunction = (entry: Omit<AuditEntry, 'id' | 'timestamp'>) => {
       const newEntry: AuditEntry = {
@@ -133,7 +120,6 @@ function AppContent() {
     setAuditLogFunction(logFunction);
   }, []);
 
-  // ✅ NOTIFICACIÓN DE BIENVENIDA (SOLO UNA VEZ POR SESIÓN)
   useEffect(() => {
     const NOTIFIED_FLAG = 'miFinanzas_WelcomeNotified_v3';
     const welcomeDone = localStorage.getItem('miFinanzasWelcomeDone');
@@ -144,8 +130,6 @@ function AppContent() {
       setShowWelcome(true);
     } else if (savedName && !alreadyNotified) {
       setUserName(savedName);
-      
-      // Notificación única
       notify({
         title: '🔓 Sesión iniciada',
         message: `Bienvenido${savedName ? `, ${savedName}` : ''}`,
@@ -154,20 +138,14 @@ function AppContent() {
         log: true,
         module: 'Auth'
       });
-      
       sessionStorage.setItem(NOTIFIED_FLAG, 'true');
     }
 
     const termsAccepted = localStorage.getItem('miFinanzasTermsAccepted');
     if (termsAccepted !== 'true') setShowTerms(true);
     
-    // Solicitar permisos para notificaciones push
     if (typeof window !== 'undefined' && 'Notification' in window) {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          console.log('Permisos de notificación concedidos');
-        }
-      }).catch(console.warn);
+      Notification.requestPermission().catch(console.warn);
     }
   }, []);
 
@@ -188,7 +166,7 @@ function AppContent() {
         
         <NavBar />
         <ToastProvider />
-        <FeedbackButton /> {/* ✅ BOTÓN DE FEEDBACK FLOTANTE */}
+        <FeedbackButton />
         
         {showWelcome && (
           <WelcomeModal 
@@ -209,7 +187,7 @@ function App() {
       <SecurityProvider>
         <BrowserRouter>
           <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-            <div className="absolute top-0 left-0 w-96 h-96 bg-green-400 rounded-full opacity-20 blur-3xl animate-pulse"></div>
+            <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-400 rounded-full opacity-20 blur-3xl animate-pulse"></div>
             <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
             <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-emerald-400 rounded-full opacity-20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
           </div>
