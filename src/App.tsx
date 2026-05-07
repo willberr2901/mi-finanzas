@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-// Importamos los iconos necesarios, incluyendo PieChart para Rentabilidad
 import { Home, ShoppingCart, Scan, CreditCard, Plus, Shield, Settings, History, PieChart } from 'lucide-react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
-
-// Páginas principales
 import FinancePage from './pages/FinancePage';
 import MarketPage from './pages/MarketPage';
 import ReceiptScannerPage from './pages/ReceiptScannerPage';
@@ -13,29 +10,60 @@ import CreditPage from './pages/CreditPage';
 import HomePage from './pages/HomePage';
 import SettingsPage from './pages/SettingsPage';
 import ReceiptHistoryPage from './pages/ReceiptHistoryPage';
-// ✅ NUEVA PÁGINA DE RENTABILIDAD
 import ProfitabilityPage from './pages/ProfitabilityPage';
-
-// Componentes UI
 import SecurityLock from './components/SecurityLock';
 import ToastProvider from './components/ToastProvider';
 import WelcomeModal from './components/WelcomeModal';
 import TermsModal from './components/TermsModal';
-
-// Servicios
 import { notify, setAuditLogFunction, type AuditEntry } from './services/notificationService';
+
+// ✅ REGISTRO DE SERVICE WORKER PARA ACTUALIZACIONES (CORREGIDO)
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').then(registration => {
+      console.log('SW registrado:', registration);
+      
+      // Detectar nueva versión
+      if (registration.installing) {
+        const newWorker = registration.installing;
+        
+        if (newWorker) { // ✅ Verificación null
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // Nueva versión disponible
+              notify({
+                title: '🔄 Actualización Disponible',
+                message: 'Se ha detectado una nueva versión. Recargando...',
+                type: 'info',
+                duration: 5000,
+                module: 'PWA'
+              });
+              
+              // Forzar recarga después de 3 segundos
+              setTimeout(() => {
+                window.location.reload();
+              }, 3000);
+            }
+          });
+        }
+      }
+    }).catch(err => {
+      console.error('Error registrando SW:', err);
+    });
+  });
+}
 
 function NavBar() {
   const location = useLocation();
   const { lockNow } = useSecurity();
   
-  // ✅ MENÚ ACTUALIZADO CON RENTABILIDAD (6 módulos + Historial)
+  // ✅ SOLO MÓDULOS FUNCIONALES (Sin Aire ni Rutas)
   const menuItems = [
     { path: '/', icon: Home, label: 'Inicio' },
     { path: '/mercado', icon: ShoppingCart, label: 'Mercado' },
     { path: '/escaner', icon: Scan, label: 'Escáner' },
     { path: '/creditos', icon: CreditCard, label: 'Créditos' },
-    { path: '/rentabilidad', icon: PieChart, label: 'Rentabilidad' }, // ← NUEVO ÍCONO
+    { path: '/rentabilidad', icon: PieChart, label: 'Rentabilidad' },
     { path: '/ajustes', icon: Settings, label: 'Ajustes' },
     { path: '/historial-facturas', icon: History, label: 'Historial' },
   ];
@@ -85,7 +113,7 @@ function AppContent() {
   const [showTerms, setShowTerms] = useState(false);
   const { isLocked, isSetup } = useSecurity();
 
-  // Configurar auditoría (ejecuta 1 sola vez al inicio)
+  // Configurar auditoría
   useEffect(() => {
     const logFunction = (entry: Omit<AuditEntry, 'id' | 'timestamp'>) => {
       const newEntry: AuditEntry = {
@@ -104,9 +132,9 @@ function AppContent() {
     setAuditLogFunction(logFunction);
   }, []);
 
-  // Manejar estado inicial y notificaciones (ejecuta 1 sola vez)
+  // ✅ NOTIFICACIÓN DE BIENVENIDA (SOLO UNA VEZ POR SESIÓN)
   useEffect(() => {
-    const NOTIFIED_FLAG = 'miFinanzas_WelcomeNotified_v2';
+    const NOTIFIED_FLAG = 'miFinanzas_WelcomeNotified_v3';
     const welcomeDone = localStorage.getItem('miFinanzasWelcomeDone');
     const savedName = localStorage.getItem('miFinanzasUserName');
     const alreadyNotified = sessionStorage.getItem(NOTIFIED_FLAG);
@@ -115,22 +143,30 @@ function AppContent() {
       setShowWelcome(true);
     } else if (savedName && !alreadyNotified) {
       setUserName(savedName);
+      
+      // Notificación única
       notify({
         title: '🔓 Sesión iniciada',
         message: `Bienvenido${savedName ? `, ${savedName}` : ''}`,
         type: 'success',
-        duration: 2000,
+        duration: 3000,
         log: true,
         module: 'Auth'
       });
+      
       sessionStorage.setItem(NOTIFIED_FLAG, 'true');
     }
 
     const termsAccepted = localStorage.getItem('miFinanzasTermsAccepted');
     if (termsAccepted !== 'true') setShowTerms(true);
     
+    // Solicitar permisos para notificaciones push
     if (typeof window !== 'undefined' && 'Notification' in window) {
-      Notification.requestPermission().catch(console.warn);
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          console.log('Permisos de notificación concedidos');
+        }
+      }).catch(console.warn);
     }
   }, []);
 
@@ -138,15 +174,12 @@ function AppContent() {
     <>
       {isSetup && isLocked && <SecurityLock />}
       <div className="pb-20 min-h-screen relative">
-        {/* <UpdatePrompt /> */}
-        
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/finanzas" element={<FinancePage />} />
           <Route path="/mercado" element={<MarketPage />} />
           <Route path="/escaner" element={<ReceiptScannerPage />} />
           <Route path="/creditos" element={<CreditPage />} />
-          {/* ✅ NUEVA RUTA PARA RENTABILIDAD */}
           <Route path="/rentabilidad" element={<ProfitabilityPage />} />
           <Route path="/ajustes" element={<SettingsPage />} />
           <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />

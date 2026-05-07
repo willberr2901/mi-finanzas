@@ -1,119 +1,95 @@
-import { useTheme } from '../contexts/ThemeContext';
-import { ArrowLeft, Store, Calendar, DollarSign, FileText } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { secureStorage } from '../utils/security';
+import { DollarSign, Calendar, Trash2, AlertTriangle } from 'lucide-react';
 
-const sampleReceipts = [
-  {
-    id: 1,
-    store: 'Éxito',
-    storeLogo: '🏪',
-    date: '2026-05-02',
-    total: 125000,
-    items: [
-      { name: 'Arroz Diana 5kg', price: 18500 },
-      { name: 'Aceite Girasol 3L', price: 22000 },
-      { name: 'Leche Alquería x12', price: 32000 },
-      { name: 'Pollo x3 unidades', price: 32500 },
-      { name: 'Jabón Bolívar x3', price: 20000 },
-    ],
-    comparedToMarket: [
-      { item: 'Arroz', planned: 15000, actual: 18500, diff: 3500 },
-      { item: 'Aceite', planned: 20000, actual: 22000, diff: 2000 },
-      { item: 'Pollo', planned: 30000, actual: 32500, diff: 2500 },
-    ]
-  },
-  {
-    id: 2,
-    store: 'SuperInter',
-    storeLogo: '🛒',
-    date: '2026-04-28',
-    total: 89000,
-    items: [
-      { name: 'Leche x6', price: 24000 },
-      { name: 'Pan x2', price: 8000 },
-      { name: 'Huevos x30', price: 18000 },
-      { name: 'Café Juan Valdez', price: 39000 },
-    ],
-    comparedToMarket: [
-      { item: 'Leche', planned: 20000, actual: 24000, diff: 4000 },
-      { item: 'Café', planned: 35000, actual: 39000, diff: 4000 },
-    ]
-  }
-];
+interface Invoice {
+  id: string;
+  store: string;
+  date: string;
+  total: number;
+  products: Array<{ name: string; price: number; quantity: number }>;
+  isValid?: boolean; // Para marcar facturas inválidas
+}
 
 export default function ReceiptHistoryPage() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-  const bgCard = isDark ? 'bg-white/5' : 'bg-white';
-  const textPrimary = isDark ? 'text-white' : 'text-gray-900';
-  const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
-  const borderColor = isDark ? 'border-white/10' : 'border-gray-200';
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+  useEffect(() => {
+    const savedInvoices = secureStorage.getItem('miFinanzasInvoices');
+    if (savedInvoices) {
+      // Filtrar solo facturas válidas
+      const validInvoices = savedInvoices.filter((inv: Invoice) => {
+        return inv.isValid !== false && inv.total > 0 && inv.products.length > 0;
+      });
+      setInvoices(validInvoices);
+    }
+  }, []);
+
+  const deleteInvoice = (id: string) => {
+    if (confirm('¿Eliminar esta factura?')) {
+      const updated = invoices.filter(inv => inv.id !== id);
+      setInvoices(updated);
+      secureStorage.setItem('miFinanzasInvoices', updated);
+    }
   };
 
-  const formatMoney = (n: number) => n.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
 
   return (
-    <div className={`min-h-screen pb-24 ${isDark ? '' : 'bg-gray-50'}`}>
-      <div className={`${bgCard} backdrop-blur-md border-b ${borderColor} px-4 py-3 flex items-center gap-3`}>
-        <Link to="/escaner" className="p-1">
-          <ArrowLeft className={`w-5 h-5 ${textPrimary}`} />
-        </Link>
-        <h1 className={`text-lg font-bold ${textPrimary}`}>Historial de Facturas</h1>
-      </div>
-
-      <div className="p-3 space-y-4">
-        {sampleReceipts.map(receipt => (
-          <div key={receipt.id} className={`${bgCard} backdrop-blur-md rounded-xl border ${borderColor} overflow-hidden`}>
-            <div className={`px-4 py-3 ${isDark ? 'bg-white/5' : 'bg-gray-100'} border-b ${borderColor} flex items-center justify-between`}>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{receipt.storeLogo}</span>
+    <div className="p-4 pb-24 space-y-4">
+      <h1 className="text-2xl font-bold text-white mb-4">Historial de Facturas</h1>
+      
+      {invoices.length === 0 ? (
+        <div className="text-center py-10 opacity-50">
+          <DollarSign size={48} className="mx-auto mb-4 text-gray-500" />
+          <p>No hay facturas escaneadas aún.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {invoices.map((invoice) => (
+            <div key={invoice.id} className="bg-gray-800/50 backdrop-blur-md p-4 rounded-xl border border-gray-700">
+              <div className="flex justify-between items-start mb-3">
                 <div>
-                  <p className={`text-sm font-bold ${textPrimary}`}>{receipt.store}</p>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-gray-500" />
-                    <span className={`text-[10px] ${textSecondary}`}>{formatDate(receipt.date)}</span>
+                  <h3 className="font-bold text-white">{invoice.store}</h3>
+                  <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                    <Calendar size={12} />
+                    <span>{invoice.date}</span>
                   </div>
                 </div>
-              </div>
-              <div className="text-right">
-                <p className={`text-lg font-bold ${textPrimary}`}>{formatMoney(receipt.total)}</p>
-                <p className={`text-[10px] ${textSecondary}`}>{receipt.items.length} productos</p>
-              </div>
-            </div>
-
-            <div className="p-3 space-y-2">
-              {receipt.items.map((item, i) => (
-                <div key={i} className={`flex justify-between text-sm py-1.5 border-b ${borderColor} last:border-0`}>
-                  <span className={textPrimary}>{item.name}</span>
-                  <span className={`font-medium ${textPrimary}`}>{formatMoney(item.price)}</span>
+                <div className="text-right">
+                  <p className="text-sm text-gray-400">Total</p>
+                  <p className="font-bold text-green-400">${formatCurrency(invoice.total)}</p>
                 </div>
-              ))}
-            </div>
-
-            <div className={`px-4 py-3 ${isDark ? 'bg-yellow-500/5' : 'bg-yellow-50'} border-t ${borderColor}`}>
-              <p className={`text-xs font-bold ${textSecondary} mb-2`}>📊 Comparación vs Lista de Mercado</p>
-              <div className="space-y-2">
-                {receipt.comparedToMarket.map((comp, i) => (
-                  <div key={i} className="flex items-center justify-between text-xs">
-                    <span className={textPrimary}>{comp.item}</span>
-                    <div className="flex items-center gap-3">
-                      <span className={textSecondary}>Plan: {formatMoney(comp.planned)}</span>
-                      <span className={textPrimary}>Real: {formatMoney(comp.actual)}</span>
-                      <span className={`font-bold ${comp.diff > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                        {comp.diff > 0 ? '↑' : '↓'} {formatMoney(Math.abs(comp.diff))}
-                      </span>
+              </div>
+              
+              <div className="border-t border-gray-700 pt-3 mt-3">
+                <p className="text-xs text-gray-500 mb-2">{invoice.products.length} productos:</p>
+                <div className="space-y-1">
+                  {invoice.products.slice(0, 3).map((product, idx) => (
+                    <div key={idx} className="flex justify-between text-sm">
+                      <span className="text-gray-300">{product.name}</span>
+                      <span className="text-gray-400">${formatCurrency(product.price)}</span>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                  {invoice.products.length > 3 && (
+                    <p className="text-xs text-gray-500">+{invoice.products.length - 3} más...</p>
+                  )}
+                </div>
               </div>
+              
+              <button
+                onClick={() => deleteInvoice(invoice.id)}
+                className="mt-3 text-red-400 text-sm flex items-center gap-1 hover:text-red-300"
+              >
+                <Trash2 size={14} />
+                Eliminar
+              </button>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
