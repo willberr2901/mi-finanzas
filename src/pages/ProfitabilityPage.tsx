@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, DollarSign, Percent, Save, X, ChevronDown, ChevronUp, TrendingUp, Calendar } from 'lucide-react';
+import { Plus, Trash2, DollarSign, Percent, Save, X, ChevronDown, ChevronUp, TrendingUp, Calendar, ArrowRight } from 'lucide-react';
 import { notify } from '../services/notificationService';
 import { secureStorage } from '../utils/security';
 
@@ -7,30 +7,40 @@ interface ProfitAccount {
   id: string;
   entityName: string;
   accountType: string;
-  initialAmount: number;
-  annualRate: number;
-  createdAt: string;
+  initialAmount: number; // Saldo inicial registrado
+  annualRate: number;    // Tasa anual %
+  createdAt: string;     // Fecha de creación
 }
 
-const BANKS = ['Bancolombia', 'Davivienda', 'BBVA', 'Falabella', 'Nequi', 'Daviplata', 'Nu Bank', 'RappiPay', 'Otro'];
-const ACCOUNT_TYPES = ['Cuenta de Ahorros', 'CDT', 'Fondo de Inversión'];
+// ✅ LISTA COMPLETA DE ENTIDADES BANCARIAS EN COLOMBIA
+const BANKS = [
+  'Bancolombia', 'Davivienda', 'Banco de Bogotá', 'BBVA', 'Falabella', 
+  'Nequi', 'Daviplata', 'Nu Bank', 'RappiPay', 'Bancóldex', 'BAC Credomatic',
+  'Colpatria', 'Citibank', 'Deutsche Bank', 'Girobank', 'Interbank', 
+  'Itaú', 'JPMorgan Chase', 'Kasba', 'Mercantil', 'Pibank', 'Scotiabank',
+  'Sudameris', 'Urbano', 'Wurbancard', 'Otro'
+];
+
+const ACCOUNT_TYPES = ['Cuenta de Ahorros', 'CDT', 'Fondo de Inversión', 'Cuenta Corriente'];
 
 export default function ProfitabilityPage() {
   const [accounts, setAccounts] = useState<ProfitAccount[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   
-  // Form State
+  // Estado del Formulario
   const [entityName, setEntityName] = useState('');
   const [accountType, setAccountType] = useState('Cuenta de Ahorros');
   const [initialAmount, setInitialAmount] = useState<string>('');
   const [annualRate, setAnnualRate] = useState<string>('');
 
+  // Cargar datos
   useEffect(() => {
     const saved = secureStorage.getItem('miFinanzasProfitAccounts');
     if (saved) setAccounts(saved);
   }, []);
 
+  // Guardar datos
   useEffect(() => {
     if (accounts.length > 0) secureStorage.setItem('miFinanzasProfitAccounts', accounts);
   }, [accounts]);
@@ -62,8 +72,17 @@ export default function ProfitabilityPage() {
   const formatCurrency = (val: number) => val.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const handleAdd = () => {
+    // Validaciones estrictas
     if (!entityName || !initialAmount || !annualRate) {
-      notify({ title: '❌ Error', message: 'Completa todos los campos', type: 'error' });
+      notify({ title: '❌ Error', message: 'Completa todos los campos correctamente.', type: 'error' });
+      return;
+    }
+
+    const amount = parseFloat(initialAmount.replace(/[^0-9.-]+/g, ""));
+    const rate = parseFloat(annualRate);
+
+    if (isNaN(amount) || isNaN(rate) || amount <= 0 || rate < 0) {
+      notify({ title: '❌ Error', message: 'Los valores deben ser números positivos.', type: 'error' });
       return;
     }
 
@@ -71,8 +90,8 @@ export default function ProfitabilityPage() {
       id: Date.now().toString(),
       entityName,
       accountType,
-      initialAmount: parseFloat(initialAmount.replace(/[^0-9.-]+/g, "")),
-      annualRate: parseFloat(annualRate),
+      initialAmount: amount,
+      annualRate: rate,
       createdAt: new Date().toISOString()
     };
 
@@ -96,6 +115,7 @@ export default function ProfitabilityPage() {
     setAnnualRate('');
   };
 
+  // Calcular proyección mensual
   const generateProjection = (amount: number, rate: number) => {
     const rows = [];
     let currentBalance = amount;
@@ -109,8 +129,18 @@ export default function ProfitabilityPage() {
     return rows;
   };
 
-  // Calcular total diario global
-  const totalDailyInterest = accounts.reduce((sum, acc) => sum + ((acc.initialAmount * (acc.annualRate / 100)) / 365), 0);
+  // Calcular métricas diarias
+  const getDailyMetrics = (acc: ProfitAccount) => {
+    const dailyInterest = (acc.initialAmount * (acc.annualRate / 100)) / 365;
+    const yesterdayBalance = acc.initialAmount - dailyInterest; // Aproximación inversa
+    const todayBalance = acc.initialAmount; 
+    
+    return {
+      dailyInterest,
+      yesterdayBalance,
+      todayBalance
+    };
+  };
 
   return (
     <div className="p-4 space-y-6 pb-24">
@@ -118,7 +148,7 @@ export default function ProfitabilityPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Rentabilidad</h1>
-          <p className="text-slate-400 text-sm">Proyección inteligente de activos</p>
+          <p className="text-slate-400 text-sm">Crece tu dinero día a día</p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
@@ -128,7 +158,7 @@ export default function ProfitabilityPage() {
         </button>
       </div>
 
-      {/* Tarjeta Principal: Interés Diario Acumulado (Estilo Banco) */}
+      {/* Tarjeta Resumen Global */}
       <div className="glass-panel bg-gradient-to-br from-emerald-900 to-teal-900 border-emerald-500/30 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
         
@@ -139,7 +169,7 @@ export default function ProfitabilityPage() {
           </div>
           
           <p className="text-4xl font-bold text-white tracking-tight mb-1">
-            ${formatCurrency(totalDailyInterest)}
+            ${formatCurrency(accounts.reduce((sum, acc) => sum + ((acc.initialAmount * (acc.annualRate / 100)) / 365), 0))}
           </p>
           
           <p className="text-xs text-emerald-400/80">
@@ -158,21 +188,16 @@ export default function ProfitabilityPage() {
       ) : (
         <div className="space-y-4">
           {accounts.map((acc) => {
-            const daily = (acc.initialAmount * (acc.annualRate / 100)) / 365;
-            const monthly = (acc.initialAmount * (acc.annualRate / 100)) / 12;
-            const yearly = acc.initialAmount * (acc.annualRate / 100);
+            const metrics = getDailyMetrics(acc);
             const isExpanded = expandedId === acc.id;
 
             return (
               <div key={acc.id} className="card-pro group relative overflow-hidden">
+                {/* Header de la Tarjeta */}
                 <div className="flex justify-between items-start mb-4 relative z-10">
                   <div>
                     <h3 className="font-bold text-white text-lg">{acc.entityName}</h3>
                     <p className="text-xs text-slate-400">{acc.accountType} • <span className="text-emerald-400">{acc.annualRate}% EA</span></p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] text-slate-500 uppercase">Saldo Actual</p>
-                    <p className="font-bold text-white text-lg">${formatCurrency(acc.initialAmount)}</p>
                   </div>
                   <button 
                     onClick={() => handleDelete(acc.id)}
@@ -182,19 +207,25 @@ export default function ProfitabilityPage() {
                   </button>
                 </div>
 
-                {/* Métricas Rápidas */}
-                <div className="grid grid-cols-3 gap-2 py-3 border-y border-white/5 my-2">
-                  <div className="text-center">
-                    <p className="text-[9px] text-slate-500 uppercase mb-1">Diario</p>
-                    <p className="text-sm font-bold text-emerald-400">${formatCurrency(daily)}</p>
+                {/* Visualización de Crecimiento Diario */}
+                <div className="bg-black/20 rounded-xl p-4 mb-4 border border-white/5">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-slate-400">Saldo Ayer</span>
+                    <span className="text-sm text-slate-300">${formatCurrency(metrics.yesterdayBalance)}</span>
                   </div>
-                  <div className="text-center border-l border-white/5">
-                    <p className="text-[9px] text-slate-500 uppercase mb-1">Mensual</p>
-                    <p className="text-sm font-bold text-blue-400">${formatCurrency(monthly)}</p>
+                  
+                  <div className="flex justify-center my-1">
+                    <ArrowRight className="rotate-90 text-emerald-500" size={16} />
                   </div>
-                  <div className="text-center border-l border-white/5">
-                    <p className="text-[9px] text-slate-500 uppercase mb-1">Anual</p>
-                    <p className="text-sm font-bold text-purple-400">${formatCurrency(yearly)}</p>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-emerald-400 font-bold">Saldo Hoy</span>
+                    <span className="text-lg font-bold text-white">${formatCurrency(metrics.todayBalance)}</span>
+                  </div>
+
+                  <div className="mt-2 pt-2 border-t border-white/10 flex justify-between items-center">
+                    <span className="text-[10px] text-slate-500 uppercase">Interés Ganado Hoy</span>
+                    <span className="text-sm font-bold text-emerald-400">+${formatCurrency(metrics.dailyInterest)}</span>
                   </div>
                 </div>
 
@@ -204,7 +235,7 @@ export default function ProfitabilityPage() {
                   className="w-full flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-white py-2 transition-colors"
                 >
                   {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-                  <span>{isExpanded ? 'Ocultar Proyección' : 'Ver Proyección Mensual'}</span>
+                  <span>{isExpanded ? 'Ocultar Proyección Mensual' : 'Ver Proyección Mensual (12 meses)'}</span>
                 </button>
 
                 {/* Tabla Expandida */}
@@ -239,7 +270,7 @@ export default function ProfitabilityPage() {
       {/* Modal Moderno */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-6 border-t sm:border border-slate-700 shadow-2xl animate-in slide-in-from-bottom-10">
+          <div className="bg-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-6 border-t sm:border border-slate-700 shadow-2xl animate-in slide-in-from-bottom-10 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-white">Nueva Cuenta</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
@@ -249,19 +280,19 @@ export default function ProfitabilityPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Entidad</label>
+                <label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Entidad Financiera</label>
                 <select 
                   value={entityName}
                   onChange={(e) => setEntityName(e.target.value)}
                   className="input-modern"
                 >
-                  <option value="">Selecciona...</option>
+                  <option value="">Selecciona un banco...</option>
                   {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Tipo</label>
+                <label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Tipo de Producto</label>
                 <select 
                   value={accountType}
                   onChange={(e) => setAccountType(e.target.value)}
@@ -287,7 +318,7 @@ export default function ProfitabilityPage() {
                 <div className="relative">
                   <input 
                     type="number" 
-                    step="0.1"
+                    step="0.01"
                     placeholder="Ej: 9.5"
                     value={annualRate}
                     onChange={(e) => setAnnualRate(e.target.value)}
