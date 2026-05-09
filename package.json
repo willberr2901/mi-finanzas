@@ -11,7 +11,11 @@
   "dependencies": {
     "@types/react-leaflet": "^2.8.3",
     "axios": "^1.16.0",
+    "date-fns": "^4.1.0",
+    "dexie": "^4.4.2",
     "idb": "^8.0.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.344.0",
     "papaparse": "^5.5.3",

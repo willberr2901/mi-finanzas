@@ -8,8 +8,10 @@ import FeedbackButton from './components/FeedbackButton';
 import SecurityLock from './components/SecurityLock';
 import WelcomeModal from './components/WelcomeModal';
 import TermsModal from './components/TermsModal';
+// ✅ FIX: Sin slash inicial
+import OnboardingTour from './components/OnboardingTour';
+import { db, migrateData } from './utils/database';
 
-// ✅ Lazy loading SOLO para páginas (no componentes de contexto/UI)
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const MarketPage = React.lazy(() => import('./pages/MarketPage'));
 const ReceiptScannerPage = React.lazy(() => import('./pages/ReceiptScannerPage'));
@@ -17,13 +19,13 @@ const CreditPage = React.lazy(() => import('./pages/CreditPage'));
 const ProfitabilityPage = React.lazy(() => import('./pages/ProfitabilityPage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const ReceiptHistoryPage = React.lazy(() => import('./pages/ReceiptHistoryPage'));
-
-const SERVER_VERSION = "1.0.8";
+const FinancePage = React.lazy(() => import('./pages/FinancePage'));
 
 function NavBar() {
   const location = useLocation();
   const menuItems = [
     { path: '/', icon: '🏠', label: 'Inicio' },
+    { path: '/finanzas', icon: '💰', label: 'Finanzas' },
     { path: '/mercado', icon: '🛒', label: 'Mercado' },
     { path: '/escaner', icon: '📷', label: 'Escáner' },
     { path: '/creditos', icon: '💳', label: 'Créditos' },
@@ -56,17 +58,19 @@ function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const { isLocked, isSetup } = useSecurity();
 
   useEffect(() => {
-    const currentVersion = localStorage.getItem('appVersion') || "0.0.0";
+    migrateData().then(() => {
+      db.settings.get('global').then(settings => {
+        if (settings?.onboardingCompleted !== true) setShowOnboarding(true);
+      });
+    });
+    
     const welcomeDone = localStorage.getItem('miFinanzasWelcomeDone');
     const savedName = localStorage.getItem('miFinanzasUserName');
-
-    if (currentVersion !== SERVER_VERSION) {
-      console.log(`🔄 Actualizando a versión ${SERVER_VERSION}`);
-    }
     if (!welcomeDone) setShowWelcome(true);
     if (savedName) setUserName(savedName);
     if (localStorage.getItem('miFinanzasTermsAccepted') !== 'true') setShowTerms(true);
@@ -86,6 +90,7 @@ function AppContent() {
           <Suspense fallback={<div className="flex h-screen items-center justify-center text-emerald-400">Cargando...</div>}>
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/finanzas" element={<FinancePage />} />
               <Route path="/mercado" element={<MarketPage />} />
               <Route path="/escaner" element={<ReceiptScannerPage />} />
               <Route path="/creditos" element={<CreditPage />} />
@@ -100,6 +105,7 @@ function AppContent() {
           <FeedbackButton />
           {showWelcome && <WelcomeModal onDismiss={() => setShowWelcome(false)} userName={userName} setUserName={setUserName} />}
           {showTerms && <TermsModal onAccept={() => setShowTerms(false)} />}
+          {showOnboarding && <OnboardingTour onComplete={() => setShowOnboarding(false)} />}
         </>
       )}
     </div>

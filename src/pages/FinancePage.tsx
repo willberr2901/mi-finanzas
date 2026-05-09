@@ -1,94 +1,240 @@
-import { useEffect } from 'react';
-import { useFinanceStore } from '../store/financeStore';
-import { Wallet, TrendingUp, TrendingDown, Plus } from 'lucide-react';
-import TransactionForm from '../components/TransactionForm';
-import TransactionList from '../components/TransactionList';
-import ExpenseChart from '../components/ExpenseChart';
+import { useState, useEffect } from 'react';
+import { Plus, Trash2, Download, Bell, Target, TrendingUp, TrendingDown } from 'lucide-react';
+// ✅ FIX: Importación de solo tipo
+import type { Transaction, SavingsGoal } from '../utils/database';
+import { notify } from '../services/notificationService';
+import { db, migrateData } from '../utils/database';
+import { format } from 'date-fns';
+// ✅ FIX: Ruta correcta sin slash inicial
+import { generateFinancialReport } from '../services/exportService';
 
-const GLASS_STYLE = {
-  background: 'rgba(255, 255, 255, 0.05)',
-  backdropFilter: 'blur(16px)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-};
+const CATEGORIES = ['Alimentación', 'Transporte', 'Servicios', 'Entretenimiento', 'Salud', 'Hogar', 'Inversiones', 'Otros'];
 
 export default function FinancePage() {
-  const { transactions, loadTransactions, getTotalIncome, getTotalExpense, getBalance } = useFinanceStore();
+  const [activeTab, setActiveTab] = useState<'transactions' | 'goals' | 'export'>('transactions');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [goals, setGoals] = useState<SavingsGoal[]>([]);
+  const [pushEnabled, setPushEnabled] = useState(false);
+
+  const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
+  const [txType, setTxType] = useState<'income' | 'expense'>('expense');
+  const [txAmount, setTxAmount] = useState('');
+  const [txCategory, setTxCategory] = useState(CATEGORIES[0]);
+  const [txDesc, setTxDesc] = useState('');
+
+  const [goalName, setGoalName] = useState('');
+  const [goalTarget, setGoalTarget] = useState('');
+  const [goalDeadline, setGoalDeadline] = useState('');
 
   useEffect(() => {
-    loadTransactions();
-  }, [loadTransactions]);
+    loadData();
+    checkPushPermission();
+  }, []);
 
-  const totalIncome = getTotalIncome();
-  const totalExpense = getTotalExpense();
-  const balance = getBalance();
+  const loadData = async () => {
+    await migrateData();
+    const txs = await db.transactions.toArray();
+    const gals = await db.goals.toArray();
+    const settings = await db.settings.get('global');
+    setTransactions(txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    setGoals(gals);
+    if (settings?.pushEnabled) setPushEnabled(true);
+  };
 
-  const formatMoney = (amount: number) =>
-    amount.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+  const checkPushPermission = async () => {
+    if ('Notification' in window) {
+      const permission = Notification.permission;
+      if (permission === 'granted') {
+        setPushEnabled(true);
+        scheduleDailyCheck();
+      } else if (permission !== 'denied') {
+        const granted = await Notification.requestPermission();
+        if (granted === 'granted') {
+          setPushEnabled(true);
+          await db.settings.update('global', { pushEnabled: true });
+          scheduleDailyCheck();
+        }
+      }
+    }
+  };
+
+  const scheduleDailyCheck = () => {
+    setInterval(async () => {
+      const now = new Date();
+      if (now.getHours() === 20 && now.getMinutes() === 0) {
+        const today = format(now, 'yyyy-MM-dd');
+        const todayTx = transactions.filter(t => t.date === today);
+        const expenses = todayTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+        if (expenses > 0 && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('📊 Resumen Diario', { body: `Gastos de hoy: $${expenses.toLocaleString('es-CO')}` });
+        }
+      }
+    }, 60000 * 10);
+  };
+
+  const handleAddTransaction = async () => {
+    if (!txAmount || !txDesc) { notify({ title: '❌ Error', message: 'Completa monto y descripción.', type: 'error' }); return; }
+    const newTx: Transaction = {
+      id: crypto.randomUUID(),
+      date: txDate,
+      type: txType,
+      amount: parseFloat(txAmount),
+      category: txCategory,
+      description: txDesc
+    };
+    await db.transactions.add(newTx);
+    await loadData();
+    resetTxForm();
+    notify({ title: '✅ Registrado', message: `${txType === 'income' ? 'Ingreso' : 'Gasto'}: $${txAmount}`, type: 'success' });
+  };
+
+  const resetTxForm = () => {
+    setTxDate(new Date().toISOString().split('T')[0]);
+    setTxAmount('');
+    setTxDesc('');
+    setTxType('expense');
+  };
+
+  const handleAddGoal = async () => {
+    if (!goalName || !goalTarget || !goalDeadline) { notify({ title: '❌ Error', message: 'Completa todos los campos.', type: 'error' }); return; }
+    const newGoal: SavingsGoal = {
+      id: crypto.randomUUID(),
+      name: goalName,
+      targetAmount: parseFloat(goalTarget),
+      currentAmount: 0,
+      deadline: goalDeadline,
+      createdAt: new Date().toISOString()
+    };
+    await db.goals.add(newGoal);
+    await loadData();
+    setGoalName(''); setGoalTarget(''); setGoalDeadline('');
+    notify({ title: '🎯 Meta creada', message: goalName, type: 'success' });
+  };
+
+  const handleDeleteTx = async (id: string) => { await db.transactions.delete(id); await loadData(); };
+  const handleDeleteGoal = async (id: string) => { await db.goals.delete(id); await loadData(); };
+
+  const calculateGoalProgress = (g: SavingsGoal) => {
+    const daysLeft = Math.max(1, Math.ceil((new Date(g.deadline).getTime() - Date.now()) / 86400000));
+    const remaining = Math.max(0, g.targetAmount - g.currentAmount);
+    return { progress: (g.currentAmount / g.targetAmount) * 100, dailyNeed: remaining / daysLeft, daysLeft };
+  };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6 pb-24">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-cyan-500 flex items-center justify-center shadow-[0_0_15px_rgba(0,255,163,0.4)]">
-          <Wallet className="w-6 h-6 text-black" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Panel Financiero</h1>
-          <p className="text-xs text-gray-400">Control de ingresos y gastos</p>
-        </div>
+    <div className="p-4 pb-24 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-white">Finanzas</h1>
+        <button onClick={() => checkPushPermission()} className={`p-2 rounded-full ${pushEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+          <Bell size={20} />
+        </button>
       </div>
 
-      <div className="rounded-3xl p-6 relative overflow-hidden" style={GLASS_STYLE}>
-        <div className="absolute top-0 right-0 w-40 h-40 bg-green-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-        
-        <div className="relative z-10">
-          <p className="text-sm font-medium text-gray-300 mb-1 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.8)]"></span>
-            Saldo Total
-          </p>
-          <h2 className="text-4xl font-extrabold text-white mb-6 tracking-tight">
-            {formatMoney(balance)}
-          </h2>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-black/20 p-3 rounded-xl border border-white/5">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="w-4 h-4 text-green-400" />
-                <span className="text-xs text-gray-400">Ingresos</span>
-              </div>
-              <p className="text-lg font-bold text-green-400">{formatMoney(totalIncome)}</p>
-            </div>
+      <div className="flex gap-2 bg-slate-900/50 p-1 rounded-xl">
+        {(['transactions', 'goals', 'export'] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${activeTab === tab ? 'bg-emerald-500 text-black' : 'text-slate-400 hover:text-white'}`}>
+            {tab === 'transactions' ? '💰 Movimientos' : tab === 'goals' ? '🎯 Metas' : '📤 Reportes'}
+          </button>
+        ))}
+      </div>
 
-            <div className="bg-black/20 p-3 rounded-xl border border-white/5">
-              <div className="flex items-center gap-2 mb-1">
-                <TrendingDown className="w-4 h-4 text-red-400" />
-                <span className="text-xs text-gray-400">Gastos</span>
-              </div>
-              <p className="text-lg font-bold text-red-400">{formatMoney(totalExpense)}</p>
+      {activeTab === 'transactions' && (
+        <>
+          <div className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
+            <div className="grid grid-cols-2 gap-2">
+              <input type="date" value={txDate} onChange={e => setTxDate(e.target.value)} className="input-modern" />
+              <select value={txType} onChange={e => setTxType(e.target.value as any)} className="input-modern">
+                <option value="expense">💸 Gasto</option>
+                <option value="income">💵 Ingreso</option>
+              </select>
             </div>
+            <div className="grid grid-cols-2 gap-2">
+              <input type="number" placeholder="Monto" value={txAmount} onChange={e => setTxAmount(e.target.value)} className="input-modern" />
+              <select value={txCategory} onChange={e => setTxCategory(e.target.value)} className="input-modern">
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <input type="text" placeholder="Descripción" value={txDesc} onChange={e => setTxDesc(e.target.value)} className="input-modern" />
+            <button onClick={handleAddTransaction} className="btn-primary w-full flex items-center justify-center gap-2">
+              <Plus size={18} /> Registrar Movimiento
+            </button>
           </div>
-        </div>
-      </div>
 
-      {transactions.length > 0 && (
-        <div className="rounded-2xl p-4" style={GLASS_STYLE}>
-          <h3 className="text-sm font-semibold text-gray-300 mb-4">Distribución de Gastos</h3>
-          <ExpenseChart />
-        </div>
+          <div className="space-y-2">
+            {transactions.map(tx => (
+              <div key={tx.id} className="glass-panel p-3 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tx.type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                    {tx.type === 'income' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{tx.description}</p>
+                    <p className="text-xs text-slate-400">{tx.category} • {format(new Date(tx.date), 'dd/MM/yy')}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {tx.type === 'income' ? '+' : '-'}${tx.amount.toLocaleString('es-CO')}
+                  </span>
+                  <button onClick={() => handleDeleteTx(tx.id)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
+                </div>
+              </div>
+            ))}
+            {transactions.length === 0 && <p className="text-center text-slate-500 py-8">No hay movimientos registrados</p>}
+          </div>
+        </>
       )}
 
-      <div className="rounded-2xl p-5" style={GLASS_STYLE}>
-        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-          <Plus className="w-5 h-5 text-cyan-400" />
-          Registrar Movimiento
-        </h3>
-        <TransactionForm />
-      </div>
+      {activeTab === 'goals' && (
+        <>
+          <div className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
+            <input type="text" placeholder="Nombre de la meta" value={goalName} onChange={e => setGoalName(e.target.value)} className="input-modern" />
+            <div className="grid grid-cols-2 gap-2">
+              <input type="number" placeholder="Monto objetivo" value={goalTarget} onChange={e => setGoalTarget(e.target.value)} className="input-modern" />
+              <input type="date" value={goalDeadline} onChange={e => setGoalDeadline(e.target.value)} className="input-modern" />
+            </div>
+            <button onClick={handleAddGoal} className="btn-primary w-full flex items-center justify-center gap-2">
+              <Target size={18} /> Crear Meta
+            </button>
+          </div>
 
-      <div>
-        <h3 className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Historial Reciente</h3>
-        <TransactionList />
-      </div>
+          <div className="space-y-4">
+            {goals.map(g => {
+              const { progress, dailyNeed, daysLeft } = calculateGoalProgress(g);
+              return (
+                <div key={g.id} className="glass-panel p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="text-white font-bold">{g.name}</h3>
+                      <p className="text-xs text-slate-400">Meta: ${g.targetAmount.toLocaleString('es-CO')} • {daysLeft} días restantes</p>
+                    </div>
+                    <button onClick={() => handleDeleteGoal(g.id)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-2 mb-2">
+                    <div className="bg-emerald-500 h-2 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400">Progreso: {progress.toFixed(1)}%</span>
+                    <span className="text-emerald-400">Necesitas ahorrar: ${dailyNeed.toLocaleString('es-CO')}/día</span>
+                  </div>
+                </div>
+              );
+            })}
+            {goals.length === 0 && <p className="text-center text-slate-500 py-8">No hay metas activas</p>}
+          </div>
+        </>
+      )}
+
+      {activeTab === 'export' && (
+        <div className="space-y-4">
+          <button onClick={() => generateFinancialReport(transactions, goals, 'pdf')} className="btn-primary w-full flex items-center justify-center gap-2">
+            <Download size={18} /> Exportar PDF
+          </button>
+          <button onClick={() => generateFinancialReport(transactions, goals, 'csv')} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2">
+            <Download size={18} /> Exportar CSV
+          </button>
+          <p className="text-xs text-slate-500 text-center">Los reportes incluyen movimientos, metas y resumen financiero.</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,13 @@
-import React, { StrictMode, Suspense, lazy } from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
 
 const ErrorBoundaryFallback = () => (
   <div className="fixed inset-0 flex items-center justify-center bg-slate-950 text-white p-6">
@@ -16,12 +22,4 @@ const ErrorBoundaryFallback = () => (
       </button>
     </div>
   </div>
-);
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Suspense fallback={<div className="fixed inset-0 bg-slate-950" />}>
-      <App />
-    </Suspense>
-  </StrictMode>
 );
