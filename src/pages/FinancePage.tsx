@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Download, Bell, Target, TrendingUp, TrendingDown } from 'lucide-react';
-// ✅ FIX: Importación de solo tipo
 import type { Transaction, SavingsGoal } from '../utils/database';
 import { notify } from '../services/notificationService';
 import { db, migrateData } from '../utils/database';
 import { format } from 'date-fns';
-// ✅ FIX: Ruta correcta sin slash inicial
 import { generateFinancialReport } from '../services/exportService';
 
 const CATEGORIES = ['Alimentación', 'Transporte', 'Servicios', 'Entretenimiento', 'Salud', 'Hogar', 'Inversiones', 'Otros'];
@@ -15,6 +13,7 @@ export default function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
   const [txType, setTxType] = useState<'income' | 'expense'>('expense');
@@ -27,18 +26,35 @@ export default function FinancePage() {
   const [goalDeadline, setGoalDeadline] = useState('');
 
   useEffect(() => {
-    loadData();
-    checkPushPermission();
+    initializePage();
   }, []);
 
+  const initializePage = async () => {
+    try {
+      setLoading(true);
+      await migrateData();
+      await loadData();
+      await checkPushPermission();
+    } catch (err) {
+      console.error('Error al inicializar Finanzas:', err);
+      notify({ title: '⚠️ Error de carga', message: 'No se pudo cargar la base de datos local.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadData = async () => {
-    await migrateData();
-    const txs = await db.transactions.toArray();
-    const gals = await db.goals.toArray();
-    const settings = await db.settings.get('global');
-    setTransactions(txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    setGoals(gals);
-    if (settings?.pushEnabled) setPushEnabled(true);
+    try {
+      const txs = await db.transactions.toArray();
+      const gals = await db.goals.toArray();
+      const settings = await db.settings.get('global');
+      
+      setTransactions(txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      setGoals(gals);
+      if (settings?.pushEnabled) setPushEnabled(true);
+    } catch (err) {
+      console.error('Error al cargar datos:', err);
+    }
   };
 
   const checkPushPermission = async () => {
@@ -59,17 +75,18 @@ export default function FinancePage() {
   };
 
   const scheduleDailyCheck = () => {
-    setInterval(async () => {
+    const check = setInterval(async () => {
       const now = new Date();
       if (now.getHours() === 20 && now.getMinutes() === 0) {
         const today = format(now, 'yyyy-MM-dd');
         const todayTx = transactions.filter(t => t.date === today);
         const expenses = todayTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-        if (expenses > 0 && 'Notification' in window && Notification.permission === 'granted') {
+        if (expenses > 0 && Notification.permission === 'granted') {
           new Notification('📊 Resumen Diario', { body: `Gastos de hoy: $${expenses.toLocaleString('es-CO')}` });
         }
       }
     }, 60000 * 10);
+    return () => clearInterval(check);
   };
 
   const handleAddTransaction = async () => {
@@ -117,8 +134,10 @@ export default function FinancePage() {
   const calculateGoalProgress = (g: SavingsGoal) => {
     const daysLeft = Math.max(1, Math.ceil((new Date(g.deadline).getTime() - Date.now()) / 86400000));
     const remaining = Math.max(0, g.targetAmount - g.currentAmount);
-    return { progress: (g.currentAmount / g.targetAmount) * 100, dailyNeed: remaining / daysLeft, daysLeft };
+    return { progress: g.targetAmount > 0 ? (g.currentAmount / g.targetAmount) * 100 : 0, dailyNeed: remaining / daysLeft, daysLeft };
   };
+
+  if (loading) return <div className="flex h-screen items-center justify-center text-emerald-400">Cargando datos financieros...</div>;
 
   return (
     <div className="p-4 pb-24 space-y-6">
@@ -142,7 +161,7 @@ export default function FinancePage() {
           <div className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
             <div className="grid grid-cols-2 gap-2">
               <input type="date" value={txDate} onChange={e => setTxDate(e.target.value)} className="input-modern" />
-              <select value={txType} onChange={e => setTxType(e.target.value as any)} className="input-modern">
+              <select value={txType} onChange={e => setTxType(e.target.value as 'income' | 'expense')} className="input-modern">
                 <option value="expense">💸 Gasto</option>
                 <option value="income">💵 Ingreso</option>
               </select>
@@ -160,7 +179,7 @@ export default function FinancePage() {
           </div>
 
           <div className="space-y-2">
-            {transactions.map(tx => (
+            {transactions.length > 0 ? transactions.map(tx => (
               <div key={tx.id} className="glass-panel p-3 flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tx.type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
@@ -178,8 +197,7 @@ export default function FinancePage() {
                   <button onClick={() => handleDeleteTx(tx.id)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
                 </div>
               </div>
-            ))}
-            {transactions.length === 0 && <p className="text-center text-slate-500 py-8">No hay movimientos registrados</p>}
+            )) : <p className="text-center text-slate-500 py-8">No hay movimientos registrados</p>}
           </div>
         </>
       )}
@@ -198,7 +216,7 @@ export default function FinancePage() {
           </div>
 
           <div className="space-y-4">
-            {goals.map(g => {
+            {goals.length > 0 ? goals.map(g => {
               const { progress, dailyNeed, daysLeft } = calculateGoalProgress(g);
               return (
                 <div key={g.id} className="glass-panel p-4">
@@ -218,8 +236,7 @@ export default function FinancePage() {
                   </div>
                 </div>
               );
-            })}
-            {goals.length === 0 && <p className="text-center text-slate-500 py-8">No hay metas activas</p>}
+            }) : <p className="text-center text-slate-500 py-8">No hay metas activas</p>}
           </div>
         </>
       )}
