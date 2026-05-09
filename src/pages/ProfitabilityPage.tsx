@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, DollarSign, Percent, Save, X, ChevronDown, ChevronUp, TrendingUp, Calendar, ArrowRight, Edit } from 'lucide-react';
+import { Plus, Trash2, DollarSign, Percent, Save, X, ChevronDown, ChevronUp, TrendingUp, Calendar, ArrowRight, Edit, History } from 'lucide-react';
 import { notify } from '../services/notificationService';
 import { secureStorage } from '../utils/security';
 
@@ -10,6 +10,7 @@ interface ProfitAccount {
   initialAmount: number;
   annualRate: number;
   createdAt: string;
+  history?: Array<{ date: string; balance: number; interest: number }>;
 }
 
 const BANKS = [
@@ -26,7 +27,8 @@ export default function ProfitabilityPage() {
   const [accounts, setAccounts] = useState<ProfitAccount[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null); // Para edición
+  const [historyAccountId, setHistoryAccountId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   
   // Estado del Formulario
   const [entityName, setEntityName] = useState('');
@@ -50,6 +52,36 @@ export default function ProfitabilityPage() {
       secureStorage.removeItem('miFinanzasProfitAccounts');
     }
   }, [accounts]);
+
+  // Actualizar historial diario
+  useEffect(() => {
+    const today = new Date().toLocaleDateString('es-CO');
+    
+    setAccounts(prevAccounts => prevAccounts.map(acc => {
+      const dailyInterest = (acc.initialAmount * (acc.annualRate / 100)) / 365;
+      const newBalance = acc.initialAmount + dailyInterest;
+      
+      // Crear o actualizar historial
+      let updatedHistory = acc.history || [];
+      const todayEntry = updatedHistory.find(h => h.date === today);
+      
+      if (!todayEntry) {
+        updatedHistory.push({
+          date: today,
+          balance: newBalance,
+          interest: dailyInterest
+        });
+      } else {
+        todayEntry.balance = newBalance;
+        todayEntry.interest = dailyInterest;
+      }
+      
+      // Mantener solo últimos 90 días
+      updatedHistory = updatedHistory.slice(-90);
+      
+      return { ...acc, history: updatedHistory };
+    }));
+  }, []);
 
   // Notificación diaria única
   useEffect(() => {
@@ -107,7 +139,8 @@ export default function ProfitabilityPage() {
         accountType,
         initialAmount: amount,
         annualRate: rate,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        history: []
       };
       setAccounts([...accounts, newAcc]);
       notify({ title: '✅ Cuenta Agregada', message: `${entityName}`, type: 'success' });
@@ -214,6 +247,7 @@ export default function ProfitabilityPage() {
           {accounts.map((acc) => {
             const metrics = getDailyMetrics(acc);
             const isExpanded = expandedId === acc.id;
+            const showHistory = historyAccountId === acc.id;
 
             return (
               <div key={acc.id} className="card-pro group relative overflow-hidden">
@@ -261,16 +295,26 @@ export default function ProfitabilityPage() {
                   </div>
                 </div>
 
-                {/* Toggle Proyección */}
-                <button 
-                  onClick={() => setExpandedId(isExpanded ? null : acc.id)}
-                  className="w-full flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-white py-2 transition-colors"
-                >
-                  {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-                  <span>{isExpanded ? 'Ocultar Proyección Mensual' : 'Ver Proyección Mensual (12 meses)'}</span>
-                </button>
+                {/* Botones de Acción */}
+                <div className="flex gap-2 mb-4">
+                  <button 
+                    onClick={() => setExpandedId(isExpanded ? null : acc.id)}
+                    className="flex-1 flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-white py-2 transition-colors bg-white/5 rounded-lg"
+                  >
+                    {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                    <span>{isExpanded ? 'Ocultar Proyección' : 'Ver Proyección Mensual'}</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => setHistoryAccountId(showHistory ? null : acc.id)}
+                    className="flex-1 flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-white py-2 transition-colors bg-white/5 rounded-lg"
+                  >
+                    <History size={14}/>
+                    <span>{showHistory ? 'Ocultar Historial' : 'Ver Historial Diario'}</span>
+                  </button>
+                </div>
 
-                {/* Tabla Expandida */}
+                {/* Tabla de Proyección Expandida */}
                 {isExpanded && (
                   <div className="mt-2 bg-black/20 rounded-lg p-3 animate-in fade-in slide-in-from-top-2">
                     <table className="w-full text-xs text-left">
@@ -291,6 +335,33 @@ export default function ProfitabilityPage() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                )}
+
+                {/* Historial Diario */}
+                {showHistory && acc.history && acc.history.length > 0 && (
+                  <div className="mt-2 bg-black/20 rounded-lg p-3 animate-in fade-in slide-in-from-top-2">
+                    <h4 className="text-sm font-bold text-white mb-2">Historial de los Últimos Días</h4>
+                    <div className="max-h-40 overflow-y-auto">
+                      <table className="w-full text-xs text-left">
+                        <thead>
+                          <tr className="text-slate-500 border-b border-white/5">
+                            <th className="py-2">Fecha</th>
+                            <th className="py-2 text-right">Interés</th>
+                            <th className="py-2 text-right">Saldo</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...acc.history].reverse().slice(0, 10).map((entry, idx) => (
+                            <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5">
+                              <td className="py-2 text-slate-300">{entry.date}</td>
+                              <td className="py-2 text-right text-emerald-400">+${formatCurrency(entry.interest)}</td>
+                              <td className="py-2 text-right text-white font-medium">${formatCurrency(entry.balance)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )}
               </div>

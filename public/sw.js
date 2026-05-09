@@ -1,5 +1,5 @@
 // ✅ VERSIÓN DEL CACHÉ - CAMBIAR ESTO FORZA LIMPIEZA TOTAL
-const CACHE_NAME = 'mi-finanzas-v5'; // Cambiado de v4 a v5
+const CACHE_NAME = 'mi-finanzas-v6'; // Cambiado de v5 a v6
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
