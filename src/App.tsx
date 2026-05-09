@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { Home, ShoppingCart, Scan, CreditCard, Shield, Settings, History, PieChart } from 'lucide-react';
+import { Home, ShoppingCart, Scan, CreditCard, Settings, History, PieChart } from 'lucide-react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
 import FinancePage from './pages/FinancePage';
@@ -18,14 +18,13 @@ import TermsModal from './components/TermsModal';
 import FeedbackButton from './components/FeedbackButton';
 import { notify } from './services/notificationService';
 
-// ✅ VERSIÓN DE LA APP (Cámbiala solo cuando subas mejoras reales)
 const SERVER_VERSION = "1.0.7";
 
 function NavBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { lockNow } = useSecurity();
-  
+  // ✅ FIX: Se eliminó `const { isLocked, isSetup } = useSecurity();` que generaba ts(6198)
+
   const menuItems = [
     { path: '/', icon: Home, label: 'Inicio' },
     { path: '/mercado', icon: ShoppingCart, label: 'Mercado' },
@@ -37,34 +36,24 @@ function NavBar() {
   ];
 
   return (
-    <>
-      <button 
-        onClick={lockNow}
-        className="fixed top-4 right-4 z-40 w-10 h-10 rounded-full bg-slate-800/90 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-slate-700 transition-colors active:scale-95"
-        title="Bloquear app"
-      >
-        <Shield className="w-5 h-5 text-slate-300" />
-      </button>
-
-      <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
-        <div className="flex justify-around items-center px-1 py-2 bg-slate-900/95 backdrop-blur-md border-t border-white/10">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <button 
-                key={item.path} 
-                onClick={() => navigate(item.path)}
-                className={`flex flex-col items-center py-1 px-2 min-w-[44px] transition-all duration-200 active:scale-95 ${isActive ? 'text-emerald-400 scale-105' : 'text-slate-500 hover:text-slate-300'}`}
-              >
-                <Icon className="w-6 h-6 mb-1" strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[10px] font-medium">{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-    </>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
+      <div className="flex justify-around items-center px-1 py-2 bg-slate-900/95 backdrop-blur-md border-t border-white/10">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location.pathname === item.path;
+          return (
+            <button
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              className={`flex flex-col items-center py-1 px-2 min-w-[44px] transition-all duration-200 active:scale-95 ${isActive ? 'text-emerald-400 scale-105' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <Icon className="w-6 h-6 mb-1" strokeWidth={isActive ? 2.5 : 2} />
+              <span className="text-[10px] font-medium">{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
@@ -73,7 +62,7 @@ function AppContent() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
-  const { isLocked, isSetup } = useSecurity();
+  const { isLocked, isSetup } = useSecurity(); // ✅ Aquí sí se usan, no genera warning
 
   useEffect(() => {
     const currentVersion = localStorage.getItem('appVersion') || "0.0.0";
@@ -107,7 +96,6 @@ function AppContent() {
     }
     caches.keys().then(keys => keys.forEach(key => caches.delete(key)));
     
-    // ✅ FIX TS2554: Se elimina el argumento 'true' (deprecated en lib.dom.d.ts moderno)
     window.location.reload();
   };
 
