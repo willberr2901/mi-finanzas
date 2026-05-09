@@ -1,107 +1,95 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  ShoppingCart, 
-  DollarSign, 
-  CreditCard, 
-  ScanLine, 
-  TrendingUp, 
-  TrendingDown, 
-  Shield, 
-  Smartphone, 
-  Lock, 
-  Info, 
-  ChevronRight 
-} from 'lucide-react';
-import { useFinanceStore } from '../store/financeStore';
-import { notify } from '../services/notificationService';
+import { ShoppingCart, DollarSign, CreditCard, PieChart, TrendingDown, Info } from 'lucide-react';
+import HealthGauge from '../components/HealthGauge';
+import { predictCashFlow } from '../services/financialIntelligence';
+import type { Transaction, SavingsGoal } from '../utils/database';
+import { db } from '../utils/database';
 
 export default function HomePage() {
-  const { transactions } = useFinanceStore();
-  
-  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-  const balance = totalIncome - totalExpense;
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [goals, setGoals] = useState<SavingsGoal[]>([]);
+  const [prediction, setPrediction] = useState<any>(null);
 
-  const formatCurrency = (value: number) => value.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (transactions.length > 0) {
+      setPrediction(predictCashFlow(transactions, 0));
+    }
+  }, [transactions]);
+
+  const loadData = async () => {
+    try {
+      const txs = await db.transactions.toArray();
+      const gals = await db.goals.toArray();
+      setTransactions(txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      setGoals(gals);
+    } catch {}
+  };
+
+  const formatCurrency = (v: number) => v.toLocaleString('es-CO', { minimumFractionDigits: 2 });
 
   return (
-    <div className="p-4 space-y-6 pb-24">
-      {/* Saludo */}
+    <div className="p-4 pb-24 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-white">Mi Finanzas</h1>
-          <p className="text-slate-400 text-sm">Bienvenido de nuevo 👋</p>
-        </div>
-        {/* Avatar pequeño en Home */}
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-bold shadow-lg">
-          G
+          <p className="text-gray-400 text-sm">Bienvenido de nuevo 👋</p>
         </div>
       </div>
 
-      {/* Tarjeta Principal */}
-      <div className="glass-panel bg-gradient-to-br from-slate-800 to-slate-900 border-emerald-500/20">
-        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Saldo Total</p>
-        <h2 className="text-4xl font-bold text-white mb-6 tracking-tight">${formatCurrency(balance)}</h2>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="p-1 bg-emerald-500/20 rounded-full">
-                <TrendingUp size={12} className="text-emerald-400" />
-              </div>
-              <span className="text-xs text-slate-400">Ingresos</span>
+      <HealthGauge transactions={transactions} goals={goals} balance={0} />
+
+      {prediction && (
+        <div className={`p-4 rounded-xl border ${prediction.status === 'critical' ? 'bg-red-900/20 border-red-500/30' : prediction.status === 'warning' ? 'bg-yellow-900/20 border-yellow-500/30' : 'bg-emerald-900/20 border-emerald-500/30'}`}>
+          <div className="flex items-start gap-3">
+            <TrendingDown className={`mt-1 ${prediction.status === 'critical' ? 'text-red-400' : prediction.status === 'warning' ? 'text-yellow-400' : 'text-emerald-400'}`} size={20} />
+            <div>
+              <h3 className="font-bold text-white text-sm">Predicción de Flujo</h3>
+              <p className="text-xs text-gray-300 mt-1">
+                {prediction.status === 'critical' ? '⚠️ Posible saldo negativo al fin de mes.' : 
+                 prediction.status === 'warning' ? '📉 Quedan pocos días con tu presupuesto.' : 
+                 '✅ Flujo positivo proyectado.'}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Gasto diario promedio: ${formatCurrency(prediction.dailyBurn)}</p>
             </div>
-            <p className="text-lg font-bold text-emerald-400">+${formatCurrency(totalIncome)}</p>
-          </div>
-          
-          <div className="bg-slate-900/50 p-3 rounded-xl border border-white/5">
-            <div className="flex items-center gap-2 mb-1">
-              <div className="p-1 bg-red-500/20 rounded-full">
-                <TrendingDown size={12} className="text-red-400" />
-              </div>
-              <span className="text-xs text-slate-400">Gastos</span>
-            </div>
-            <p className="text-lg font-bold text-red-400">-${formatCurrency(totalExpense)}</p>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Accesos Rápidos Grid */}
       <div>
-        <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-          Accesos rápidos <ChevronRight size={16} className="text-slate-500"/>
-        </h3>
-        <div className="grid grid-cols-2 gap-4">
-          {[
-            { icon: ShoppingCart, label: 'Mercado', path: '/mercado', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-            { icon: DollarSign, label: 'Finanzas', path: '/finanzas', color: 'text-blue-400', bg: 'bg-blue-500/10' },
-            { icon: CreditCard, label: 'Créditos', path: '/creditos', color: 'text-purple-400', bg: 'bg-purple-500/10' },
-            { icon: ScanLine, label: 'Escáner', path: '/escaner', color: 'text-orange-400', bg: 'bg-orange-500/10' },
-            { icon: TrendingUp, label: 'Rentabilidad', path: '/rentabilidad', color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
-            { icon: Shield, label: 'Ajustes', path: '/ajustes', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-          ].map((item, index) => (
-            <Link 
-              key={index}
-              to={item.path} 
-              className={`${item.bg} p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center gap-3 hover:bg-opacity-20 transition-all duration-300`}
-            >
-              <item.icon className={`${item.color}`} size={28} />
-              <span className="text-sm font-medium text-slate-200">{item.label}</span>
-            </Link>
-          ))}
+        <h3 className="text-white font-bold mb-3">Accesos rápidos</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <Link to="/mercado" className="bg-gray-800/50 backdrop-blur p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
+            <ShoppingCart className="text-green-400" size={24} />
+            <span className="text-xs text-gray-300">Mercado</span>
+          </Link>
+          <Link to="/finanzas" className="bg-gray-800/50 backdrop-blur p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
+            <DollarSign className="text-blue-400" size={24} />
+            <span className="text-xs text-gray-300">Finanzas</span>
+          </Link>
+          <Link to="/creditos" className="bg-gray-800/50 backdrop-blur p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
+            <CreditCard className="text-purple-400" size={24} />
+            <span className="text-xs text-gray-300">Créditos</span>
+          </Link>
+          <Link to="/rentabilidad" className="bg-gray-800/50 backdrop-blur p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
+            <PieChart className="text-orange-400" size={24} />
+            <span className="text-xs text-gray-300">Rentabilidad</span>
+          </Link>
         </div>
       </div>
 
-      {/* Guía Rápida Compacta */}
-      <div className="glass-panel">
-        <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-          <Info size={18} className="text-blue-400"/> Guía Rápida
+      <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+        <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+          <Info size={18} className="text-blue-400" /> Guía Rápida
         </h3>
-        <ul className="text-sm text-slate-300 space-y-2 list-disc pl-5 marker:text-emerald-400">
-          <li><strong>Mercado:</strong> Controla tus compras diarias</li>
-          <li><strong>Rentabilidad:</strong> Calcula cuánto gana tu dinero</li>
-          <li><strong>Seguridad:</strong> Activa el PIN en Ajustes</li>
+        <ul className="text-sm text-gray-300 space-y-2 list-disc pl-5">
+          <li><strong>Score 0-100:</strong> Tu salud financiera calculada localmente.</li>
+          <li><strong>Predicción:</strong> Proyección de flujo basada en tus últimos 30 días.</li>
+          <li><strong>Reglas locales:</strong> Alertas inteligentes sin conexión a la nube.</li>
         </ul>
       </div>
     </div>

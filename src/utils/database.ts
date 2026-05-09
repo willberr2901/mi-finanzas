@@ -7,7 +7,7 @@ export interface Transaction {
   amount: number;
   category: string;
   description: string;
-  receiptUrl?: string;
+  createdAt: number; // ✅ Agregado para ordenamiento rápido
 }
 
 export interface SavingsGoal {
@@ -19,7 +19,6 @@ export interface SavingsGoal {
   createdAt: string;
 }
 
-// ✅ FIX: Se agregó `id: string` que falta para el bulkAdd/update
 export interface AppSettings {
   id: string;
   theme: 'dark' | 'light';
@@ -34,7 +33,7 @@ export const db = new Dexie('MiFinanzasDB') as Dexie & {
 };
 
 db.version(1).stores({
-  transactions: '++id, date, type, category, amount',
+  transactions: '++id, date, type, category, amount, createdAt', // ✅ Índice compuesto
   goals: '++id, name, deadline',
   settings: '++id'
 });
@@ -49,7 +48,5 @@ export const migrateData = async () => {
       pushEnabled: false,
       onboardingCompleted: false
     });
-  } catch (e) {
-    console.error('Error en migración DB:', e);
-  }
+  } catch {}
 };

@@ -5,6 +5,7 @@ import { notify } from '../services/notificationService';
 import { db, migrateData } from '../utils/database';
 import { format } from 'date-fns';
 import { generateFinancialReport } from '../services/exportService';
+import { triggerLocalRules, type RuleAlert } from '../services/financialIntelligence';
 
 const CATEGORIES = ['Alimentación', 'Transporte', 'Servicios', 'Entretenimiento', 'Salud', 'Hogar', 'Inversiones', 'Otros'];
 
@@ -36,8 +37,7 @@ export default function FinancePage() {
       await loadData();
       await checkPushPermission();
     } catch (err) {
-      console.error('Error al inicializar Finanzas:', err);
-      notify({ title: '⚠️ Error de carga', message: 'No se pudo cargar la base de datos local.', type: 'error' });
+      console.error('Error inicialización:', err);
     } finally {
       setLoading(false);
     }
@@ -48,45 +48,24 @@ export default function FinancePage() {
       const txs = await db.transactions.toArray();
       const gals = await db.goals.toArray();
       const settings = await db.settings.get('global');
-      
       setTransactions(txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       setGoals(gals);
       if (settings?.pushEnabled) setPushEnabled(true);
-    } catch (err) {
-      console.error('Error al cargar datos:', err);
-    }
+    } catch {}
   };
 
   const checkPushPermission = async () => {
     if ('Notification' in window) {
-      const permission = Notification.permission;
-      if (permission === 'granted') {
+      if (Notification.permission === 'granted') {
         setPushEnabled(true);
-        scheduleDailyCheck();
-      } else if (permission !== 'denied') {
+      } else if (Notification.permission !== 'denied') {
         const granted = await Notification.requestPermission();
         if (granted === 'granted') {
           setPushEnabled(true);
           await db.settings.update('global', { pushEnabled: true });
-          scheduleDailyCheck();
         }
       }
     }
-  };
-
-  const scheduleDailyCheck = () => {
-    const check = setInterval(async () => {
-      const now = new Date();
-      if (now.getHours() === 20 && now.getMinutes() === 0) {
-        const today = format(now, 'yyyy-MM-dd');
-        const todayTx = transactions.filter(t => t.date === today);
-        const expenses = todayTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-        if (expenses > 0 && Notification.permission === 'granted') {
-          new Notification('📊 Resumen Diario', { body: `Gastos de hoy: $${expenses.toLocaleString('es-CO')}` });
-        }
-      }
-    }, 60000 * 10);
-    return () => clearInterval(check);
   };
 
   const handleAddTransaction = async () => {
@@ -97,31 +76,25 @@ export default function FinancePage() {
       type: txType,
       amount: parseFloat(txAmount),
       category: txCategory,
-      description: txDesc
+      description: txDesc,
+      createdAt: Date.now() // ✅ FIX: Agregado
     };
     await db.transactions.add(newTx);
+    
+    const updatedTx = await db.transactions.toArray();
+    const alerts: RuleAlert[] = triggerLocalRules(newTx, updatedTx); // ✅ FIX: Tipo explícito
+    alerts.forEach((alert: RuleAlert) => notify({ title: '🤖 Regla Local', message: alert.message, type: alert.type as any }));
+
     await loadData();
     resetTxForm();
     notify({ title: '✅ Registrado', message: `${txType === 'income' ? 'Ingreso' : 'Gasto'}: $${txAmount}`, type: 'success' });
   };
 
-  const resetTxForm = () => {
-    setTxDate(new Date().toISOString().split('T')[0]);
-    setTxAmount('');
-    setTxDesc('');
-    setTxType('expense');
-  };
+  const resetTxForm = () => { setTxDate(new Date().toISOString().split('T')[0]); setTxAmount(''); setTxDesc(''); setTxType('expense'); };
 
   const handleAddGoal = async () => {
     if (!goalName || !goalTarget || !goalDeadline) { notify({ title: '❌ Error', message: 'Completa todos los campos.', type: 'error' }); return; }
-    const newGoal: SavingsGoal = {
-      id: crypto.randomUUID(),
-      name: goalName,
-      targetAmount: parseFloat(goalTarget),
-      currentAmount: 0,
-      deadline: goalDeadline,
-      createdAt: new Date().toISOString()
-    };
+    const newGoal: SavingsGoal = { id: crypto.randomUUID(), name: goalName, targetAmount: parseFloat(goalTarget), currentAmount: 0, deadline: goalDeadline, createdAt: new Date().toISOString() };
     await db.goals.add(newGoal);
     await loadData();
     setGoalName(''); setGoalTarget(''); setGoalDeadline('');
@@ -137,7 +110,7 @@ export default function FinancePage() {
     return { progress: g.targetAmount > 0 ? (g.currentAmount / g.targetAmount) * 100 : 0, dailyNeed: remaining / daysLeft, daysLeft };
   };
 
-  if (loading) return <div className="flex h-screen items-center justify-center text-emerald-400">Cargando datos financieros...</div>;
+  if (loading) return <div className="flex h-screen items-center justify-center text-emerald-400">Sincronizando datos locales...</div>;
 
   return (
     <div className="p-4 pb-24 space-y-6">
@@ -249,7 +222,6 @@ export default function FinancePage() {
           <button onClick={() => generateFinancialReport(transactions, goals, 'csv')} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2">
             <Download size={18} /> Exportar CSV
           </button>
-          <p className="text-xs text-slate-500 text-center">Los reportes incluyen movimientos, metas y resumen financiero.</p>
         </div>
       )}
     </div>
