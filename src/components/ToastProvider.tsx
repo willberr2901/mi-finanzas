@@ -13,6 +13,7 @@ const customStyles = `
     font-family: 'Inter', sans-serif !important;
     min-height: 60px !important;
     opacity: 1 !important; /* Forzar opacidad completa */
+    z-index: 9999 !important; /* Asegurar que esté encima de todo */
   }
   
   .Toastify__toast-body {

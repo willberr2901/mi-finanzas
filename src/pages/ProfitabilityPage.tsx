@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, DollarSign, Percent, Save, X, ChevronDown, ChevronUp, TrendingUp, Calendar, ArrowRight } from 'lucide-react';
+import { Plus, Trash2, DollarSign, Percent, Save, X, ChevronDown, ChevronUp, TrendingUp, Calendar, ArrowRight, Edit } from 'lucide-react';
 import { notify } from '../services/notificationService';
-import { secureStorage } from '../utils/security'; // Usamos tu utilitaria existente
+import { secureStorage } from '../utils/security';
 
 interface ProfitAccount {
   id: string;
@@ -12,7 +12,6 @@ interface ProfitAccount {
   createdAt: string;
 }
 
-// ✅ LISTA COMPLETA DE ENTIDADES BANCARIAS EN COLOMBIA
 const BANKS = [
   'Bancolombia', 'Davivienda', 'Banco de Bogotá', 'BBVA', 'Falabella', 
   'Nequi', 'Daviplata', 'Nu Bank', 'RappiPay', 'Bancóldex', 'BAC Credomatic',
@@ -27,6 +26,7 @@ export default function ProfitabilityPage() {
   const [accounts, setAccounts] = useState<ProfitAccount[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null); // Para edición
   
   // Estado del Formulario
   const [entityName, setEntityName] = useState('');
@@ -34,24 +34,20 @@ export default function ProfitabilityPage() {
   const [initialAmount, setInitialAmount] = useState<string>('');
   const [annualRate, setAnnualRate] = useState<string>('');
 
-  // ✅ CARGAR DATOS AL INICIAR (Usando secureStorage)
+  // Cargar datos
   useEffect(() => {
     const savedAccounts = secureStorage.getItem('miFinanzasProfitAccounts');
     if (savedAccounts && Array.isArray(savedAccounts)) {
       setAccounts(savedAccounts);
-    } else {
-      // Si no hay datos o están corruptos, inicializar vacío
-      setAccounts([]);
     }
   }, []);
 
-  // ✅ GUARDAR DATOS CADA VEZ QUE CAMBIAN (Usando secureStorage)
+  // Guardar datos
   useEffect(() => {
     if (accounts.length > 0) {
       secureStorage.setItem('miFinanzasProfitAccounts', accounts);
     } else {
-      // Opcional: Eliminar si está vacío para mantener localStorage limpio
-      // secureStorage.removeItem('miFinanzasProfitAccounts');
+      secureStorage.removeItem('miFinanzasProfitAccounts');
     }
   }, [accounts]);
 
@@ -81,8 +77,7 @@ export default function ProfitabilityPage() {
 
   const formatCurrency = (val: number) => val.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const handleAdd = () => {
-    // Validaciones estrictas
+  const handleAddOrUpdate = () => {
     if (!entityName || !initialAmount || !annualRate) {
       notify({ title: '❌ Error', message: 'Completa todos los campos correctamente.', type: 'error' });
       return;
@@ -96,28 +91,44 @@ export default function ProfitabilityPage() {
       return;
     }
 
-    const newAcc: ProfitAccount = {
-      id: Date.now().toString(), // ID único basado en timestamp
-      entityName,
-      accountType,
-      initialAmount: amount,
-      annualRate: rate,
-      createdAt: new Date().toISOString()
-    };
+    if (editingId) {
+      // Actualizar cuenta existente
+      setAccounts(prev => prev.map(acc => 
+        acc.id === editingId 
+          ? { ...acc, entityName, accountType, initialAmount: amount, annualRate: rate }
+          : acc
+      ));
+      notify({ title: '✅ Cuenta Actualizada', message: `${entityName}`, type: 'success' });
+    } else {
+      // Agregar nueva cuenta
+      const newAcc: ProfitAccount = {
+        id: Date.now().toString(),
+        entityName,
+        accountType,
+        initialAmount: amount,
+        annualRate: rate,
+        createdAt: new Date().toISOString()
+      };
+      setAccounts([...accounts, newAcc]);
+      notify({ title: '✅ Cuenta Agregada', message: `${entityName}`, type: 'success' });
+    }
 
-    // Actualizamos el estado local
-    setAccounts(prev => [...prev, newAcc]);
-    
-    // Limpiamos el formulario y cerramos modal
     resetForm();
     setIsModalOpen(false);
-    
-    notify({ title: '✅ Cuenta Agregada', message: `${entityName}`, type: 'success' });
+  };
+
+  const handleEdit = (acc: ProfitAccount) => {
+    setEntityName(acc.entityName);
+    setAccountType(acc.accountType);
+    setInitialAmount(acc.initialAmount.toString());
+    setAnnualRate(acc.annualRate.toString());
+    setEditingId(acc.id);
+    setIsModalOpen(true);
   };
 
   const handleDelete = (id: string) => {
     if (confirm('¿Eliminar esta cuenta?')) {
-      setAccounts(prev => prev.filter(a => a.id !== id));
+      setAccounts(accounts.filter(a => a.id !== id));
       notify({ title: '🗑️ Eliminada', message: 'Cuenta eliminada', type: 'info' });
     }
   };
@@ -127,6 +138,7 @@ export default function ProfitabilityPage() {
     setAccountType('Cuenta de Ahorros');
     setInitialAmount('');
     setAnnualRate('');
+    setEditingId(null);
   };
 
   const generateProjection = (amount: number, rate: number) => {
@@ -211,12 +223,20 @@ export default function ProfitabilityPage() {
                     <h3 className="font-bold text-white text-lg">{acc.entityName}</h3>
                     <p className="text-xs text-slate-400">{acc.accountType} • <span className="text-emerald-400">{acc.annualRate}% EA</span></p>
                   </div>
-                  <button 
-                    onClick={() => handleDelete(acc.id)}
-                    className="absolute top-2 right-2 text-red-400/50 hover:text-red-500 transition-colors p-2"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleEdit(acc)}
+                      className="text-blue-400/50 hover:text-blue-500 transition-colors p-2"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(acc.id)}
+                      className="text-red-400/50 hover:text-red-500 transition-colors p-2"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Visualización de Crecimiento Diario */}
@@ -284,7 +304,7 @@ export default function ProfitabilityPage() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-6 border-t sm:border border-slate-700 shadow-2xl animate-in slide-in-from-bottom-10 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white">Nueva Cuenta</h2>
+              <h2 className="text-xl font-bold text-white">{editingId ? 'Editar Cuenta' : 'Nueva Cuenta'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
                 <X size={24} />
               </button>
@@ -340,11 +360,12 @@ export default function ProfitabilityPage() {
                 </div>
               </div>
 
+              {/* ✅ BOTÓN GUARDAR SIEMPRE VISIBLE Y CLARO */}
               <button 
-                onClick={handleAdd}
+                onClick={handleAddOrUpdate}
                 className="btn-primary mt-6 w-full"
               >
-                <Save size={20} /> Guardar Configuración
+                <Save size={20} /> {editingId ? 'Actualizar Configuración' : 'Guardar Configuración'}
               </button>
             </div>
           </div>

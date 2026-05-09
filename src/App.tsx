@@ -25,7 +25,7 @@ import FeedbackButton from './components/FeedbackButton';
 import { notify, setAuditLogFunction, type AuditEntry } from './services/notificationService';
 
 // ✅ VERSIÓN DEL SERVIDOR (Cambia esto para forzar actualización)
-const SERVER_VERSION = "1.0.4"; 
+const SERVER_VERSION = "1.0.5"; 
 
 function NavBar() {
   const location = useLocation();
@@ -62,18 +62,18 @@ function NavBar() {
         </div>
       </nav>
       
-      {/* Botón Flotante Central */}
+      {/* Botón Flotante Central - AHORA SIN INTERFERENCIAS */}
       <button 
         onClick={() => window.location.href = '/'} 
-        className="fixed bottom-20 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-400 to-cyan-500 flex items-center justify-center text-black shadow-[0_0_25px_rgba(16,185,129,0.5)] z-50 hover:scale-110 transition-transform"
+        className="fixed bottom-20 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-400 to-cyan-500 flex items-center justify-center text-black shadow-[0_0_25px_rgba(16,185,129,0.5)] z-40 hover:scale-110 transition-transform"
       >
         <Plus className="w-8 h-8" />
       </button>
 
-      {/* Botón Bloquear Superior */}
+      {/* Botón Bloquear Superior - POSICIÓN CORREGIDA */}
       <button 
         onClick={lockNow}
-        className="fixed top-4 right-4 z-50 w-10 h-10 rounded-full bg-slate-800/80 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-slate-700 transition-colors"
+        className="fixed top-4 right-4 z-30 w-10 h-10 rounded-full bg-slate-800/80 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-slate-700 transition-colors"
         title="Bloquear app"
       >
         <Shield className="w-5 h-5 text-slate-300" />
@@ -156,7 +156,7 @@ function AppContent() {
             // Si hay nueva versión instalada, limpiar cachés antiguos
             caches.keys().then(keys => {
               keys.forEach(key => {
-                if (!key.includes('v4')) { // Asumiendo que la nueva versión es v4
+                if (!key.includes('v5')) { // Asumiendo que la nueva versión es v5
                   caches.delete(key).then(() => {
                     console.log(`Cache antiguo eliminado: ${key}`);
                   });
