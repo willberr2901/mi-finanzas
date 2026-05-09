@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, DollarSign, Percent, Save, X, ChevronDown, ChevronUp, TrendingUp, Calendar, ArrowRight } from 'lucide-react';
 import { notify } from '../services/notificationService';
-import { secureStorage } from '../utils/security';
+import { secureStorage } from '../utils/security'; // Usamos tu utilitaria existente
 
 interface ProfitAccount {
   id: string;
   entityName: string;
   accountType: string;
-  initialAmount: number; // Saldo inicial registrado
-  annualRate: number;    // Tasa anual %
-  createdAt: string;     // Fecha de creación
+  initialAmount: number;
+  annualRate: number;
+  createdAt: string;
 }
 
 // ✅ LISTA COMPLETA DE ENTIDADES BANCARIAS EN COLOMBIA
@@ -34,15 +34,25 @@ export default function ProfitabilityPage() {
   const [initialAmount, setInitialAmount] = useState<string>('');
   const [annualRate, setAnnualRate] = useState<string>('');
 
-  // Cargar datos
+  // ✅ CARGAR DATOS AL INICIAR (Usando secureStorage)
   useEffect(() => {
-    const saved = secureStorage.getItem('miFinanzasProfitAccounts');
-    if (saved) setAccounts(saved);
+    const savedAccounts = secureStorage.getItem('miFinanzasProfitAccounts');
+    if (savedAccounts && Array.isArray(savedAccounts)) {
+      setAccounts(savedAccounts);
+    } else {
+      // Si no hay datos o están corruptos, inicializar vacío
+      setAccounts([]);
+    }
   }, []);
 
-  // Guardar datos
+  // ✅ GUARDAR DATOS CADA VEZ QUE CAMBIAN (Usando secureStorage)
   useEffect(() => {
-    if (accounts.length > 0) secureStorage.setItem('miFinanzasProfitAccounts', accounts);
+    if (accounts.length > 0) {
+      secureStorage.setItem('miFinanzasProfitAccounts', accounts);
+    } else {
+      // Opcional: Eliminar si está vacío para mantener localStorage limpio
+      // secureStorage.removeItem('miFinanzasProfitAccounts');
+    }
   }, [accounts]);
 
   // Notificación diaria única
@@ -87,7 +97,7 @@ export default function ProfitabilityPage() {
     }
 
     const newAcc: ProfitAccount = {
-      id: Date.now().toString(),
+      id: Date.now().toString(), // ID único basado en timestamp
       entityName,
       accountType,
       initialAmount: amount,
@@ -95,15 +105,19 @@ export default function ProfitabilityPage() {
       createdAt: new Date().toISOString()
     };
 
-    setAccounts([...accounts, newAcc]);
+    // Actualizamos el estado local
+    setAccounts(prev => [...prev, newAcc]);
+    
+    // Limpiamos el formulario y cerramos modal
     resetForm();
     setIsModalOpen(false);
+    
     notify({ title: '✅ Cuenta Agregada', message: `${entityName}`, type: 'success' });
   };
 
   const handleDelete = (id: string) => {
     if (confirm('¿Eliminar esta cuenta?')) {
-      setAccounts(accounts.filter(a => a.id !== id));
+      setAccounts(prev => prev.filter(a => a.id !== id));
       notify({ title: '🗑️ Eliminada', message: 'Cuenta eliminada', type: 'info' });
     }
   };
@@ -115,7 +129,6 @@ export default function ProfitabilityPage() {
     setAnnualRate('');
   };
 
-  // Calcular proyección mensual
   const generateProjection = (amount: number, rate: number) => {
     const rows = [];
     let currentBalance = amount;
@@ -129,10 +142,9 @@ export default function ProfitabilityPage() {
     return rows;
   };
 
-  // Calcular métricas diarias
   const getDailyMetrics = (acc: ProfitAccount) => {
     const dailyInterest = (acc.initialAmount * (acc.annualRate / 100)) / 365;
-    const yesterdayBalance = acc.initialAmount - dailyInterest; // Aproximación inversa
+    const yesterdayBalance = acc.initialAmount - dailyInterest;
     const todayBalance = acc.initialAmount; 
     
     return {
@@ -328,7 +340,6 @@ export default function ProfitabilityPage() {
                 </div>
               </div>
 
-              {/* ✅ BOTÓN GUARDAR SIEMPRE VISIBLE Y CLARO */}
               <button 
                 onClick={handleAdd}
                 className="btn-primary mt-6 w-full"
