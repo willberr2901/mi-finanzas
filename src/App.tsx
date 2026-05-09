@@ -23,7 +23,6 @@ const SERVER_VERSION = "1.0.7";
 function NavBar() {
   const location = useLocation();
   const navigate = useNavigate();
-  // ✅ FIX: Se eliminó `const { isLocked, isSetup } = useSecurity();` que generaba ts(6198)
 
   const menuItems = [
     { path: '/', icon: Home, label: 'Inicio' },
@@ -62,7 +61,7 @@ function AppContent() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
-  const { isLocked, isSetup } = useSecurity(); // ✅ Aquí sí se usan, no genera warning
+  const { isLocked, isSetup } = useSecurity();
 
   useEffect(() => {
     const currentVersion = localStorage.getItem('appVersion') || "0.0.0";

@@ -37,11 +37,7 @@ export default function ToastProvider() {
       }
     `;
     document.head.appendChild(style);
-
-    // ✅ FIX: .remove() retorna void, solucionando el error TS2345
-    return () => {
-      style.remove();
-    };
+    return () => { style.remove(); };
   }, []);
 
   return (

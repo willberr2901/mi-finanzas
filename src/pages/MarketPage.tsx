@@ -91,7 +91,6 @@ export default function MarketPage() {
         </div>
       </div>
 
-      {/* ✅ PRESUPUESTO MODIFICABLE */}
       <div className="glass-panel p-4">
         <div className="flex justify-between items-center mb-2">
           <span className="text-slate-400 text-sm">PRESUPUESTO</span>
@@ -120,7 +119,6 @@ export default function MarketPage() {
         </div>
       </div>
 
-      {/* Formulario */}
       <div className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
         <input type="text" placeholder="Buscar producto..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="input-modern w-full mb-2" />
         <input type="text" placeholder="Nombre del producto" value={productName} onChange={e => setProductName(e.target.value)} className="input-modern" />
@@ -133,7 +131,6 @@ export default function MarketPage() {
         </button>
       </div>
 
-      {/* Lista de Productos */}
       {filteredItems.length > 0 && (
         <div className="space-y-2">
           {filteredItems.map(item => (

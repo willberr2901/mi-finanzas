@@ -173,38 +173,27 @@ export default function ProfitabilityPage() {
         </div>
       )}
 
-      {/* ✅ MODAL CORREGIDO - AHORA EL BOTÓN SIEMPRE SE VE (FLEX-COL FIX) */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/90 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 backdrop-blur-sm">
           <div className="bg-slate-900 w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl border border-slate-700 shadow-2xl h-[85vh] sm:h-auto flex flex-col">
-            
-            {/* 1. CABECERA FIJA */}
             <div className="flex justify-between items-center p-4 border-b border-slate-800 flex-shrink-0">
               <h2 className="text-xl font-bold text-white">{editingId?'Editar Cuenta':'Nueva Cuenta'}</h2>
               <button onClick={()=>setIsModalOpen(false)} className="text-slate-400 hover:text-white"><X size={24}/></button>
             </div>
 
-            {/* 2. FORMULARIO SCROLLEABLE */}
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
               <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Entidad Financiera</label><select value={entityName} onChange={e=>setEntityName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-white focus:ring-2 focus:ring-emerald-500 outline-none appearance-none"><option value="">Selecciona un banco...</option>{BANKS.map(b=><option key={b} value={b}>{b}</option>)}</select></div>
-              
               <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Tipo de Producto</label><select value={accountType} onChange={e=>setAccountType(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-white focus:ring-2 focus:ring-emerald-500 outline-none appearance-none">{ACCOUNT_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></div>
-              
               <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Monto Actual ($)</label><input type="number" placeholder="Ej: 1000000" value={initialAmount} onChange={e=>setInitialAmount(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-white focus:ring-2 focus:ring-emerald-500 outline-none"/></div>
-              
               <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Tasa Anual (%)</label><input type="number" step="0.01" placeholder="Ej: 9.5" value={annualRate} onChange={e=>setAnnualRate(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-3 text-white focus:ring-2 focus:ring-emerald-500 outline-none"/></div>
-              
-              {/* Espacio extra al final del scroll para que el último input no quede tapado por el botón */}
               <div className="h-4"></div>
             </form>
 
-            {/* 3. BOTÓN FIJO EN EL FONDO DEL MODAL (NUNCA SE OCULTA) */}
             <div className="p-4 border-t border-slate-800 bg-slate-900 flex-shrink-0 rounded-b-2xl">
               <button type="submit" onClick={handleSubmit} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
                 <Save size={20}/> {editingId?'Actualizar Cuenta':'Guardar Configuración'}
               </button>
             </div>
-
           </div>
         </div>
       )}
