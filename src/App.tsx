@@ -1,15 +1,15 @@
-import React, { useState, useEffect, Suspense } from 'react'; // ✅ FIX 1: Import React explícitamente
+import React, { useState, useEffect, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
-
-// ✅ FIX 2: Ruta relativa correcta './' (quitado el slash inicial '/')
-// Asegúrate de que este archivo exista en tu carpeta src/components/
 import AnimatedSplash from './components/AnimatedSplash';
 import ToastProvider from './components/ToastProvider';
 import FeedbackButton from './components/FeedbackButton';
+import SecurityLock from './components/SecurityLock';
+import WelcomeModal from './components/WelcomeModal';
+import TermsModal from './components/TermsModal';
 
-// ✅ Lazy loading (Carga diferida) para optimizar rendimiento
+// ✅ Lazy loading SOLO para páginas (no componentes de contexto/UI)
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const MarketPage = React.lazy(() => import('./pages/MarketPage'));
 const ReceiptScannerPage = React.lazy(() => import('./pages/ReceiptScannerPage'));
@@ -17,18 +17,11 @@ const CreditPage = React.lazy(() => import('./pages/CreditPage'));
 const ProfitabilityPage = React.lazy(() => import('./pages/ProfitabilityPage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const ReceiptHistoryPage = React.lazy(() => import('./pages/ReceiptHistoryPage'));
-const SecurityLock = React.lazy(() => import('./components/SecurityLock'));
-const WelcomeModal = React.lazy(() => import('./components/WelcomeModal'));
-const TermsModal = React.lazy(() => import('./components/TermsModal'));
 
-// ✅ FIX 3: Constante global para que el linter vea que se usa
 const SERVER_VERSION = "1.0.8";
-
-// ✅ FIX 4: Se eliminó el componente PageTransition porque no se usaba y daba warning
 
 function NavBar() {
   const location = useLocation();
-
   const menuItems = [
     { path: '/', icon: '🏠', label: 'Inicio' },
     { path: '/mercado', icon: '🛒', label: 'Mercado' },
@@ -47,9 +40,7 @@ function NavBar() {
             key={item.path}
             href={item.path}
             className={`flex flex-col items-center py-1 px-2 min-w-[44px] transition-all duration-200 active:scale-95 ${
-              location.pathname === item.path
-                ? 'text-emerald-400 scale-105'
-                : 'text-slate-500 hover:text-slate-300'
+              location.pathname === item.path ? 'text-emerald-400 scale-105' : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <span className="text-xl mb-1">{item.icon}</span>
@@ -69,33 +60,25 @@ function AppContent() {
   const { isLocked, isSetup } = useSecurity();
 
   useEffect(() => {
-    // ✅ FIX 5: Uso correcto de las variables para eliminar warnings
     const currentVersion = localStorage.getItem('appVersion') || "0.0.0";
     const welcomeDone = localStorage.getItem('miFinanzasWelcomeDone');
     const savedName = localStorage.getItem('miFinanzasUserName');
 
-    // Verificar versión (usa SERVER_VERSION)
     if (currentVersion !== SERVER_VERSION) {
-      console.log(`Nueva versión detectada: ${SERVER_VERSION}`);
-      // Aquí podrías disparar un modal de actualización si quisieras
+      console.log(`🔄 Actualizando a versión ${SERVER_VERSION}`);
     }
-
-    // Manejo de bienvenida y términos
     if (!welcomeDone) setShowWelcome(true);
     if (savedName) setUserName(savedName);
     if (localStorage.getItem('miFinanzasTermsAccepted') !== 'true') setShowTerms(true);
 
-    // Simular carga de assets para el Splash
     const timer = setTimeout(() => setShowSplash(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-emerald-500/30 font-sans">
-      {/* Pantalla de carga animada */}
       {showSplash && <AnimatedSplash onComplete={() => setShowSplash(false)} />}
       
-      {/* Contenido principal */}
       {!showSplash && (
         <>
           {isSetup && isLocked && <SecurityLock />}
@@ -115,7 +98,6 @@ function AppContent() {
           <NavBar />
           <ToastProvider />
           <FeedbackButton />
-          
           {showWelcome && <WelcomeModal onDismiss={() => setShowWelcome(false)} userName={userName} setUserName={setUserName} />}
           {showTerms && <TermsModal onAccept={() => setShowTerms(false)} />}
         </>

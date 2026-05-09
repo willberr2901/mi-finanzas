@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192.png', 'icon-512.png'],
+      includeAssets: ['icon-192.png', 'icon-512.png', 'favicon.ico'],
       manifest: {
         name: 'Mi Finanzas',
         short_name: 'Finanzas',
@@ -37,13 +37,11 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['lucide-react', 'react-toastify'],
-          utils: ['date-fns']
+          ui: ['lucide-react', 'react-toastify']
         }
       }
     },
-    chunkSizeWarningLimit: 800,
-    cssCodeSplit: true
+    chunkSizeWarningLimit: 800
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom', 'lucide-react', 'react-toastify']
