@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, DollarSign, Save, X, ChevronDown, ChevronUp, History, Edit } from 'lucide-react';
 import { notify } from '../services/notificationService';
 import { secureStorage } from '../utils/security';
@@ -10,7 +10,7 @@ interface ProfitAccount {
   initialAmount: number;
   annualRate: number;
   createdAt: string;
-  history?: Array<{ date: string; balance: number; interest: number }>;
+  history: Array<{ date: string; balance: number; interest: number }>;
 }
 
 const BANKS = ['Bancolombia','Davivienda','Banco de Bogotá','BBVA','Falabella','Nequi','Daviplata','Nu Bank','RappiPay','Bancóldex','BAC Credomatic','Colpatria','Citibank','Deutsche Bank','Girobank','Interbank','Itaú','JPMorgan Chase','Kasba','Mercantil','Pibank','Scotiabank','Sudameris','Urbano','Wurbancard','Otro'];
@@ -27,6 +27,7 @@ export default function ProfitabilityPage() {
   const [accountType, setAccountType] = useState('Cuenta de Ahorros');
   const [initialAmount, setInitialAmount] = useState('');
   const [annualRate, setAnnualRate] = useState('');
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const saved = secureStorage.getItem('profitAccounts');
@@ -48,7 +49,8 @@ export default function ProfitabilityPage() {
     }
   }, [accounts]);
 
-  const handleSave = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!entityName || !initialAmount || !annualRate) {
       notify({ title: '❌ Error', message: 'Completa todos los campos.', type: 'error' }); return;
     }
@@ -83,7 +85,14 @@ export default function ProfitabilityPage() {
 
   const getMetrics = (a: ProfitAccount) => {
     const daily = (a.initialAmount * (a.annualRate/100))/365;
-    return { daily, yesterday: a.initialAmount - daily, today: a.initialAmount };
+    const accountAgeHours = (new Date().getTime() - new Date(a.createdAt).getTime()) / 3600000;
+    const showYesterday = accountAgeHours > 24 || a.history.length > 1;
+    return {
+      daily,
+      showYesterday,
+      yesterdayBalance: showYesterday ? a.initialAmount - daily : 0,
+      currentBalance: a.initialAmount
+    };
   };
 
   const proj = (amt: number, rate: number) => {
@@ -100,7 +109,6 @@ export default function ProfitabilityPage() {
       </div>
 
       <div className="bg-gradient-to-br from-emerald-900 to-teal-900 rounded-2xl p-5 border border-emerald-500/30 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/20 rounded-full blur-xl -mr-8 -mt-8"></div>
         <p className="text-emerald-300 text-xs font-bold uppercase tracking-wider mb-1">Interés Generado HOY</p>
         <p className="text-4xl font-bold text-white">${accounts.reduce((s,a)=>s+((a.initialAmount*(a.annualRate/100))/365),0).toLocaleString('es-CO',{minimumFractionDigits:2})}</p>
         <p className="text-xs text-emerald-400/80 mt-1">{accounts.length} cuenta(s) activa(s)</p>
@@ -121,20 +129,29 @@ export default function ProfitabilityPage() {
                     <button onClick={()=>handleDelete(a.id)} className="text-red-400 p-1"><Trash2 size={16}/></button>
                   </div>
                 </div>
+                
                 <div className="bg-black/30 rounded-xl p-3 mb-3 space-y-2">
-                  <div className="flex justify-between text-sm"><span className="text-slate-400">Saldo Ayer</span><span>${m.yesterday.toLocaleString('es-CO',{minimumFractionDigits:2})}</span></div>
-                  <div className="flex justify-center"><ChevronDown className="text-emerald-500 rotate-90" size={14}/></div>
-                  <div className="flex justify-between text-sm"><span className="text-emerald-400 font-bold">Saldo Hoy</span><span className="font-bold text-white">${m.today.toLocaleString('es-CO',{minimumFractionDigits:2})}</span></div>
+                  {m.showYesterday ? (
+                    <>
+                      <div className="flex justify-between text-sm"><span className="text-slate-400">Saldo Ayer</span><span>${m.yesterdayBalance.toLocaleString('es-CO',{minimumFractionDigits:2})}</span></div>
+                      <div className="flex justify-center"><ChevronDown className="text-emerald-500 rotate-90" size={14}/></div>
+                    </>
+                  ) : (
+                    <div className="text-center text-xs text-slate-500 mb-1">Cuenta nueva • Sin registro anterior</div>
+                  )}
+                  <div className="flex justify-between text-sm"><span className="text-emerald-400 font-bold">Saldo Actual</span><span className="font-bold text-white">${m.currentBalance.toLocaleString('es-CO',{minimumFractionDigits:2})}</span></div>
                   <div className="pt-2 border-t border-white/10 flex justify-between text-xs"><span className="text-slate-500 uppercase">Interés Hoy</span><span className="text-emerald-400 font-bold">+${m.daily.toLocaleString('es-CO',{minimumFractionDigits:2})}</span></div>
                 </div>
+
                 <div className="flex gap-2">
                   <button onClick={()=>setExpandedId(expandedId===a.id?null:a.id)} className="flex-1 text-xs text-slate-400 bg-white/5 py-2 rounded-lg flex items-center justify-center gap-1 hover:bg-white/10">
-                    {expandedId===a.id?<ChevronUp size={12}/>:<ChevronDown size={12}/>} {expandedId===a.id?'Ocultar Proyección':'Proyección 12M'}
+                    {expandedId===a.id?<ChevronUp size={12}/>:<ChevronDown size={12}/>} {expandedId===a.id?'Ocultar':'Proyección 12M'}
                   </button>
                   <button onClick={()=>setHistoryId(historyId===a.id?null:a.id)} className="flex-1 text-xs text-slate-400 bg-white/5 py-2 rounded-lg flex items-center justify-center gap-1 hover:bg-white/10">
-                    <History size={12}/> {historyId===a.id?'Ocultar Historial':'Historial Diario'}
+                    <History size={12}/> {historyId===a.id?'Ocultar':'Historial'}
                   </button>
                 </div>
+
                 {expandedId===a.id && (
                   <div className="mt-3 bg-black/30 rounded-lg p-3 overflow-x-auto">
                     <table className="w-full text-xs">
@@ -143,7 +160,7 @@ export default function ProfitabilityPage() {
                     </table>
                   </div>
                 )}
-                {historyId===a.id && a.history && a.history.length > 0 && (
+                {historyId===a.id && a.history.length > 0 && (
                   <div className="mt-3 bg-black/30 rounded-lg p-3 max-h-40 overflow-y-auto">
                     <table className="w-full text-xs">
                       <thead className="text-slate-500 border-b border-white/10"><tr><th className="py-1">Fecha</th><th className="text-right py-1">Interés</th><th className="text-right py-1">Saldo</th></tr></thead>
@@ -159,16 +176,19 @@ export default function ProfitabilityPage() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-6 border-t sm:border border-slate-700 shadow-2xl max-h-[90vh] flex flex-col">
-            <div className="flex justify-between items-center mb-4"><h2 className="text-xl font-bold text-white">{editingId?'Editar Cuenta':'Nueva Cuenta'}</h2><button onClick={()=>setIsModalOpen(false)} className="text-slate-400"><X size={24}/></button></div>
-            <div className="flex-1 overflow-y-auto space-y-4 pb-24">
+          <div ref={modalRef} className="bg-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-700 shadow-2xl h-[95vh] sm:h-auto flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b border-slate-800">
+              <h2 className="text-xl font-bold text-white">{editingId?'Editar Cuenta':'Nueva Cuenta'}</h2>
+              <button onClick={()=>setIsModalOpen(false)} className="text-slate-400"><X size={24}/></button>
+            </div>
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
               <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Entidad Financiera</label><select value={entityName} onChange={e=>setEntityName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none"><option value="">Selecciona un banco...</option>{BANKS.map(b=><option key={b} value={b}>{b}</option>)}</select></div>
               <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Tipo de Producto</label><select value={accountType} onChange={e=>setAccountType(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none">{ACCOUNT_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></div>
               <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Monto Actual ($)</label><input type="number" placeholder="Ej: 1000000" value={initialAmount} onChange={e=>setInitialAmount(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none"/></div>
               <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Tasa Anual (%)</label><input type="number" step="0.01" placeholder="Ej: 9.5" value={annualRate} onChange={e=>setAnnualRate(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none"/></div>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-slate-900 border-t border-slate-800 rounded-b-2xl sm:static sm:bg-transparent sm:border-0">
-              <button onClick={handleSave} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2">
+            </form>
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-slate-900 border-t border-slate-800 rounded-b-2xl">
+              <button type="submit" onClick={handleSubmit} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2">
                 <Save size={20}/> {editingId?'Actualizar':'Guardar Configuración'}
               </button>
             </div>

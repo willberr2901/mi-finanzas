@@ -2,42 +2,52 @@ import { useEffect } from 'react';
 import { ToastContainer, Slide } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const customStyles = `
-  .Toastify__toast {
-    background: #0f172a !important;
-    color: white !important;
-    border-radius: 12px !important;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.8) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    font-family: 'Inter', sans-serif !important;
-    min-height: 60px !important;
-    opacity: 1 !important;
-    z-index: 9999 !important;
-  }
-  .Toastify__toast-body {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 14px !important;
-    font-weight: 500;
-    color: #ffffff !important;
-  }
-  .Toastify__close-button { color: #94a3b8 !important; opacity: 1 !important; margin-left: 10px !important; }
-  .Toastify__progress-bar { height: 4px !important; background: linear-gradient(90deg, #10b981, #3b82f6) !important; }
-`;
-
 export default function ToastProvider() {
   useEffect(() => {
-    const styleElement = document.createElement('style');
-    styleElement.innerHTML = customStyles;
-    document.head.appendChild(styleElement);
-    return () => { document.head.removeChild(styleElement); };
+    const style = document.createElement('style');
+    style.textContent = `
+      .Toastify__toast {
+        background: #0f172a !important;
+        backdrop-filter: none !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.9) !important;
+        border: 1px solid #334155 !important;
+        opacity: 1 !important;
+        z-index: 99999 !important;
+        border-radius: 12px !important;
+        padding: 0 !important;
+      }
+      .Toastify__toast-body {
+        color: #ffffff !important;
+        font-weight: 500 !important;
+        padding: 12px 16px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+      }
+      .Toastify__close-button {
+        color: #94a3b8 !important;
+        opacity: 1 !important;
+        margin-left: auto !important;
+        padding: 8px !important;
+      }
+      .Toastify__progress-bar {
+        height: 4px !important;
+        background: #10b981 !important;
+        border-radius: 0 0 12px 12px !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // ✅ FIX: .remove() retorna void, solucionando el error TS2345
+    return () => {
+      style.remove();
+    };
   }, []);
 
   return (
     <ToastContainer
       position="top-center"
-      autoClose={5000}
+      autoClose={4000}
       hideProgressBar={false}
       newestOnTop
       closeOnClick
@@ -48,7 +58,6 @@ export default function ToastProvider() {
       theme="dark"
       transition={Slide}
       limit={3}
-      toastClassName={() => "mb-4"}
     />
   );
 }
