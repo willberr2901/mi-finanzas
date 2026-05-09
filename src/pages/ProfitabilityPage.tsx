@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, DollarSign, Percent, Save, X, ChevronDown, ChevronUp, TrendingUp, Calendar, ArrowRight, Edit, History } from 'lucide-react';
+import { Plus, Trash2, DollarSign, Save, X, ChevronDown, ChevronUp, History, Edit } from 'lucide-react';
 import { notify } from '../services/notificationService';
 import { secureStorage } from '../utils/security';
 
@@ -13,355 +13,142 @@ interface ProfitAccount {
   history?: Array<{ date: string; balance: number; interest: number }>;
 }
 
-const BANKS = [
-  'Bancolombia', 'Davivienda', 'Banco de Bogotá', 'BBVA', 'Falabella', 
-  'Nequi', 'Daviplata', 'Nu Bank', 'RappiPay', 'Bancóldex', 'BAC Credomatic',
-  'Colpatria', 'Citibank', 'Deutsche Bank', 'Girobank', 'Interbank', 
-  'Itaú', 'JPMorgan Chase', 'Kasba', 'Mercantil', 'Pibank', 'Scotiabank',
-  'Sudameris', 'Urbano', 'Wurbancard', 'Otro'
-];
-
-const ACCOUNT_TYPES = ['Cuenta de Ahorros', 'CDT', 'Fondo de Inversión', 'Cuenta Corriente'];
+const BANKS = ['Bancolombia','Davivienda','Banco de Bogotá','BBVA','Falabella','Nequi','Daviplata','Nu Bank','RappiPay','Bancóldex','BAC Credomatic','Colpatria','Citibank','Deutsche Bank','Girobank','Interbank','Itaú','JPMorgan Chase','Kasba','Mercantil','Pibank','Scotiabank','Sudameris','Urbano','Wurbancard','Otro'];
+const ACCOUNT_TYPES = ['Cuenta de Ahorros','CDT','Fondo de Inversión','Cuenta Corriente'];
 
 export default function ProfitabilityPage() {
   const [accounts, setAccounts] = useState<ProfitAccount[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [historyAccountId, setHistoryAccountId] = useState<string | null>(null);
+  const [historyId, setHistoryId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   
-  // Estado del Formulario
   const [entityName, setEntityName] = useState('');
   const [accountType, setAccountType] = useState('Cuenta de Ahorros');
-  const [initialAmount, setInitialAmount] = useState<string>('');
-  const [annualRate, setAnnualRate] = useState<string>('');
+  const [initialAmount, setInitialAmount] = useState('');
+  const [annualRate, setAnnualRate] = useState('');
 
-  // Cargar datos
   useEffect(() => {
-    const savedAccounts = secureStorage.getItem('miFinanzasProfitAccounts');
-    if (savedAccounts && Array.isArray(savedAccounts)) {
-      setAccounts(savedAccounts);
-    }
+    const saved = secureStorage.getItem('profitAccounts');
+    if (saved && Array.isArray(saved)) setAccounts(saved);
   }, []);
 
-  // Guardar datos
   useEffect(() => {
-    if (accounts.length > 0) {
-      secureStorage.setItem('miFinanzasProfitAccounts', accounts);
-    } else {
-      secureStorage.removeItem('miFinanzasProfitAccounts');
-    }
+    if (accounts.length > 0) secureStorage.setItem('profitAccounts', accounts);
   }, [accounts]);
 
-  // Actualizar historial diario
   useEffect(() => {
     const today = new Date().toLocaleDateString('es-CO');
-    
-    setAccounts(prevAccounts => prevAccounts.map(acc => {
-      const dailyInterest = (acc.initialAmount * (acc.annualRate / 100)) / 365;
-      const newBalance = acc.initialAmount + dailyInterest;
-      
-      // Crear o actualizar historial
-      let updatedHistory = acc.history || [];
-      const todayEntry = updatedHistory.find(h => h.date === today);
-      
-      if (!todayEntry) {
-        updatedHistory.push({
-          date: today,
-          balance: newBalance,
-          interest: dailyInterest
-        });
-      } else {
-        todayEntry.balance = newBalance;
-        todayEntry.interest = dailyInterest;
-      }
-      
-      // Mantener solo últimos 90 días
-      updatedHistory = updatedHistory.slice(-90);
-      
-      return { ...acc, history: updatedHistory };
-    }));
-  }, []);
-
-  // Notificación diaria única
-  useEffect(() => {
-    const today = new Date().toLocaleDateString('es-CO');
-    const key = `profit_notified_${today}`;
-    
-    if (!sessionStorage.getItem(key) && accounts.length > 0) {
-      let totalDaily = 0;
-      accounts.forEach(acc => {
-        totalDaily += (acc.initialAmount * (acc.annualRate / 100)) / 365;
-      });
-
-      if (totalDaily > 0) {
-        notify({
-          title: '💰 Ganancia de Hoy',
-          message: `Has generado aprox. $${formatCurrency(totalDaily)} en intereses hoy.`,
-          type: 'success',
-          duration: 6000,
-          module: 'Rentabilidad'
-        });
-        sessionStorage.setItem(key, 'true');
+    if (!sessionStorage.getItem(`notif_${today}`) && accounts.length > 0) {
+      const total = accounts.reduce((s, a) => s + (a.initialAmount * (a.annualRate/100))/365, 0);
+      if (total > 0) {
+        notify({ title: '💰 Ganancia Hoy', message: `Aprox. $${total.toLocaleString('es-CO',{minimumFractionDigits:2})} en intereses.`, type: 'success' });
+        sessionStorage.setItem(`notif_${today}`, '1');
       }
     }
   }, [accounts]);
 
-  const formatCurrency = (val: number) => val.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  const handleAddOrUpdate = () => {
+  const handleSave = () => {
     if (!entityName || !initialAmount || !annualRate) {
-      notify({ title: '❌ Error', message: 'Completa todos los campos correctamente.', type: 'error' });
-      return;
+      notify({ title: '❌ Error', message: 'Completa todos los campos.', type: 'error' }); return;
     }
-
-    const amount = parseFloat(initialAmount.replace(/[^0-9.-]+/g, ""));
+    const amt = parseFloat(initialAmount.replace(/[^0-9.-]+/g,''));
     const rate = parseFloat(annualRate);
-
-    if (isNaN(amount) || isNaN(rate) || amount <= 0 || rate < 0) {
-      notify({ title: '❌ Error', message: 'Los valores deben ser números positivos.', type: 'error' });
-      return;
+    if (isNaN(amt) || isNaN(rate) || amt <= 0 || rate < 0) {
+      notify({ title: '❌ Error', message: 'Valores deben ser positivos.', type: 'error' }); return;
     }
 
+    const payload = { entityName, accountType, initialAmount: amt, annualRate: rate };
     if (editingId) {
-      // Actualizar cuenta existente
-      setAccounts(prev => prev.map(acc => 
-        acc.id === editingId 
-          ? { ...acc, entityName, accountType, initialAmount: amount, annualRate: rate }
-          : acc
-      ));
-      notify({ title: '✅ Cuenta Actualizada', message: `${entityName}`, type: 'success' });
+      setAccounts(prev => prev.map(a => a.id === editingId ? { ...a, ...payload } : a));
+      notify({ title: '✅ Actualizada', message: entityName, type: 'success' });
     } else {
-      // Agregar nueva cuenta
-      const newAcc: ProfitAccount = {
-        id: Date.now().toString(),
-        entityName,
-        accountType,
-        initialAmount: amount,
-        annualRate: rate,
-        createdAt: new Date().toISOString(),
-        history: []
-      };
-      setAccounts([...accounts, newAcc]);
-      notify({ title: '✅ Cuenta Agregada', message: `${entityName}`, type: 'success' });
+      setAccounts(prev => [...prev, { ...payload, id: Date.now().toString(), createdAt: new Date().toISOString(), history: [] }]);
+      notify({ title: '✅ Agregada', message: entityName, type: 'success' });
     }
-
-    resetForm();
-    setIsModalOpen(false);
+    reset(); setIsModalOpen(false);
   };
 
-  const handleEdit = (acc: ProfitAccount) => {
-    setEntityName(acc.entityName);
-    setAccountType(acc.accountType);
-    setInitialAmount(acc.initialAmount.toString());
-    setAnnualRate(acc.annualRate.toString());
-    setEditingId(acc.id);
-    setIsModalOpen(true);
+  const handleEdit = (a: ProfitAccount) => {
+    setEntityName(a.entityName); setAccountType(a.accountType);
+    setInitialAmount(a.initialAmount.toString()); setAnnualRate(a.annualRate.toString());
+    setEditingId(a.id); setIsModalOpen(true);
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('¿Eliminar esta cuenta?')) {
-      setAccounts(accounts.filter(a => a.id !== id));
-      notify({ title: '🗑️ Eliminada', message: 'Cuenta eliminada', type: 'info' });
-    }
+    if (confirm('¿Eliminar?')) { setAccounts(prev => prev.filter(a => a.id !== id)); notify({ title: '🗑️ Eliminada', type: 'info' }); }
   };
 
-  const resetForm = () => {
-    setEntityName('');
-    setAccountType('Cuenta de Ahorros');
-    setInitialAmount('');
-    setAnnualRate('');
-    setEditingId(null);
+  const reset = () => { setEntityName(''); setAccountType('Cuenta de Ahorros'); setInitialAmount(''); setAnnualRate(''); setEditingId(null); };
+
+  const getMetrics = (a: ProfitAccount) => {
+    const daily = (a.initialAmount * (a.annualRate/100))/365;
+    return { daily, yesterday: a.initialAmount - daily, today: a.initialAmount };
   };
 
-  const generateProjection = (amount: number, rate: number) => {
-    const rows = [];
-    let currentBalance = amount;
-    const monthlyRate = rate / 100 / 12;
-    
-    for (let i = 1; i <= 12; i++) {
-      const interest = currentBalance * monthlyRate;
-      currentBalance += interest;
-      rows.push({ month: i, interest, balance: currentBalance });
-    }
-    return rows;
-  };
-
-  const getDailyMetrics = (acc: ProfitAccount) => {
-    const dailyInterest = (acc.initialAmount * (acc.annualRate / 100)) / 365;
-    const yesterdayBalance = acc.initialAmount - dailyInterest;
-    const todayBalance = acc.initialAmount; 
-    
-    return {
-      dailyInterest,
-      yesterdayBalance,
-      todayBalance
-    };
+  const proj = (amt: number, rate: number) => {
+    const r: any[] = []; let bal = amt; const mr = rate/100/12;
+    for(let i=1;i<=12;i++){ const int = bal*mr; bal+=int; r.push({m:i,int,bal}); }
+    return r;
   };
 
   return (
-    <div className="p-4 space-y-6 pb-24">
-      {/* Header */}
+    <div className="p-4 pb-28 space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Rentabilidad</h1>
-          <p className="text-slate-400 text-sm">Crece tu dinero día a día</p>
-        </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-emerald-500 hover:bg-emerald-600 text-black p-3 rounded-full shadow-lg transition-transform hover:scale-105"
-        >
-          <Plus size={24} />
-        </button>
+        <div><h1 className="text-2xl font-bold text-white">Rentabilidad</h1><p className="text-slate-400 text-sm">Crece tu dinero día a día</p></div>
+        <button onClick={()=>setIsModalOpen(true)} className="bg-emerald-500 text-black p-3 rounded-full shadow-lg hover:scale-105 transition"><Plus size={24}/></button>
       </div>
 
-      {/* Tarjeta Resumen Global */}
-      <div className="glass-panel bg-gradient-to-br from-emerald-900 to-teal-900 border-emerald-500/30 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl -mr-10 -mt-10"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar size={16} className="text-emerald-400" />
-            <h3 className="text-emerald-300 text-xs font-bold uppercase tracking-wider">Interés Generado HOY</h3>
-          </div>
-          
-          <p className="text-4xl font-bold text-white tracking-tight mb-1">
-            ${formatCurrency(accounts.reduce((sum, acc) => sum + ((acc.initialAmount * (acc.annualRate / 100)) / 365), 0))}
-          </p>
-          
-          <p className="text-xs text-emerald-400/80">
-            Basado en {accounts.length} cuenta(s) activa(s)
-          </p>
-        </div>
+      <div className="bg-gradient-to-br from-emerald-900 to-teal-900 rounded-2xl p-5 border border-emerald-500/30 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/20 rounded-full blur-xl -mr-8 -mt-8"></div>
+        <p className="text-emerald-300 text-xs font-bold uppercase tracking-wider mb-1">Interés Generado HOY</p>
+        <p className="text-4xl font-bold text-white">${accounts.reduce((s,a)=>s+((a.initialAmount*(a.annualRate/100))/365),0).toLocaleString('es-CO',{minimumFractionDigits:2})}</p>
+        <p className="text-xs text-emerald-400/80 mt-1">{accounts.length} cuenta(s) activa(s)</p>
       </div>
 
-      {/* Lista de Cuentas */}
       {accounts.length === 0 ? (
-        <div className="text-center py-12 opacity-60">
-          <DollarSign size={48} className="mx-auto mb-4 text-slate-600" />
-          <p className="text-slate-400">No tienes cuentas configuradas.</p>
-          <button onClick={() => setIsModalOpen(true)} className="mt-4 text-emerald-400 text-sm font-semibold">Agregar primera cuenta</button>
-        </div>
+        <div className="text-center py-12 opacity-60"><DollarSign size={48} className="mx-auto mb-4 text-slate-600"/><p className="text-slate-400">No tienes cuentas configuradas.</p><button onClick={()=>setIsModalOpen(true)} className="mt-4 text-emerald-400 font-semibold">Agregar primera cuenta</button></div>
       ) : (
         <div className="space-y-4">
-          {accounts.map((acc) => {
-            const metrics = getDailyMetrics(acc);
-            const isExpanded = expandedId === acc.id;
-            const showHistory = historyAccountId === acc.id;
-
+          {accounts.map(a => {
+            const m = getMetrics(a);
             return (
-              <div key={acc.id} className="card-pro group relative overflow-hidden">
-                {/* Header de la Tarjeta */}
-                <div className="flex justify-between items-start mb-4 relative z-10">
-                  <div>
-                    <h3 className="font-bold text-white text-lg">{acc.entityName}</h3>
-                    <p className="text-xs text-slate-400">{acc.accountType} • <span className="text-emerald-400">{acc.annualRate}% EA</span></p>
-                  </div>
+              <div key={a.id} className="bg-slate-800/50 rounded-2xl p-4 border border-white/10">
+                <div className="flex justify-between items-start mb-3">
+                  <div><h3 className="font-bold text-white">{a.entityName}</h3><p className="text-xs text-slate-400">{a.accountType} • <span className="text-emerald-400">{a.annualRate}% EA</span></p></div>
                   <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleEdit(acc)}
-                      className="text-blue-400/50 hover:text-blue-500 transition-colors p-2"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(acc.id)}
-                      className="text-red-400/50 hover:text-red-500 transition-colors p-2"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <button onClick={()=>handleEdit(a)} className="text-blue-400 p-1"><Edit size={16}/></button>
+                    <button onClick={()=>handleDelete(a.id)} className="text-red-400 p-1"><Trash2 size={16}/></button>
                   </div>
                 </div>
-
-                {/* Visualización de Crecimiento Diario */}
-                <div className="bg-black/20 rounded-xl p-4 mb-4 border border-white/5">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs text-slate-400">Saldo Ayer</span>
-                    <span className="text-sm text-slate-300">${formatCurrency(metrics.yesterdayBalance)}</span>
-                  </div>
-                  
-                  <div className="flex justify-center my-1">
-                    <ArrowRight className="rotate-90 text-emerald-500" size={16} />
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-emerald-400 font-bold">Saldo Hoy</span>
-                    <span className="text-lg font-bold text-white">${formatCurrency(metrics.todayBalance)}</span>
-                  </div>
-
-                  <div className="mt-2 pt-2 border-t border-white/10 flex justify-between items-center">
-                    <span className="text-[10px] text-slate-500 uppercase">Interés Ganado Hoy</span>
-                    <span className="text-sm font-bold text-emerald-400">+${formatCurrency(metrics.dailyInterest)}</span>
-                  </div>
+                <div className="bg-black/30 rounded-xl p-3 mb-3 space-y-2">
+                  <div className="flex justify-between text-sm"><span className="text-slate-400">Saldo Ayer</span><span>${m.yesterday.toLocaleString('es-CO',{minimumFractionDigits:2})}</span></div>
+                  <div className="flex justify-center"><ChevronDown className="text-emerald-500 rotate-90" size={14}/></div>
+                  <div className="flex justify-between text-sm"><span className="text-emerald-400 font-bold">Saldo Hoy</span><span className="font-bold text-white">${m.today.toLocaleString('es-CO',{minimumFractionDigits:2})}</span></div>
+                  <div className="pt-2 border-t border-white/10 flex justify-between text-xs"><span className="text-slate-500 uppercase">Interés Hoy</span><span className="text-emerald-400 font-bold">+${m.daily.toLocaleString('es-CO',{minimumFractionDigits:2})}</span></div>
                 </div>
-
-                {/* Botones de Acción */}
-                <div className="flex gap-2 mb-4">
-                  <button 
-                    onClick={() => setExpandedId(isExpanded ? null : acc.id)}
-                    className="flex-1 flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-white py-2 transition-colors bg-white/5 rounded-lg"
-                  >
-                    {isExpanded ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-                    <span>{isExpanded ? 'Ocultar Proyección' : 'Ver Proyección Mensual'}</span>
+                <div className="flex gap-2">
+                  <button onClick={()=>setExpandedId(expandedId===a.id?null:a.id)} className="flex-1 text-xs text-slate-400 bg-white/5 py-2 rounded-lg flex items-center justify-center gap-1 hover:bg-white/10">
+                    {expandedId===a.id?<ChevronUp size={12}/>:<ChevronDown size={12}/>} {expandedId===a.id?'Ocultar Proyección':'Proyección 12M'}
                   </button>
-                  
-                  <button 
-                    onClick={() => setHistoryAccountId(showHistory ? null : acc.id)}
-                    className="flex-1 flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-white py-2 transition-colors bg-white/5 rounded-lg"
-                  >
-                    <History size={14}/>
-                    <span>{showHistory ? 'Ocultar Historial' : 'Ver Historial Diario'}</span>
+                  <button onClick={()=>setHistoryId(historyId===a.id?null:a.id)} className="flex-1 text-xs text-slate-400 bg-white/5 py-2 rounded-lg flex items-center justify-center gap-1 hover:bg-white/10">
+                    <History size={12}/> {historyId===a.id?'Ocultar Historial':'Historial Diario'}
                   </button>
                 </div>
-
-                {/* Tabla de Proyección Expandida */}
-                {isExpanded && (
-                  <div className="mt-2 bg-black/20 rounded-lg p-3 animate-in fade-in slide-in-from-top-2">
-                    <table className="w-full text-xs text-left">
-                      <thead>
-                        <tr className="text-slate-500 border-b border-white/5">
-                          <th className="py-2">Mes</th>
-                          <th className="py-2 text-right">Interés</th>
-                          <th className="py-2 text-right">Saldo Acum.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {generateProjection(acc.initialAmount, acc.annualRate).map((row) => (
-                          <tr key={row.month} className="border-b border-white/5 last:border-0 hover:bg-white/5">
-                            <td className="py-2 text-slate-300">{row.month}</td>
-                            <td className="py-2 text-right text-emerald-400">+${formatCurrency(row.interest)}</td>
-                            <td className="py-2 text-right text-white font-medium">${formatCurrency(row.balance)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
+                {expandedId===a.id && (
+                  <div className="mt-3 bg-black/30 rounded-lg p-3 overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead className="text-slate-500 border-b border-white/10"><tr><th className="py-1">Mes</th><th className="text-right py-1">Interés</th><th className="text-right py-1">Saldo</th></tr></thead>
+                      <tbody>{proj(a.initialAmount,a.annualRate).map(r=><tr key={r.m} className="border-b border-white/5"><td className="py-1">{r.m}</td><td className="text-right text-emerald-400">+${r.int.toLocaleString('es-CO',{maximumFractionDigits:2})}</td><td className="text-right text-white">${r.bal.toLocaleString('es-CO',{maximumFractionDigits:2})}</td></tr>)}</tbody>
                     </table>
                   </div>
                 )}
-
-                {/* Historial Diario */}
-                {showHistory && acc.history && acc.history.length > 0 && (
-                  <div className="mt-2 bg-black/20 rounded-lg p-3 animate-in fade-in slide-in-from-top-2">
-                    <h4 className="text-sm font-bold text-white mb-2">Historial de los Últimos Días</h4>
-                    <div className="max-h-40 overflow-y-auto">
-                      <table className="w-full text-xs text-left">
-                        <thead>
-                          <tr className="text-slate-500 border-b border-white/5">
-                            <th className="py-2">Fecha</th>
-                            <th className="py-2 text-right">Interés</th>
-                            <th className="py-2 text-right">Saldo</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {[...acc.history].reverse().slice(0, 10).map((entry, idx) => (
-                            <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/5">
-                              <td className="py-2 text-slate-300">{entry.date}</td>
-                              <td className="py-2 text-right text-emerald-400">+${formatCurrency(entry.interest)}</td>
-                              <td className="py-2 text-right text-white font-medium">${formatCurrency(entry.balance)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                {historyId===a.id && a.history && a.history.length > 0 && (
+                  <div className="mt-3 bg-black/30 rounded-lg p-3 max-h-40 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="text-slate-500 border-b border-white/10"><tr><th className="py-1">Fecha</th><th className="text-right py-1">Interés</th><th className="text-right py-1">Saldo</th></tr></thead>
+                      <tbody>{[...a.history].reverse().slice(0,15).map((h,i)=><tr key={i} className="border-b border-white/5"><td className="py-1">{h.date}</td><td className="text-right text-emerald-400">+${h.interest.toLocaleString('es-CO',{maximumFractionDigits:2})}</td><td className="text-right text-white">${h.balance.toLocaleString('es-CO',{maximumFractionDigits:2})}</td></tr>)}</tbody>
+                    </table>
                   </div>
                 )}
               </div>
@@ -370,73 +157,19 @@ export default function ProfitabilityPage() {
         </div>
       )}
 
-      {/* Modal Moderno */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-6 border-t sm:border border-slate-700 shadow-2xl animate-in slide-in-from-bottom-10 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-white">{editingId ? 'Editar Cuenta' : 'Nueva Cuenta'}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">
-                <X size={24} />
-              </button>
+          <div className="bg-slate-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-6 border-t sm:border border-slate-700 shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4"><h2 className="text-xl font-bold text-white">{editingId?'Editar Cuenta':'Nueva Cuenta'}</h2><button onClick={()=>setIsModalOpen(false)} className="text-slate-400"><X size={24}/></button></div>
+            <div className="flex-1 overflow-y-auto space-y-4 pb-24">
+              <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Entidad Financiera</label><select value={entityName} onChange={e=>setEntityName(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none"><option value="">Selecciona un banco...</option>{BANKS.map(b=><option key={b} value={b}>{b}</option>)}</select></div>
+              <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Tipo de Producto</label><select value={accountType} onChange={e=>setAccountType(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none">{ACCOUNT_TYPES.map(t=><option key={t} value={t}>{t}</option>)}</select></div>
+              <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Monto Actual ($)</label><input type="number" placeholder="Ej: 1000000" value={initialAmount} onChange={e=>setInitialAmount(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none"/></div>
+              <div><label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Tasa Anual (%)</label><input type="number" step="0.01" placeholder="Ej: 9.5" value={annualRate} onChange={e=>setAnnualRate(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none"/></div>
             </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Entidad Financiera</label>
-                <select 
-                  value={entityName}
-                  onChange={(e) => setEntityName(e.target.value)}
-                  className="input-modern"
-                >
-                  <option value="">Selecciona un banco...</option>
-                  {BANKS.map(b => <option key={b} value={b}>{b}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Tipo de Producto</label>
-                <select 
-                  value={accountType}
-                  onChange={(e) => setAccountType(e.target.value)}
-                  className="input-modern"
-                >
-                  {ACCOUNT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Monto Actual ($)</label>
-                <input 
-                  type="number" 
-                  placeholder="Ej: 1000000"
-                  value={initialAmount}
-                  onChange={(e) => setInitialAmount(e.target.value)}
-                  className="input-modern"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1 uppercase font-bold">Tasa Anual (%)</label>
-                <div className="relative">
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    placeholder="Ej: 9.5"
-                    value={annualRate}
-                    onChange={(e) => setAnnualRate(e.target.value)}
-                    className="input-modern pr-10"
-                  />
-                  <Percent className="absolute right-3 top-3 text-slate-500" size={20} />
-                </div>
-              </div>
-
-              {/* ✅ BOTÓN GUARDAR SIEMPRE VISIBLE Y CLARO */}
-              <button 
-                onClick={handleAddOrUpdate}
-                className="btn-primary mt-6 w-full"
-              >
-                <Save size={20} /> {editingId ? 'Actualizar Configuración' : 'Guardar Configuración'}
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-slate-900 border-t border-slate-800 rounded-b-2xl sm:static sm:bg-transparent sm:border-0">
+              <button onClick={handleSave} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2">
+                <Save size={20}/> {editingId?'Actualizar':'Guardar Configuración'}
               </button>
             </div>
           </div>

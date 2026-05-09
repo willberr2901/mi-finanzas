@@ -1,12 +1,10 @@
-// Utilidades de seguridad y cifrado
+// src/utils/security.ts
 
-// Sanitizar inputs (previene XSS)
+// ✅ SANITIZE INPUT (PREVIENE XSS)
 export const sanitizeInput = (input: string): string => {
   if (typeof input !== 'string') return '';
-  
   const div = document.createElement('div');
   div.textContent = input;
-  
   return div.innerHTML
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -16,24 +14,20 @@ export const sanitizeInput = (input: string): string => {
     .trim();
 };
 
-// Validar email
 export const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-// Validar PIN (4-6 dígitos)
 export const isValidPIN = (pin: string): boolean => {
   return /^\d{4,6}$/.test(pin);
 };
 
-// Validar monto (número positivo)
 export const isValidAmount = (amount: number | string): boolean => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   return !isNaN(num) && num >= 0 && num <= 999999999;
 };
 
-// Hash simple para PIN (no es criptográfico pero sirve para comparación básica)
 export const hashPIN = (pin: string): string => {
   let hash = 0;
   for (let i = 0; i < pin.length; i++) {
@@ -44,7 +38,6 @@ export const hashPIN = (pin: string): string => {
   return hash.toString(36);
 };
 
-// Cifrado simple usando localStorage (para datos sensibles básicos)
 export const encryptData = (data: any, key: string = 'mi-finanzas-key-2026'): string => {
   try {
     const str = JSON.stringify(data);
@@ -73,92 +66,115 @@ export const decryptData = (encrypted: string, key: string = 'mi-finanzas-key-20
   }
 };
 
-// Rate limiting simple (para intentos de PIN)
 export class RateLimiter {
   private static attempts: Map<string, { count: number; resetTime: number }> = new Map();
-  
+
   static check(key: string, maxAttempts: number = 5, windowMs: number = 15 * 60 * 1000): boolean {
     const now = Date.now();
     const record = this.attempts.get(key);
-    
+
     if (!record || now > record.resetTime) {
       this.attempts.set(key, { count: 1, resetTime: now + windowMs });
       return true;
     }
-    
+
     if (record.count >= maxAttempts) {
       return false;
     }
-    
+
     record.count++;
     return true;
   }
-  
+
   static reset(key: string): void {
     this.attempts.delete(key);
   }
 }
 
-// Verificar integridad de datos
 export const verifyDataIntegrity = (data: any): boolean => {
   if (!data || typeof data !== 'object') return false;
   const str = JSON.stringify(data);
   return !/<script|javascript:|onerror=|onload=/i.test(str);
 };
 
-// Guardar en localStorage de forma segura
+// ✅ CONFIGURACIÓN CENTRALIZADA (Evita problemas de contexto 'this')
+const STORAGE_CONFIG = {
+  KEY_PREFIX: 'miFinanzas_v2_',
+  ENCRYPT_KEY: 'finanzas-key-2026-secure'
+};
+
 export const secureStorage = {
-  setItem: (key: string, value: any): void => {
+  KEY_PREFIX: STORAGE_CONFIG.KEY_PREFIX,
+  ENCRYPT_KEY: STORAGE_CONFIG.ENCRYPT_KEY,
+
+  getItem(key: string): any {
     try {
-      const encrypted = encryptData(value);
-      localStorage.setItem(key, encrypted);
-    } catch (e) {
-      console.error('Error guardando datos:', e);
-    }
-  },
-  
-  getItem: (key: string): any => {
-    try {
-      const encrypted = localStorage.getItem(key);
-      if (!encrypted) return null;
-      return decryptData(encrypted);
-    } catch (e) {
-      console.error('Error leyendo datos:', e);
+      const raw = localStorage.getItem(`${this.KEY_PREFIX}${key}`);
+      if (!raw) return null;
+
+      try {
+        const decrypted = atob(raw)
+          .split('')
+          .map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ this.ENCRYPT_KEY.charCodeAt(i % this.ENCRYPT_KEY.length)))
+          .join('');
+        return JSON.parse(decrypted);
+      } catch {
+        console.warn('[Storage] Desencriptación fallida, intentando raw JSON:', key);
+        return JSON.parse(raw);
+      }
+    } catch (err) {
+      console.error('[Storage] Error lectura:', err);
       return null;
     }
   },
-  
-  removeItem: (key: string): void => {
-    localStorage.removeItem(key);
+
+  setItem(key: string, value: any): void {
+    try {
+      const json = JSON.stringify(value);
+      const encrypted = json
+        .split('')
+        .map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ this.ENCRYPT_KEY.charCodeAt(i % this.ENCRYPT_KEY.length)))
+        .join('');
+      localStorage.setItem(`${this.KEY_PREFIX}${key}`, btoa(encrypted));
+    } catch (err) {
+      console.error('[Storage] Error escritura:', err);
+    }
   },
-  
-  clear: (): void => {
-    localStorage.clear();
+
+  removeItem(key: string): void {
+    localStorage.removeItem(`${this.KEY_PREFIX}${key}`);
+  },
+
+  clear(): void {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(this.KEY_PREFIX)) {
+        localStorage.removeItem(key);
+      }
+    }
   }
 };
-// ✅ FUNCIONES DE BACKUP PARA SettingsPage.tsx
 
+// ✅ BACKUP Y RESTORE (Corregido: usa STORAGE_CONFIG en lugar de 'this')
 export const createBackup = async (): Promise<Blob | null> => {
   try {
     const data: Record<string, any> = {};
-    
-    // Recopilar todos los datos de localStorage que empiecen con 'miFinanzas'
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith('miFinanzas')) {
-        data[key] = localStorage.getItem(key);
+      if (key && key.startsWith(STORAGE_CONFIG.KEY_PREFIX)) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          data[key] = value;
+        }
       }
     }
-    
+
     if (Object.keys(data).length === 0) {
       return null;
     }
-    
-    // Cifrar los datos antes de guardar
+
     const encryptedData = encryptData(data);
-    const blob = new Blob([encryptedData], { type: 'application/json' });
-    
-    return blob;
+    return new Blob([encryptedData], { type: 'application/json' });
   } catch (e) {
     console.error('Error creando backup:', e);
     return null;
@@ -168,31 +184,25 @@ export const createBackup = async (): Promise<Blob | null> => {
 export const restoreBackup = async (file: File): Promise<boolean> => {
   try {
     const text = await file.text();
-    
-    // Intentar descifrar
     let data: Record<string, any>;
+
     try {
       const decrypted = decryptData(text);
       if (!decrypted || typeof decrypted !== 'object') {
         throw new Error('Datos inválidos');
       }
       data = decrypted;
-    } catch (e) {
-      // Si falla el descifrado, intentar como JSON normal (backup antiguo sin cifrado)
-      try {
-        data = JSON.parse(text);
-      } catch (e2) {
-        throw new Error('Archivo de backup inválido o corrupto');
-      }
+    } catch {
+      // Fallback para backups antiguos sin cifrado
+      data = JSON.parse(text);
     }
-    
-    // Restaurar datos
+
     for (const [key, value] of Object.entries(data)) {
-      if (key.startsWith('miFinanzas') && typeof value === 'string') {
+      if (key.startsWith(STORAGE_CONFIG.KEY_PREFIX) && typeof value === 'string') {
         localStorage.setItem(key, value);
       }
     }
-    
+
     return true;
   } catch (e) {
     console.error('Error restaurando backup:', e);
