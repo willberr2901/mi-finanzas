@@ -190,7 +190,7 @@ export default function ProfitabilityPage() {
             </form>
 
             <div className="p-4 border-t border-slate-800 bg-slate-900 flex-shrink-0 rounded-b-2xl">
-              <button type="submit" onClick={handleSubmit} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+              <button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
                 <Save size={20}/> {editingId?'Actualizar Cuenta':'Guardar Configuración'}
               </button>
             </div>
