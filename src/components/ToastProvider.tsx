@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { toast, ToastContainer, Slide } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { CheckCircle, AlertTriangle, Info, XCircle, Bell } from 'lucide-react';
 
 // Estilos personalizados inyectados para máxima visibilidad
 const customStyles = `
@@ -13,6 +12,7 @@ const customStyles = `
     border: 1px solid rgba(255,255,255,0.1) !important;
     font-family: 'Inter', sans-serif !important;
     min-height: 60px !important;
+    opacity: 1 !important; /* Forzar opacidad completa */
   }
   
   .Toastify__toast-body {

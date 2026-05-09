@@ -328,9 +328,10 @@ export default function ProfitabilityPage() {
                 </div>
               </div>
 
+              {/* ✅ BOTÓN GUARDAR SIEMPRE VISIBLE Y CLARO */}
               <button 
                 onClick={handleAdd}
-                className="btn-primary mt-6"
+                className="btn-primary mt-6 w-full"
               >
                 <Save size={20} /> Guardar Configuración
               </button>

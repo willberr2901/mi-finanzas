@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, ShoppingCart, Scan, CreditCard, Plus, Shield, Settings, History, PieChart, Bell } from 'lucide-react';
+import { Home, ShoppingCart, Scan, CreditCard, Plus, Shield, Settings, History, PieChart } from 'lucide-react';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
 
@@ -24,7 +24,7 @@ import FeedbackButton from './components/FeedbackButton';
 // Servicios
 import { notify, setAuditLogFunction, type AuditEntry } from './services/notificationService';
 
-// ✅ SIMULACIÓN DE VERSIÓN DEL SERVIDOR (Cambia esto cuando subas código nuevo)
+// ✅ VERSIÓN DEL SERVIDOR (Cambia esto para forzar actualización)
 const SERVER_VERSION = "1.0.4"; 
 
 function NavBar() {
@@ -69,6 +69,15 @@ function NavBar() {
       >
         <Plus className="w-8 h-8" />
       </button>
+
+      {/* Botón Bloquear Superior */}
+      <button 
+        onClick={lockNow}
+        className="fixed top-4 right-4 z-50 w-10 h-10 rounded-full bg-slate-800/80 backdrop-blur border border-white/10 flex items-center justify-center hover:bg-slate-700 transition-colors"
+        title="Bloquear app"
+      >
+        <Shield className="w-5 h-5 text-slate-300" />
+      </button>
     </>
   );
 }
@@ -77,6 +86,7 @@ function AppContent() {
   const [userName, setUserName] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showUpdatePopup, setShowUpdatePopup] = useState(false); // ✅ Estado para popup actualización
   const { isLocked, isSetup } = useSecurity();
 
   // Configurar auditoría
@@ -98,27 +108,18 @@ function AppContent() {
     setAuditLogFunction(logFunction);
   }, []);
 
-  // ✅ LÓGICA DE DETECCIÓN DE ACTUALIZACIÓN "SI O SI"
+  // ✅ LÓGICA DE DETECCIÓN DE ACTUALIZACIÓN "SI O SI" CON POPUP
   useEffect(() => {
     const currentVersion = localStorage.getItem('appVersion') || "0.0.0";
     
     if (currentVersion !== SERVER_VERSION) {
-      // Hay una nueva versión
-      notify({
-        title: '🚀 ¡Nueva Versión Disponible!',
-        message: `Se ha detectado la versión ${SERVER_VERSION}. Se están aplicando mejoras automáticamente...`,
-        type: 'success',
-        duration: 8000, // Duración larga para leer
-        module: 'System'
-      });
+      // Hay una nueva versión -> Mostrar Popup Obligatorio
+      setShowUpdatePopup(true);
       
-      // Actualizar versión local
-      localStorage.setItem('appVersion', SERVER_VERSION);
-      
-      // Forzar recarga limpia después de un momento
+      // Actualizar versión local después de mostrar popup
       setTimeout(() => {
-        window.location.reload();
-      }, 3000);
+        localStorage.setItem('appVersion', SERVER_VERSION);
+      }, 1000);
     } else {
       // Verificación normal de bienvenida
       const NOTIFIED_FLAG = 'miFinanzas_WelcomeNotified_v4';
@@ -145,6 +146,33 @@ function AppContent() {
     const termsAccepted = localStorage.getItem('miFinanzasTermsAccepted');
     if (termsAccepted !== 'true') setShowTerms(true);
   }, []);
+
+  // ✅ LIMPIEZA DE CACHE AL CARGAR NUEVA VERSIÓN
+  useEffect(() => {
+    if ('serviceWorker' in navigator && import.meta.env.PROD) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        registrations.forEach(registration => {
+          registration.update().then(() => {
+            // Si hay nueva versión instalada, limpiar cachés antiguos
+            caches.keys().then(keys => {
+              keys.forEach(key => {
+                if (!key.includes('v4')) { // Asumiendo que la nueva versión es v4
+                  caches.delete(key).then(() => {
+                    console.log(`Cache antiguo eliminado: ${key}`);
+                  });
+                }
+              });
+            });
+          });
+        });
+      });
+    }
+  }, []);
+
+  const handleUpdateReload = () => {
+    setShowUpdatePopup(false);
+    window.location.reload();
+  };
 
   return (
     <>
@@ -173,6 +201,32 @@ function AppContent() {
           />
         )}
         {showTerms && <TermsModal onAccept={() => setShowTerms(false)} />}
+
+        {/* ✅ POPUP DE ACTUALIZACIÓN OBLIGATORIO */}
+        {showUpdatePopup && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <div className="bg-slate-900 w-full max-w-sm rounded-2xl p-6 border border-emerald-500/30 shadow-2xl animate-in zoom-in duration-300">
+              <div className="text-center">
+                <div className="mx-auto w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold text-white mb-2">¡Nueva Versión Disponible!</h2>
+                <p className="text-slate-300 mb-6">
+                  Se ha detectado la versión <strong>{SERVER_VERSION}</strong>.<br/>
+                  Estamos aplicando mejoras automáticas y limpiando datos antiguos para tu mejor experiencia.
+                </p>
+                <button 
+                  onClick={handleUpdateReload}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                >
+                  Actualizar Ahora
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
