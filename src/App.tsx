@@ -8,11 +8,9 @@ import SecurityLock from './components/SecurityLock';
 import WelcomeModal from './components/WelcomeModal';
 import TermsModal from './components/TermsModal';
 import OnboardingTour from './components/OnboardingTour';
-import TopBar from './components/TopBar';
-import SidebarMenu from './components/SidebarMenu';
+import PwaUpdateBanner from './components/ui/PwaUpdateBanner';
 import { db, migrateData } from './utils/database';
 
-// Importación diferida de páginas
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const MarketPage = React.lazy(() => import('./pages/MarketPage'));
 const ReceiptScannerPage = React.lazy(() => import('./pages/ReceiptScannerPage'));
@@ -22,33 +20,31 @@ const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const ReceiptHistoryPage = React.lazy(() => import('./pages/ReceiptHistoryPage'));
 const FinancePage = React.lazy(() => import('./pages/FinancePage'));
 
-// Componente de Navegación Inferior (Corregido)
 function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-
-  const NavButton = ({ path, icon, label }: { path: string, icon: string, label: string }) => {
-    const isActive = location.pathname === path;
-    return (
-      <button 
-        onClick={() => navigate(path)}
-        className={`flex flex-col items-center justify-center py-2 px-4 flex-1 transition-all duration-200 ${isActive ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
-      >
-        <span className="text-2xl mb-1 filter drop-shadow-lg">{icon}</span>
-        <span className="text-[10px] font-medium">{label}</span>
-        {isActive && <div className="absolute top-2 w-8 h-1 bg-emerald-500 rounded-full" />}
-      </button>
-    );
-  };
-
+  
+  const items = [
+    { path: '/', icon: '🏠', label: 'Inicio' },
+    { path: '/finanzas', icon: '💰', label: 'Finanzas' },
+    { path: '/mercado', icon: '🛒', label: 'Mercado' },
+    { path: '/ajustes', icon: '⚙️', label: 'Ajustes' }
+  ];
+  
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-xl border-t border-white/10 pb-safe pt-2">
-      <div className="flex justify-around items-center">
-        <NavButton path="/" icon="🏠" label="Inicio" />
-        <NavButton path="/finanzas" icon="💰" label="Finanzas" />
-        <NavButton path="/mercado" icon="🛒" label="Mercado" />
-        <NavButton path="/ajustes" icon="⚙️" label="Ajustes" />
-      </div>
+    <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-40 bg-slate-950/90 backdrop-blur-xl border border-white/10 rounded-3xl p-2 flex justify-around shadow-2xl">
+      {items.map(i => (
+        <button 
+          key={i.path} 
+          onClick={() => navigate(i.path)} 
+          className={`flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-all ${
+            location.pathname === i.path ? 'text-violet-400 bg-white/5' : 'text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          <span className="text-xl">{i.icon}</span>
+          <span className="text-[10px] font-medium">{i.label}</span>
+        </button>
+      ))}
     </nav>
   );
 }
@@ -59,64 +55,28 @@ function AppContent() {
   const [showTerms, setShowTerms] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isLocked, isSetup } = useSecurity();
-  const location = useLocation();
-
-  // Título dinámico para la barra superior
-  const getPageTitle = () => {
-    const titles: Record<string, string> = {
-      '/': 'Mi Finanzas',
-      '/finanzas': 'Control Financiero',
-      '/mercado': 'Lista Inteligente',
-      '/creditos': 'Simulador Créditos',
-      '/rentabilidad': 'Ganancia Diaria',
-      '/escaner': 'Escáner Facturas',
-      '/historial-facturas': 'Historial',
-      '/ajustes': 'Configuración',
-    };
-    return titles[location.pathname] || 'Mi Finanzas';
-  };
 
   useEffect(() => {
     migrateData().then(() => {
-      db.settings.get('global').then(settings => {
-        if (settings?.onboardingCompleted !== true) setShowOnboarding(true);
+      db.settings.get('global').then(s => { 
+        if (s?.onboardingCompleted !== true) setShowOnboarding(true); 
       });
     });
-    
-    const welcomeDone = localStorage.getItem('miFinanzasWelcomeDone');
-    const savedName = localStorage.getItem('miFinanzasUserName');
-    if (!welcomeDone) setShowWelcome(true);
-    if (savedName) setUserName(savedName);
+    if (!localStorage.getItem('miFinanzasWelcomeDone')) setShowWelcome(true);
+    setUserName(localStorage.getItem('miFinanzasUserName'));
     if (localStorage.getItem('miFinanzasTermsAccepted') !== 'true') setShowTerms(true);
-
-    const timer = setTimeout(() => setShowSplash(false), 1800);
-    return () => clearTimeout(timer);
+    setTimeout(() => setShowSplash(false), 1500);
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white selection:bg-emerald-500/30 font-sans">
+    <div className="min-h-screen bg-[#0B0F19] text-white font-sans pb-24">
       {showSplash && <AnimatedSplash onComplete={() => setShowSplash(false)} />}
-      
       {!showSplash && (
         <>
           {isSetup && isLocked && <SecurityLock />}
-          
-          {/* BARRA SUPERIOR PROFESIONAL */}
-          <TopBar 
-            title={getPageTitle()} 
-            onMenuClick={() => setSidebarOpen(true)} 
-            showBell={location.pathname === '/finanzas'}
-            onBellClick={() => alert('Notificaciones activadas')}
-          />
-
-          {/* MENÚ LATERAL DESPLEGABLE */}
-          <SidebarMenu isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-          {/* CONTENIDO PRINCIPAL */}
-          <Suspense fallback={<div className="flex h-screen items-center justify-center text-emerald-400 pt-20">Cargando...</div>}>
-            <main className="pt-20 pb-24 px-4 min-h-screen overflow-y-auto scroll-smooth">
+          <div className="pt-4 px-4 space-y-6">
+            <Suspense fallback={<div className="flex h-64 items-center justify-center text-violet-400">Cargando...</div>}>
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/finanzas" element={<FinancePage />} />
@@ -127,15 +87,11 @@ function AppContent() {
                 <Route path="/ajustes" element={<SettingsPage />} />
                 <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
               </Routes>
-            </main>
-          </Suspense>
-
-          {/* NAVEGACIÓN INFERIOR */}
+            </Suspense>
+          </div>
           <BottomNav />
-
+          <PwaUpdateBanner />
           <ToastProvider />
-          {/* ELIMINADO: FeedbackButton flotante */}
-          
           {showWelcome && <WelcomeModal onDismiss={() => setShowWelcome(false)} userName={userName} setUserName={setUserName} />}
           {showTerms && <TermsModal onAccept={() => setShowTerms(false)} />}
           {showOnboarding && <OnboardingTour onComplete={() => setShowOnboarding(false)} />}
