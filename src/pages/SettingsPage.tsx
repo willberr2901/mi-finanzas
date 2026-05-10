@@ -1,129 +1,96 @@
-import { useState, useRef } from 'react';
-import { Camera, Shield, Lock, LogOut, Download, Trash2, Moon, Sun, Info } from 'lucide-react';
-import { useSecurity } from '../contexts/SecurityContext';
-import { useTheme } from '../contexts/ThemeContext'; // ✅ Usar hook correcto
+import { useState } from 'react';
+import { Trash2, MessageSquare } from 'lucide-react';
+import { secureStorage } from '../utils/security';
 import { notify } from '../services/notificationService';
 
 export default function SettingsPage() {
-  const { lockNow, setupPin } = useSecurity(); // ✅ setupPin ahora existe
-  const { theme, toggleTheme } = useTheme();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // Estado del usuario
-  const [userName, setUserName] = useState(localStorage.getItem('miFinanzasUserName') || 'Usuario');
-  const [userAvatar, setUserAvatar] = useState(localStorage.getItem('miFinanzasUserAvatar') || '');
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [name, setName] = useState('');
 
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setUserAvatar(base64String);
-        localStorage.setItem('miFinanzasUserAvatar', base64String);
-        notify({ title: '📸 Foto actualizada', message: 'Tu avatar ha sido cambiado.', type: 'success' });
-      };
-      reader.readAsDataURL(file);
+  const handleClearData = () => {
+    if (confirm('⚠️ ¿Borrar todos los datos locales? Esta acción no se puede deshacer.')) {
+      localStorage.clear();
+      sessionStorage.clear();
+      notify({ title: '🗑️ Datos Eliminados', message: 'La app se recargará.', type: 'info' });
+      setTimeout(() => window.location.reload(), 1500);
     }
   };
 
-  const handleBackup = () => {
-    notify({ title: '💾 Backup creado', message: 'Descargando archivo...', type: 'success' });
+  const sendFeedback = () => {
+    if (!feedbackText.trim()) return;
+    // Guardamos feedback localmente
+    const feedbacks = JSON.parse(localStorage.getItem('userFeedback') || '[]');
+    feedbacks.push({ date: new Date().toISOString(), name, message: feedbackText });
+    localStorage.setItem('userFeedback', JSON.stringify(feedbacks));
+
+    notify({ title: '✅ Enviado', message: 'Gracias por tu ayuda.', type: 'success' });
+    setShowFeedback(false);
+    setFeedbackText('');
+    setName('');
   };
 
   return (
-    <div className="p-4 space-y-6 pb-24">
-      <h1 className="text-2xl font-bold text-white">Ajustes</h1>
+    <div className="space-y-6 pb-24 max-w-md mx-auto">
+      
+      {showFeedback && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+           <div className="bg-slate-900 w-full max-w-sm rounded-2xl p-6 border border-emerald-500/30">
+             <h3 className="text-lg font-bold mb-4">Enviar Reporte</h3>
+             
+             <input 
+               type="text" 
+               placeholder="Tu nombre" 
+               className="w-full bg-slate-800 p-3 rounded-xl border border-slate-700 text-white mb-3 focus:border-emerald-500 outline-none"
+               value={name}
+               onChange={(e) => setName(e.target.value)}
+             />
 
-      {/* Perfil de Usuario Mejorado */}
-      <div className="glass-panel flex items-center gap-4">
-        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-black font-bold text-2xl overflow-hidden border-2 border-white/20">
-            {userAvatar ? (
-              <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-              userName.charAt(0).toUpperCase()
-            )}
-          </div>
-          <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <Camera size={20} className="text-white" />
-          </div>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleAvatarChange} 
-            accept="image/*" 
-            className="hidden" 
-          />
+             <textarea 
+               className="w-full bg-slate-800 p-3 rounded-xl border border-slate-700 text-white mb-4 h-32 resize-none focus:border-emerald-500 outline-none"
+               placeholder="Describe el error o sugerencia..."
+               value={feedbackText}
+               onChange={(e) => setFeedbackText(e.target.value)}
+             />
+             
+             <div className="flex gap-2">
+               <button onClick={() => setShowFeedback(false)} className="flex-1 py-3 bg-slate-800 rounded-xl hover:bg-slate-700 transition-colors">Cancelar</button>
+               <button onClick={sendFeedback} className="flex-1 py-3 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 transition-colors">Enviar</button>
+             </div>
+           </div>
         </div>
-        
-        <div className="flex-1">
-          <h2 className="text-lg font-bold text-white">{userName}</h2>
-          <p className="text-xs text-slate-400">Miembro desde {new Date().getFullYear()}</p>
+      )}
+
+      <div className="bg-slate-900/50 p-4 rounded-2xl border border-white/5 space-y-2">
+        <div 
+          onClick={() => setShowFeedback(true)}
+          className="flex justify-between items-center p-4 bg-slate-800/50 rounded-xl border border-white/5 cursor-pointer hover:bg-slate-800 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-blue-500/10 rounded-xl"><MessageSquare size={20} className="text-blue-400"/></div>
+            <div>
+              <h3 className="font-bold">Soporte y Feedback</h3>
+              <p className="text-xs text-slate-400">Reportar un problema o sugerencia</p>
+            </div>
+          </div>
+          <span className="text-slate-500">{'>'}</span>
         </div>
-      </div>
 
-      {/* Apariencia */}
-      <div className="glass-panel">
-        <h3 className="text-sm font-bold text-slate-400 uppercase mb-4">Apariencia</h3>
-        <button onClick={toggleTheme} className="flex items-center justify-between w-full py-3 border-b border-white/5 last:border-0">
+        <div onClick={handleClearData} className="flex justify-between items-center p-4 bg-slate-800/50 rounded-xl border border-red-500/20 cursor-pointer hover:bg-red-500/10 transition-colors">
           <div className="flex items-center gap-3">
-            {theme === 'dark' ? <Moon size={20} className="text-indigo-400"/> : <Sun size={20} className="text-yellow-400"/>}
-            <span className="text-white">{theme === 'dark' ? 'Modo Oscuro' : 'Modo Claro'}</span>
+            <div className="p-3 bg-red-500/10 rounded-xl"><Trash2 size={20} className="text-red-400"/></div>
+            <div>
+              <h3 className="font-bold text-red-400">Borrar Datos</h3>
+              <p className="text-xs text-slate-500">Eliminar todo localmente</p>
+            </div>
           </div>
-          <div className={`w-12 h-6 rounded-full p-1 transition-colors ${theme === 'dark' ? 'bg-emerald-500' : 'bg-slate-600'}`}>
-            <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${theme === 'dark' ? 'translate-x-6' : ''}`} />
-          </div>
-        </button>
-      </div>
-
-      {/* Seguridad */}
-      <div className="glass-panel">
-        <h3 className="text-sm font-bold text-slate-400 uppercase mb-4">Seguridad</h3>
-        
-        <button onClick={() => setupPin(prompt('Ingresa tu nuevo PIN (4 o 6 dígitos):') || '')} className="flex items-center justify-between w-full py-3 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <Shield size={20} className="text-emerald-400"/>
-            <span className="text-white">Activar protección PIN</span>
-          </div>
-          <Lock size={16} className="text-slate-500"/>
-        </button>
-
-        <button onClick={lockNow} className="flex items-center justify-between w-full py-3">
-          <div className="flex items-center gap-3">
-            <LogOut size={20} className="text-red-400"/>
-            <span className="text-white">Bloquear ahora</span>
-          </div>
-        </button>
-      </div>
-
-      {/* Datos */}
-      <div className="glass-panel">
-        <h3 className="text-sm font-bold text-slate-400 uppercase mb-4">Datos</h3>
-        
-        <button onClick={handleBackup} className="flex items-center justify-between w-full py-3 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <Download size={20} className="text-blue-400"/>
-            <span className="text-white">Crear backup</span>
-          </div>
-        </button>
-
-        <button className="flex items-center justify-between w-full py-3 text-red-400">
-          <div className="flex items-center gap-3">
-            <Trash2 size={20} />
-            <span>Borrar todos los datos</span>
-          </div>
-        </button>
+        </div>
       </div>
       
-      {/* Info App */}
-       <div className="glass-panel">
-         <h3 className="text-sm font-bold text-slate-400 uppercase mb-4">Información</h3>
-         <div className="flex items-center gap-3 py-2">
-           <Info size={20} className="text-slate-500"/>
-           <span className="text-sm text-slate-300">Versión v1.0.3 - Beta</span>
-         </div>
-       </div>
+      <div className="text-center text-xs text-slate-500 mt-8">
+        <p>Mi Finanzas v1.1.0 Pro</p>
+        <p className="mt-1">Desarrollado con ❤️</p>
+      </div>
     </div>
   );
 }
