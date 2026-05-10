@@ -19,7 +19,10 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    
+    /* FIX para Windows: desactivar verificación estricta de capitalización */
+    "forceConsistentCasingInFileNames": false
   },
   "include": ["src"]
 }

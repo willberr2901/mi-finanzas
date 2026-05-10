@@ -1,97 +1,108 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, DollarSign, CreditCard, PieChart, TrendingDown, Info } from 'lucide-react';
-import HealthGauge from '../components/HealthGauge';
-import { predictCashFlow } from '../services/financialIntelligence';
-import type { Transaction, SavingsGoal } from '../utils/database';
-import { db } from '../utils/database';
+import { ShoppingCart, DollarSign, CreditCard, TrendingUp, AlertTriangle } from 'lucide-react';
+import Card from '../components/ui/Card';
 
 export default function HomePage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [goals, setGoals] = useState<SavingsGoal[]>([]);
-  const [prediction, setPrediction] = useState<any>(null);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (transactions.length > 0) {
-      setPrediction(predictCashFlow(transactions, 0));
-    }
-  }, [transactions]);
-
-  const loadData = async () => {
-    try {
-      const txs = await db.transactions.toArray();
-      const gals = await db.goals.toArray();
-      setTransactions(txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-      setGoals(gals);
-    } catch {}
-  };
-
-  const formatCurrency = (v: number) => v.toLocaleString('es-CO', { minimumFractionDigits: 2 });
-
   return (
-    <div className="p-4 pb-24 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Mi Finanzas</h1>
-          <p className="text-gray-400 text-sm">Bienvenido de nuevo 👋</p>
-        </div>
+    <div className="space-y-6">
+      {/* Saludo */}
+      <div>
+        <h1 className="text-2xl font-bold text-white">Mi Finanzas</h1>
+        <p className="text-slate-400">Bienvenido de nuevo 👋</p>
       </div>
 
-      <HealthGauge transactions={transactions} goals={goals} balance={0} />
-
-      {prediction && (
-        <div className={`p-4 rounded-xl border ${prediction.status === 'critical' ? 'bg-red-900/20 border-red-500/30' : prediction.status === 'warning' ? 'bg-yellow-900/20 border-yellow-500/30' : 'bg-emerald-900/20 border-emerald-500/30'}`}>
-          <div className="flex items-start gap-3">
-            <TrendingDown className={`mt-1 ${prediction.status === 'critical' ? 'text-red-400' : prediction.status === 'warning' ? 'text-yellow-400' : 'text-emerald-400'}`} size={20} />
+      {/* Score Financiero */}
+      <Card className="relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl -mr-8 -mt-8"></div>
+        
+        <div className="relative">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-white text-sm">Predicción de Flujo</h3>
-              <p className="text-xs text-gray-300 mt-1">
-                {prediction.status === 'critical' ? '⚠️ Posible saldo negativo al fin de mes.' : 
-                 prediction.status === 'warning' ? '📉 Quedan pocos días con tu presupuesto.' : 
-                 '✅ Flujo positivo proyectado.'}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">Gasto diario promedio: ${formatCurrency(prediction.dailyBurn)}</p>
+              <div className="text-4xl font-bold text-white">8<span className="text-lg text-slate-400">/100</span></div>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                <span className="text-sm text-red-400">Requiere atención</span>
+              </div>
             </div>
+            <div className="w-24 h-24 rounded-full border-4 border-slate-700 border-t-red-500 rotate-45"></div>
+          </div>
+          <p className="text-xs text-slate-500">Salud Financiera Local</p>
+        </div>
+      </Card>
+
+      {/* Predicción de Flujo */}
+      <Card className="bg-red-950/20 border-red-500/20">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-red-500/10 rounded-xl">
+            <AlertTriangle size={20} className="text-red-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-white font-semibold">Predicción de Flujo</h3>
+            <p className="text-sm text-slate-300 mt-1">
+              ⚠️ Posible saldo negativo al fin de mes.
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              Gasto diario promedio: $56,850,767
+            </p>
           </div>
         </div>
-      )}
+      </Card>
 
+      {/* Accesos Rápidos */}
       <div>
-        <h3 className="text-white font-bold mb-3">Accesos rápidos</h3>
+        <h2 className="text-lg font-bold text-white mb-3">Accesos rápidos</h2>
         <div className="grid grid-cols-2 gap-3">
-          <Link to="/mercado" className="bg-gray-800/50 backdrop-blur p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
-            <ShoppingCart className="text-green-400" size={24} />
-            <span className="text-xs text-gray-300">Mercado</span>
+          <Link to="/mercado" className="block">
+            <Card className="p-4 hover:bg-[#1a2332] transition-colors group">
+              <ShoppingCart size={24} className="text-green-400 mb-2 group-hover:scale-110 transition-transform" />
+              <p className="text-white font-medium">Mercado</p>
+            </Card>
           </Link>
-          <Link to="/finanzas" className="bg-gray-800/50 backdrop-blur p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
-            <DollarSign className="text-blue-400" size={24} />
-            <span className="text-xs text-gray-300">Finanzas</span>
+          
+          <Link to="/finanzas" className="block">
+            <Card className="p-4 hover:bg-[#1a2332] transition-colors group">
+              <DollarSign size={24} className="text-blue-400 mb-2 group-hover:scale-110 transition-transform" />
+              <p className="text-white font-medium">Finanzas</p>
+            </Card>
           </Link>
-          <Link to="/creditos" className="bg-gray-800/50 backdrop-blur p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
-            <CreditCard className="text-purple-400" size={24} />
-            <span className="text-xs text-gray-300">Créditos</span>
+          
+          <Link to="/creditos" className="block">
+            <Card className="p-4 hover:bg-[#1a2332] transition-colors group">
+              <CreditCard size={24} className="text-purple-400 mb-2 group-hover:scale-110 transition-transform" />
+              <p className="text-white font-medium">Créditos</p>
+            </Card>
           </Link>
-          <Link to="/rentabilidad" className="bg-gray-800/50 backdrop-blur p-4 rounded-xl border border-gray-700 flex flex-col items-center justify-center gap-2 hover:bg-gray-700/50 transition-colors">
-            <PieChart className="text-orange-400" size={24} />
-            <span className="text-xs text-gray-300">Rentabilidad</span>
+          
+          <Link to="/rentabilidad" className="block">
+            <Card className="p-4 hover:bg-[#1a2332] transition-colors group">
+              <TrendingUp size={24} className="text-orange-400 mb-2 group-hover:scale-110 transition-transform" />
+              <p className="text-white font-medium">Rentabilidad</p>
+            </Card>
           </Link>
         </div>
       </div>
 
-      <div className="bg-gray-800/50 p-4 rounded-xl border border-gray-700">
-        <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-          <Info size={18} className="text-blue-400" /> Guía Rápida
+      {/* Guía Rápida */}
+      <Card className="p-4">
+        <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+          <span className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-[10px]">i</span>
+          Guía Rápida
         </h3>
-        <ul className="text-sm text-gray-300 space-y-2 list-disc pl-5">
-          <li><strong>Score 0-100:</strong> Tu salud financiera calculada localmente.</li>
-          <li><strong>Predicción:</strong> Proyección de flujo basada en tus últimos 30 días.</li>
-          <li><strong>Reglas locales:</strong> Alertas inteligentes sin conexión a la nube.</li>
+        <ul className="space-y-2 text-sm text-slate-300">
+          <li className="flex items-start gap-2">
+            <span className="text-violet-400">•</span>
+            <span><strong>Score 0-100:</strong> Tu salud financiera calculada localmente.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-violet-400">•</span>
+            <span><strong>Predicción:</strong> Proyección de flujo basada en tus últimos 30 días.</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-violet-400">•</span>
+            <span><strong>Reglas locales:</strong> Alertas inteligentes sin conexión a la nube.</span>
+          </li>
         </ul>
-      </div>
+      </Card>
     </div>
   );
 }
