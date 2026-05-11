@@ -1,9 +1,10 @@
 import React, { useState, useEffect, Suspense } from 'react';
-// UPDATE: 10-May-2026 - Premium UI + PWA Fix
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Home, Wallet, ShoppingCart, Settings } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
-import AppShell from './components/layout/AppShell';
 import ToastProvider from './components/ToastProvider';
 import SecurityLock from './components/SecurityLock';
 import WelcomeModal from './components/WelcomeModal';
@@ -20,6 +21,78 @@ const ProfitabilityPage = React.lazy(() => import('./pages/ProfitabilityPage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const ReceiptHistoryPage = React.lazy(() => import('./pages/ReceiptHistoryPage'));
 const FinancePage = React.lazy(() => import('./pages/FinancePage'));
+
+// BottomNav inline
+function BottomNav() {
+  const links = [
+    { to: '/', icon: Home, label: 'Inicio' },
+    { to: '/finanzas', icon: Wallet, label: 'Finanzas' },
+    { to: '/mercado', icon: ShoppingCart, label: 'Mercado' },
+    { to: '/ajustes', icon: Settings, label: 'Ajustes' },
+  ];
+
+  return (
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50">
+      <div className="bg-[#111827]/80 backdrop-blur-xl border border-white/10 rounded-3xl px-4 py-3 flex justify-around items-center shadow-2xl">
+        {links.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={label}
+            to={to}
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-1 transition-all duration-300 ${
+                isActive ? 'text-violet-400 scale-110' : 'text-slate-500 hover:text-slate-300'
+              }`
+            }
+          >
+            <Icon size={22} strokeWidth={2} />
+            <span className="text-[10px] font-medium">{label}</span>
+          </NavLink>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// PwaUpdate inline
+function PwaUpdate() {
+  const [showBanner, setShowBanner] = useState(false);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                setShowBanner(true);
+              }
+            });
+          }
+        });
+      });
+    }
+  }, []);
+
+  const handleUpdate = () => {
+    window.location.reload();
+    setShowBanner(false);
+  };
+
+  if (!showBanner) return null;
+
+  return (
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-sm">
+      <div className="bg-[#111827] border border-violet-500/30 rounded-3xl p-4 shadow-2xl backdrop-blur-xl">
+        <h3 className="text-white font-semibold text-sm mb-2">Nueva versión disponible 🚀</h3>
+        <p className="text-slate-400 text-xs mb-3">Mejoras de rendimiento y diseño.</p>
+        <button onClick={handleUpdate} className="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-2.5 rounded-xl transition-all text-sm">
+          Actualizar ahora
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
@@ -57,27 +130,31 @@ function AppContent() {
   }
 
   return (
-    <AppShell>
+    <div className="min-h-screen bg-[#070B14] text-white font-sans selection:bg-violet-500/30 pb-24">
       {isSetup && isLocked && <SecurityLock />}
       
-      <Suspense fallback={<div className="h-40 flex items-center justify-center text-slate-500">Cargando...</div>}>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/finanzas" element={<FinancePage />} />
-          <Route path="/mercado" element={<MarketPage />} />
-          <Route path="/escaner" element={<ReceiptScannerPage />} />
-          <Route path="/creditos" element={<CreditPage />} />
-          <Route path="/rentabilidad" element={<ProfitabilityPage />} />
-          <Route path="/ajustes" element={<SettingsPage />} />
-          <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
-        </Routes>
-      </Suspense>
+      <main className="pt-4 px-4 max-w-md mx-auto">
+        <Suspense fallback={<div className="h-40 flex items-center justify-center text-slate-500">Cargando...</div>}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/finanzas" element={<FinancePage />} />
+            <Route path="/mercado" element={<MarketPage />} />
+            <Route path="/escaner" element={<ReceiptScannerPage />} />
+            <Route path="/creditos" element={<CreditPage />} />
+            <Route path="/rentabilidad" element={<ProfitabilityPage />} />
+            <Route path="/ajustes" element={<SettingsPage />} />
+            <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
+          </Routes>
+        </Suspense>
+      </main>
 
+      <BottomNav />
+      <PwaUpdate />
       <ToastProvider />
       {showWelcome && <WelcomeModal onDismiss={() => setShowWelcome(false)} userName={userName} setUserName={setUserName} />}
       {showTerms && <TermsModal onAccept={() => setShowTerms(false)} />}
       {showOnboarding && <OnboardingTour onComplete={() => setShowOnboarding(false)} />}
-    </AppShell>
+    </div>
   );
 }
 
