@@ -2,7 +2,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
-import AppShell from './components/layout/AppShell'; // Asegúrate que el archivo existe
+import AppShell from './components/layout/AppShell';
 import ToastProvider from './components/ToastProvider';
 import SecurityLock from './components/SecurityLock';
 import WelcomeModal from './components/WelcomeModal';

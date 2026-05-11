@@ -11,14 +11,12 @@ interface AppShellProps {
 export default function AppShell({ children }: AppShellProps) {
   const location = useLocation();
 
-  // Efecto para scroll arriba al cambiar de página
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-[#070B14] text-white font-sans selection:bg-violet-500/30">
-      {/* Contenido Principal */}
       <main className="pb-32 pt-4 px-4 max-w-md mx-auto">
         <AnimatePresence mode="wait">
           <motion.div
@@ -33,10 +31,7 @@ export default function AppShell({ children }: AppShellProps) {
         </AnimatePresence>
       </main>
 
-      {/* Navegación Flotante Premium */}
       <BottomNav />
-      
-      {/* Banner de Actualización */}
       <PwaUpdate />
     </div>
   );
