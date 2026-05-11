@@ -1,38 +1,34 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { Home, Wallet, ShoppingCart, Settings } from 'lucide-react';
 
-const items = [
-  { path: '/', icon: Home, label: 'Inicio' },
-  { path: '/finanzas', icon: Wallet, label: 'Finanzas' },
-  { path: '/mercado', icon: ShoppingCart, label: 'Mercado' },
-  { path: '/ajustes', icon: Settings, label: 'Ajustes' },
+const links = [
+  { to: '/', icon: Home, label: 'Inicio' },
+  { to: '/finanzas', icon: Wallet, label: 'Finanzas' },
+  { to: '/mercado', icon: ShoppingCart, label: 'Mercado' },
+  { to: '/ajustes', icon: Settings, label: 'Ajustes' },
 ];
 
 export default function BottomNav() {
-  const location = useLocation();
-  const navigate = useNavigate();
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0B0F19]/95 backdrop-blur-xl border-t border-white/10 pb-safe">
-      <div className="flex justify-around items-center py-2">
-        {items.map(({ path, icon: Icon, label }) => {
-          const isActive = location.pathname === path;
-          return (
-            <button
-              key={path}
-              onClick={() => navigate(path)}
-              className={`flex flex-col items-center gap-1 py-2 px-4 rounded-2xl transition-all duration-200 ${
-                isActive 
-                  ? 'text-violet-400 bg-violet-500/10' 
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
-              <span className="text-[11px] font-medium">{label}</span>
-            </button>
-          );
-        })}
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-50">
+      <div className="bg-[#111827]/80 backdrop-blur-xl border border-white/10 rounded-3xl px-4 py-3 flex justify-around items-center shadow-2xl shadow-black/50">
+        {links.map(({ to, icon: Icon, label }) => (
+          <NavLink
+            key={label}
+            to={to}
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-1 transition-all duration-300 ${
+                isActive
+                  ? 'text-violet-400 scale-110'
+                  : 'text-slate-500 hover:text-slate-300 scale-100'
+              }`
+            }
+          >
+            <Icon size={22} strokeWidth={2} />
+            <span className="text-[10px] font-medium tracking-wide">{label}</span>
+          </NavLink>
+        ))}
       </div>
-    </nav>
+    </div>
   );
 }
