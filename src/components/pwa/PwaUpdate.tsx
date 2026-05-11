@@ -30,14 +30,14 @@ export default function PwaUpdate() {
           <div className="bg-[#111827] border border-violet-500/30 rounded-3xl p-4 shadow-2xl backdrop-blur-xl relative">
             <button 
               onClick={() => setShowBanner(false)}
-              className="absolute top-3 right-3 text-slate-500 hover:text-white"
+              className="absolute top-3 right-3 text-slate-500 hover:text-white transition-colors"
             >
               <X size={16} />
             </button>
             
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-violet-500/20 rounded-xl">
-                <RefreshCw size={20} className="text-violet-400 animate-spin-slow" />
+                <RefreshCw size={20} className="text-violet-400" />
               </div>
               <div>
                 <h3 className="text-white font-semibold text-sm">Nueva versión disponible</h3>
