@@ -12,8 +12,8 @@ export default defineConfig({
         name: 'Mi Finanzas',
         short_name: 'Finanzas',
         description: 'Gestión financiera inteligente y segura',
-        theme_color: '#020617',
-        background_color: '#020617',
+        theme_color: '#0B0F19',
+        background_color: '#0B0F19',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
