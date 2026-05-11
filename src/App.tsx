@@ -1,5 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
+// v1.2.0 - Premium UI Update
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+// ... resto del código
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
 import AppShell from './components/layout/AppShell';
