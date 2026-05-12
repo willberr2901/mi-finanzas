@@ -16,15 +16,20 @@ export default function AppShell({ children }: AppShellProps) {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-[#070B14] text-white font-sans selection:bg-violet-500/30">
-      <main className="pb-32 pt-4 px-4 max-w-md mx-auto">
+    <div className="min-h-screen bg-[#020617] text-white font-sans selection:bg-emerald-500/30 relative overflow-hidden">
+      {/* ✨ EFECTOS DE LUZ DE FONDO (GLOWS) */}
+      <div className="absolute top-[-100px] left-[-100px] w-[300px] h-[300px] bg-emerald-500/10 blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-100px] right-[-100px] w-[300px] h-[300px] bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
+      
+      {/* Contenido */}
+      <main className="relative z-10 pb-32 pt-4 px-4 max-w-md mx-auto">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
           >
             {children}
           </motion.div>
