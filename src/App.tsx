@@ -11,7 +11,8 @@ import WelcomeModal from './components/WelcomeModal';
 import TermsModal from './components/TermsModal';
 import OnboardingTour from './components/OnboardingTour';
 import { db, migrateData } from './utils/database';
-import RentabilidadPage from './modules/rentabilidad/RentabilidadPage';
+// 1. Importa el nuevo componente arriba
+import RentabilidadPremium from './pages/RentabilidadPremium';
 
 // Lazy loading de páginas
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -137,7 +138,7 @@ function AppContent() {
                 <Route path="/rentabilidad" element={<ProfitabilityPage />} />
                 <Route path="/ajustes" element={<SettingsPage />} />
                 <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
-                <Route path="/rentabilidad" element={<RentabilidadPage />} />
+                <Route path="/rentabilidad" element={<RentabilidadPremium />} />
               </Routes>
             </Suspense>
           </motion.div>
