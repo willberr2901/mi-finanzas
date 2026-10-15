@@ -32,7 +32,7 @@ export type Owner = 'yo' | 'pareja' | 'compartido';
 export interface Bill {
   id: string;
   name: string;
-  kind: 'fijo' | 'deuda';
+  kind: 'fijo' | 'tarjeta' | 'deuda'; // tarjeta: fecha fija, valor cambia cada mes
   category: string;      // Arriendo, Servicios, Deudas…
   amount: number;        // valor de la cuota o del pago mensual
   dueDay: number;        // día del mes en que vence (1-31)

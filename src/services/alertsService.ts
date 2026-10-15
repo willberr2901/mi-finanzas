@@ -47,18 +47,59 @@ export const markRead = (ids: string[]) => {
   localStorage.setItem(READ_KEY, JSON.stringify(all));
 };
 
-/** Notificación del sistema una vez al día con los pagos urgentes (si la persona dio permiso). */
-export const dailySystemReminder = async () => {
-  if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  const today = new Date().toDateString();
-  if (localStorage.getItem('mf_lastDailyReminder') === today) return;
-  const urgent = (await computeAlerts()).filter(a => a.level === 'urgente' && a.link === '/pagos');
-  if (!urgent.length) return;
-  localStorage.setItem('mf_lastDailyReminder', today);
-  const body = urgent.length === 1 ? urgent[0].title : `${urgent.length} pagos necesitan tu atención: ${urgent.map(a => a.title).slice(0, 2).join(', ')}…`;
+// ---- Historial de notificaciones (solo en este celular) ----
+export interface LoggedAlert extends AppAlert { at: number }
+const LOG_KEY = 'mf_notifLog';
+export const getLog = (): LoggedAlert[] => {
+  try { return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); } catch { return []; }
+};
+export const logAlerts = (alerts: AppAlert[]) => {
+  const log = getLog();
+  const known = new Set(log.map(l => l.id));
+  const fresh = alerts.filter(a => !known.has(a.id)).map(a => ({ ...a, at: Date.now() }));
+  if (fresh.length) localStorage.setItem(LOG_KEY, JSON.stringify([...fresh, ...log].slice(0, 100)));
+};
+export const clearLog = () => localStorage.removeItem(LOG_KEY);
+
+// ---- Recordatorios en el celular ----
+export const remindersSupported = () => 'Notification' in window && 'serviceWorker' in navigator;
+export const backgroundSupported = async () => {
+  const reg = await navigator.serviceWorker?.getRegistration();
+  return !!(reg && 'periodicSync' in reg);
+};
+
+/** Pide permiso, programa la revisión en segundo plano y hace una revisión ahora. */
+export const enableReminders = async (): Promise<NotificationPermission> => {
+  if (!remindersSupported()) return 'denied';
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') return perm;
+  localStorage.setItem('mf_reminders', 'on');
   try {
-    const reg = await navigator.serviceWorker?.getRegistration();
-    if (reg) await reg.showNotification('Mi Finanzas', { body, icon: '/icon-192.png', badge: '/icon-192.png', tag: 'mf-daily' });
-    else new Notification('Mi Finanzas', { body, icon: '/icon-192.png' });
-  } catch { /* algunos navegadores no lo permiten */ }
+    const reg: any = await navigator.serviceWorker.ready;
+    if (reg.periodicSync) {
+      try { await (navigator as any).permissions?.query({ name: 'periodic-background-sync' }); } catch { /* sin API de permisos */ }
+      await reg.periodicSync.register('mf-pagos', { minInterval: 12 * 60 * 60 * 1000 });
+    }
+  } catch { /* el navegador no permite revisión en segundo plano; quedan los avisos al abrir la app */ }
+  return perm;
+};
+
+/** Pide al service worker revisar los pagos y avisar (máximo una vez al día; force para probar). */
+export const requestBillCheck = async (force = false) => {
+  if (!remindersSupported() || Notification.permission !== 'granted') return;
+  try { (await navigator.serviceWorker.ready).active?.postMessage({ type: 'CHECK_BILLS', force }); } catch { /* sin service worker */ }
+};
+
+export const sendTestNotification = async () => {
+  if (Notification.permission !== 'granted') return false;
+  const reg = await navigator.serviceWorker?.ready;
+  await reg?.showNotification('Mi Finanzas', { body: '¡Listo! Así te avisaremos de tus pagos antes de que venzan.', icon: '/icon-192.png', badge: '/icon-192.png', tag: 'mf-test' });
+  return true;
+};
+
+/** Al abrir la app: revisa pagos (notificación del celular una vez al día) y renueva la revisión en segundo plano. */
+export const dailySystemReminder = async () => {
+  if (!remindersSupported() || Notification.permission !== 'granted') return;
+  if (localStorage.getItem('mf_reminders') !== 'off') await enableReminders();
+  await requestBillCheck();
 };

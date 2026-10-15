@@ -1,178 +1,72 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { motion, useAnimationControls } from 'framer-motion';
+import { Delete, Fingerprint, Lock } from 'lucide-react';
 import { useSecurity } from '../contexts/SecurityContext';
-import { Lock, AlertTriangle, Fingerprint } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
+import AppLogo from './ui/AppLogo';
 
+/** Pantalla de bloqueo: PIN con teclado propio, huella opcional y espera tras varios intentos. */
 export default function SecurityLock() {
-  const { unlockWithPin, isSetup } = useSecurity();
-  const { theme } = useTheme();
-  
+  const { unlockWithPin, unlockWithBiometric, biometricEnabled, lockoutRemaining } = useSecurity();
   const [pin, setPin] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [msg, setMsg] = useState('Ingresa tu PIN');
+  const [wait, setWait] = useState(lockoutRemaining());
+  const [busy, setBusy] = useState(false);
+  const shake = useAnimationControls();
+  const LEN = 4;
 
-  const isDark = theme === 'dark';
-  const bgCard = isDark ? 'bg-white/5' : 'bg-white';
-  const textPrimary = isDark ? 'text-white' : 'text-gray-900';
-  const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
-  const borderColor = isDark ? 'border-white/10' : 'border-gray-200';
+  useEffect(() => { if (biometricEnabled) unlockWithBiometric(); }, [biometricEnabled, unlockWithBiometric]);
+  useEffect(() => {
+    if (wait <= 0) return;
+    const t = setInterval(() => setWait(lockoutRemaining()), 1000);
+    return () => clearInterval(t);
+  }, [wait, lockoutRemaining]);
 
-  const handleNumberPress = (num: string) => {
-    if (pin.length < 6) {
-      setPin(prev => prev + num);
-      setError('');
-    }
-  };
-
-  const handleDelete = () => {
-    setPin(prev => prev.slice(0, -1));
-    setError('');
-  };
-
-  const handleClear = () => {
+  const submit = async (value: string) => {
+    setBusy(true);
+    const r = await unlockWithPin(value);
+    setBusy(false);
+    if (r.ok) return;
     setPin('');
-    setError('');
+    shake.start({ x: [0, -14, 14, -10, 10, -4, 0], transition: { duration: 0.45 } });
+    if (r.waitSeconds) { setWait(r.waitSeconds); setMsg('Demasiados intentos'); }
+    else setMsg(r.left !== undefined && r.left <= 2 ? `PIN incorrecto · te quedan ${r.left} intentos` : 'PIN incorrecto');
   };
 
-  const handleSubmit = async () => {
-    if (pin.length < 4) {
-      setError('PIN muy corto');
-      return;
-    }
-
-    setIsLoading(true);
-    const success = unlockWithPin(pin);
-    
-    if (!success) {
-      setError('PIN incorrecto');
-      setPin('');
-    }
-    setIsLoading(false);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key >= '0' && e.key <= '9') {
-      handleNumberPress(e.key);
-    } else if (e.key === 'Backspace') {
-      handleDelete();
-    } else if (e.key === 'Enter') {
-      handleSubmit();
-    }
+  const press = (d: string) => {
+    if (busy || wait > 0 || pin.length >= LEN) return;
+    const next = pin + d;
+    setPin(next);
+    if (next.length === LEN) submit(next);
   };
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
-      <div className={`${bgCard} backdrop-blur-md rounded-3xl border ${borderColor} p-6 w-full max-w-sm shadow-2xl`}>
-        
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className={`w-16 h-16 mx-auto mb-4 rounded-full ${isDark ? 'bg-green-500/20' : 'bg-green-100'} flex items-center justify-center`}>
-            <Lock className={`w-8 h-8 ${isDark ? 'text-green-400' : 'text-green-600'}`} />
-          </div>
-          <h2 className={`text-xl font-bold ${textPrimary}`}>
-            {isSetup ? 'Ingresa tu PIN' : 'Configura tu PIN'}
-          </h2>
-          <p className={`text-sm ${textSecondary} mt-1`}>
-            {isSetup ? 'Para acceder a tus datos' : 'Protege tu información financiera'}
-          </p>
-        </div>
-
-        {/* Display de PIN */}
-        <div className="mb-6">
-          <div className="flex justify-center gap-3 mb-2">
-            {[0, 1, 2, 3, 4, 5].map(i => (
-              <div
-                key={i}
-                className={`w-4 h-4 rounded-full border-2 transition-all ${
-                  i < pin.length 
-                    ? 'bg-green-500 border-green-500 scale-110' 
-                    : `${isDark ? 'border-gray-600' : 'border-gray-300'}`
-                }`}
-              />
-            ))}
-          </div>
-          {error && (
-            <div className="flex items-center justify-center gap-1 text-red-400 text-xs">
-              <AlertTriangle className="w-3 h-3" />
-              <span>{error}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Teclado numérico */}
-        <div className="grid grid-cols-3 gap-3 mb-6" onKeyDown={handleKeyPress} tabIndex={0}>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-            <button
-              key={num}
-              onClick={() => handleNumberPress(num.toString())}
-              disabled={isLoading}
-              className={`h-14 rounded-xl font-bold text-xl transition-all active:scale-95 ${
-                isDark 
-                  ? 'bg-white/10 text-white hover:bg-white/20' 
-                  : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-              }`}
-            >
-              {num}
-            </button>
-          ))}
-          <button
-            onClick={handleClear}
-            disabled={isLoading}
-            className={`h-14 rounded-xl font-semibold text-sm transition-all ${
-              isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            Limpiar
-          </button>
-          <button
-            onClick={() => handleNumberPress('0')}
-            disabled={isLoading}
-            className={`h-14 rounded-xl font-bold text-xl transition-all active:scale-95 ${
-              isDark 
-                ? 'bg-white/10 text-white hover:bg-white/20' 
-                : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-            }`}
-          >
-            0
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={isLoading}
-            className={`h-14 rounded-xl transition-all ${
-              isDark ? 'text-red-400 hover:bg-red-400/10' : 'text-red-500 hover:bg-red-50'
-            }`}
-          >
-            ⌫
-          </button>
-        </div>
-
-        {/* Botón de acción */}
-        <button
-          onClick={handleSubmit}
-          disabled={pin.length < 4 || isLoading}
-          className={`w-full py-4 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 ${
-            pin.length >= 4 && !isLoading
-              ? 'bg-gradient-to-r from-green-500 to-cyan-500 hover:scale-[1.02] shadow-lg'
-              : 'bg-gray-600 opacity-50 cursor-not-allowed'
-          }`}
-        >
-          {isLoading ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Verificando...
-            </>
-          ) : (
-            <>
-              <Fingerprint className="w-5 h-5" />
-              {isSetup ? 'Desbloquear' : 'Guardar PIN'}
-            </>
-          )}
-        </button>
-
-        {/* Info de seguridad */}
-        <p className={`text-[10px] ${textSecondary} text-center mt-4`}>
-          🔐 Tus datos están encriptados y solo se guardan en este dispositivo
+    <div className="fixed inset-0 z-[300] bg-[#070B14] flex flex-col items-center justify-center px-8">
+      <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-violet-600/25 blur-3xl" aria-hidden="true" />
+      <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
+      <div className="relative flex flex-col items-center w-full max-w-xs">
+        <AppLogo size={64} />
+        <p className="text-white text-xl font-bold mt-5 flex items-center gap-2"><Lock size={18} /> Mi Finanzas</p>
+        <p className={`text-sm mt-1 ${msg.startsWith('PIN incorrecto') || wait ? 'text-red-300' : 'text-slate-400'}`} role="status">
+          {wait > 0 ? `Espera ${wait} s para intentar de nuevo` : msg}
         </p>
+        <motion.div animate={shake} className="flex gap-4 my-8" aria-label={`${pin.length} de ${LEN} dígitos`}>
+          {Array.from({ length: LEN }).map((_, i) => (
+            <motion.span key={i} animate={{ scale: i < pin.length ? 1.15 : 1 }}
+              className={`w-4 h-4 rounded-full border-2 ${i < pin.length ? 'bg-violet-400 border-violet-400' : 'border-slate-600'}`} />
+          ))}
+        </motion.div>
+        <div className="grid grid-cols-3 gap-4 w-full">
+          {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(d => (
+            <motion.button key={d} whileTap={{ scale: 0.88 }} onClick={() => press(d)} disabled={wait > 0}
+              className="h-16 rounded-2xl bg-white/5 border border-white/10 text-white text-2xl font-semibold disabled:opacity-40">{d}</motion.button>
+          ))}
+          {biometricEnabled
+            ? <motion.button whileTap={{ scale: 0.88 }} onClick={() => unlockWithBiometric()} aria-label="Desbloquear con huella" className="h-16 rounded-2xl flex items-center justify-center text-violet-300"><Fingerprint size={30} /></motion.button>
+            : <span />}
+          <motion.button whileTap={{ scale: 0.88 }} onClick={() => press('0')} disabled={wait > 0} className="h-16 rounded-2xl bg-white/5 border border-white/10 text-white text-2xl font-semibold disabled:opacity-40">0</motion.button>
+          <motion.button whileTap={{ scale: 0.88 }} onClick={() => setPin(p => p.slice(0, -1))} aria-label="Borrar" className="h-16 rounded-2xl flex items-center justify-center text-slate-300"><Delete size={26} /></motion.button>
+        </div>
+        <p className="text-[11px] text-slate-500 mt-8 text-center">¿Olvidaste el PIN? Por seguridad no se puede recuperar: borra los datos del sitio desde el navegador y restaura un respaldo.</p>
       </div>
     </div>
   );

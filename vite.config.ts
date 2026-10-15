@@ -32,12 +32,13 @@ export default defineConfig({
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
         ]
       },
-      workbox: {
+      // Service worker propio (src/sw.ts): guarda la app sin internet y revisa pagos en segundo plano.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
         globIgnores: ['**/version.json'],
-        cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true
       }
     })
   ],

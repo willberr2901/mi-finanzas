@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ChevronLeft, ChevronRight, CalendarDays, Pencil, Trash2, Undo2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { db, type Bill, type Owner } from '../utils/database';
-import { loadBillStatuses, payBill, unpayBill, describeDue, OWNER_LABEL, periodOf, type BillStatus } from '../services/billsService';
+import { loadBillStatuses, payBill, unpayBill, describeDue, OWNER_LABEL, periodOf, googleCalendarLink, buildICS, type BillStatus } from '../services/billsService';
 import { formatCOP, todayISO } from '../utils/format';
 import { notify } from '../services/notificationService';
 import BillForm from '../components/bills/BillForm';
 import MoneyInput from '../components/ui/MoneyInput';
 import ModuleHeader from '../components/ui/ModuleHeader';
+import { usePageTour } from '../components/tour/Tour';
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const WEEK = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -24,6 +25,12 @@ export default function BillsPage() {
   const [ref, setRef] = useState(new Date(today.getFullYear(), today.getMonth(), today.getDate()));
   const [statuses, setStatuses] = useState<BillStatus[]>([]);
   const [debts, setDebts] = useState<Bill[]>([]);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
+  usePageTour('pagos', [
+    { target: 'bills-add', title: 'Agrega tus pagos del mes', text: 'Arriendo, servicios, tarjetas de crédito o créditos. Lo registras una vez y se programa solo todos los meses.' },
+    { target: 'bills-calendar', title: 'Tu calendario de pagos', text: 'Cada punto es un pago: rojo vencido, amarillo pronto, morado pendiente y verde pagado. Toca un día para ver qué vence. Desliza para cambiar de mes.' },
+    { target: 'bills-export', title: 'Recordatorios en tu celular', text: 'Agrega todos tus pagos al calendario del celular: te avisará un día antes y el mismo día, aunque no abras la app.' },
+  ]);
   const [owner, setOwner] = useState<'todos' | Owner>('todos');
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -62,7 +69,15 @@ export default function BillsPage() {
   const cells: (number | null)[] = [...Array(firstWeekday).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
   const byDay = (d: number) => visible.filter(s => s.dueDate.getDate() === d);
 
-  const changeMonth = (delta: number) => { setRef(new Date(year, month + delta, 1)); setSelectedDay(null); };
+  const [dir, setDir] = useState(0);
+  const changeMonth = (delta: number) => { setDir(delta); setRef(new Date(year, month + delta, 1)); setSelectedDay(null); };
+
+  const exportAll = () => {
+    const blob = new Blob([buildICS(statuses.map(s => s.bill))], { type: 'text/calendar;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mis-pagos-mi-finanzas.ics'; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    notify({ title: 'Recordatorios listos', message: 'Abre el archivo para agregarlos a tu calendario: te avisará un día antes y el mismo día.', type: 'success', duration: 6000 });
+  };
 
   const saveBill = async (data: Omit<Bill, 'id' | 'createdAt' | 'active'>) => {
     if (editing) {
@@ -71,6 +86,7 @@ export default function BillsPage() {
     } else {
       const bill: Bill = { ...data, id: crypto.randomUUID(), createdAt: Date.now(), active: true };
       await db.bills.add(bill);
+      setJustAdded(bill.id);
       // Si el día de pago de este mes ya pasó, pregunta si ya se pagó (para no marcarlo vencido sin razón).
       if (bill.dueDay < today.getDate() && window.confirm(`El día ${bill.dueDay} ya pasó este mes. ¿Ya pagaste "${bill.name}" este mes?`)) {
         // Queda pagado este mes y se registra como gasto para que el balance cuadre.
@@ -98,9 +114,10 @@ export default function BillsPage() {
 
   const undo = async (s: BillStatus) => { await unpayBill(s); notify({ title: 'Pago desmarcado', message: s.bill.name, type: 'info' }); reload(); };
 
-  const Row = ({ s, i }: { s: BillStatus; i: number }) => (
-    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-      className="bg-[#111827] border border-white/5 rounded-2xl p-3 flex items-center gap-3">
+  const row = (s: BillStatus, i: number) => (
+    <motion.div key={s.bill.id} layout initial={s.bill.id === justAdded ? { opacity: 0, scale: 0.8, y: -20 } : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={s.bill.id === justAdded ? { type: 'spring', damping: 12, stiffness: 200 } : { delay: i * 0.04 }}
+      className={`bg-[#111827] border rounded-2xl p-3 flex items-center gap-3 ${s.bill.id === justAdded ? 'border-amber-400/70 shadow-lg shadow-amber-500/20' : 'border-white/5'}`}>
       <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0 ${s.paid ? 'bg-emerald-500/15' : s.state === 'vencido' ? 'bg-red-500/15' : 'bg-white/5'}`}>
         <span className="text-[9px] text-slate-400 leading-none">{MONTHS[s.dueDate.getMonth()].slice(0, 3).toUpperCase()}</span>
         <span className="text-white font-bold text-base leading-none mt-0.5">{s.dueDate.getDate()}</span>
@@ -109,7 +126,7 @@ export default function BillsPage() {
         <p className={`text-white font-medium text-sm truncate ${s.paid ? 'line-through opacity-60' : ''}`}>{s.bill.name}</p>
         <p className="text-[11px] text-slate-400 truncate">
           <span className={STATE_STYLE[s.state].text}>{describeDue(s)}</span> · {OWNER_LABEL[s.bill.owner]}
-          {s.bill.kind === 'deuda' && s.bill.totalInstallments ? ` · cuota ${(s.bill.paidInstallments ?? 0) + (s.paid ? 0 : 1)}/${s.bill.totalInstallments}` : ''}
+          {s.bill.kind === 'tarjeta' ? ' · Tarjeta' : ''}{s.bill.kind === 'deuda' && s.bill.totalInstallments ? ` · cuota ${(s.bill.paidInstallments ?? 0) + (s.paid ? 0 : 1)}/${s.bill.totalInstallments}` : ''}
         </p>
       </div>
       <div className="text-right">
@@ -118,6 +135,7 @@ export default function BillsPage() {
           {s.paid
             ? <button onClick={() => undo(s)} aria-label={`Desmarcar ${s.bill.name}`} className="p-1 text-slate-500 hover:text-white"><Undo2 size={14} /></button>
             : <button onClick={() => { setPaying(s); setPayAmount(s.bill.amount); }} className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">Pagar</button>}
+          <a href={googleCalendarLink(s.bill)} target="_blank" rel="noopener noreferrer" aria-label={`Agregar ${s.bill.name} a Google Calendar`} title="Recordatorio en Google Calendar" className="p-1 text-slate-500 hover:text-amber-300"><CalendarDays size={14} /></a>
           <button onClick={() => { setEditing(s.bill); setFormOpen(true); }} aria-label={`Editar ${s.bill.name}`} className="p-1 text-slate-500 hover:text-blue-400"><Pencil size={14} /></button>
           <button onClick={() => removeBill(s.bill)} aria-label={`Eliminar ${s.bill.name}`} className="p-1 text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
         </div>
@@ -128,7 +146,7 @@ export default function BillsPage() {
   return (
     <div className="space-y-5 pb-28">
       <ModuleHeader module="pagos" title="Pagos y deudas" />
-      <button onClick={() => { setEditing(null); setFormOpen(true); }}
+      <button data-tour="bills-add" onClick={() => { setEditing(null); setFormOpen(true); }}
         className="w-full -mt-2 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-bold flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 active:scale-[0.98]">
         <Plus size={20} /> Agregar pago fijo o deuda
       </button>
@@ -160,14 +178,17 @@ export default function BillsPage() {
       </div>
 
       {/* Calendario */}
-      <div className="bg-[#111827] border border-white/5 rounded-3xl p-4">
+      <div data-tour="bills-calendar" className="bg-[#111827] border border-white/5 rounded-3xl p-4">
         <div className="flex items-center justify-between mb-3">
           <button onClick={() => changeMonth(-1)} aria-label="Mes anterior" className="p-2 text-slate-400 hover:text-white"><ChevronLeft size={18} /></button>
           <p className="text-white font-semibold flex items-center gap-2"><CalendarDays size={16} className="text-violet-400" />{MONTHS[month]} {year}</p>
           <button onClick={() => changeMonth(1)} aria-label="Mes siguiente" className="p-2 text-slate-400 hover:text-white"><ChevronRight size={18} /></button>
         </div>
         <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-slate-500 mb-1">{WEEK.map((d, i) => <span key={i}>{d}</span>)}</div>
-        <div className="grid grid-cols-7 gap-1">
+        <AnimatePresence mode="wait" custom={dir}>
+        <motion.div key={`${year}-${month}`} className="grid grid-cols-7 gap-1"
+          initial={{ opacity: 0, x: dir * 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: dir * -40 }} transition={{ duration: 0.22, ease: 'easeOut' }}
+          drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.25} onDragEnd={(_, info) => { if (info.offset.x < -60) changeMonth(1); else if (info.offset.x > 60) changeMonth(-1); }}>
           {cells.map((d, i) => {
             if (!d) return <span key={i} />;
             const items = byDay(d);
@@ -175,13 +196,15 @@ export default function BillsPage() {
             const sel = selectedDay === d;
             return (
               <button key={i} onClick={() => setSelectedDay(sel ? null : d)} aria-label={`${d} de ${MONTHS[month]}${items.length ? `, ${items.length} pagos` : ''}`}
-                className={`aspect-square rounded-xl flex flex-col items-center justify-center text-sm transition-all ${sel ? 'bg-violet-600 text-white' : isToday ? 'bg-white/10 text-white font-bold' : 'text-slate-300 hover:bg-white/5'}`}>
+                className={`aspect-square rounded-xl flex flex-col items-center justify-center text-sm transition-all ${sel ? 'bg-amber-500 text-black font-bold scale-105' : isToday ? 'bg-white/10 text-white font-bold' : 'text-slate-300 hover:bg-white/5'}`}>
                 {d}
                 <span className="flex gap-0.5 h-1.5 mt-0.5">{items.slice(0, 3).map((s, k) => <span key={k} className={`w-1.5 h-1.5 rounded-full ${STATE_STYLE[s.state].dot}`} />)}</span>
               </button>
             );
           })}
-        </div>
+        </motion.div>
+        </AnimatePresence>
+        <p className="text-[10px] text-slate-500 text-center mt-2">Desliza el calendario para cambiar de mes</p>
         <div className="flex flex-wrap gap-3 mt-3 text-[10px] text-slate-400">
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" />Vencido</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" />Pronto</span>
@@ -193,12 +216,22 @@ export default function BillsPage() {
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
               <div className="pt-3 mt-3 border-t border-white/5 space-y-2">
                 <p className="text-xs text-slate-400">Día {selectedDay}</p>
-                {dayList.length ? dayList.map((s, i) => <Row key={s.bill.id} s={s} i={i} />) : <p className="text-sm text-slate-500">Sin pagos este día.</p>}
+                {dayList.length ? dayList.map((s, i) => row(s, i)) : <p className="text-sm text-slate-500">Sin pagos este día.</p>}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {statuses.length > 0 && (
+        <button data-tour="bills-export" onClick={exportAll} className="w-full flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 to-orange-500/10 border border-amber-500/25 text-left active:scale-[0.99]">
+          <CalendarDays size={22} className="text-amber-300 shrink-0" />
+          <span className="flex-1">
+            <span className="block text-white text-sm font-semibold">Recordatorios en el calendario del celular</span>
+            <span className="block text-[11px] text-slate-400">Todos tus pagos, cada mes, con aviso un día antes y el mismo día. Así no se te pasa ninguno aunque no abras la app.</span>
+          </span>
+        </button>
+      )}
 
       {/* ¿Ya lo pagaste? */}
       {overdue.map(s => (
@@ -222,11 +255,11 @@ export default function BillsPage() {
         </div>
       ) : (
         <>
-          {upcoming.length > 0 && <section className="space-y-2"><h2 className="text-sm font-bold text-slate-300">Por pagar</h2>{upcoming.map((s, i) => <Row key={s.bill.id} s={s} i={i} />)}</section>}
+          {upcoming.length > 0 && <section className="space-y-2"><h2 className="text-sm font-bold text-slate-300">Por pagar</h2>{upcoming.map((s, i) => row(s, i))}</section>}
           {overdue.length === 0 && visible.some(s => s.state === 'vencido') && (
-            <section className="space-y-2"><h2 className="text-sm font-bold text-red-400">Vencidos</h2>{visible.filter(s => s.state === 'vencido').map((s, i) => <Row key={s.bill.id} s={s} i={i} />)}</section>
+            <section className="space-y-2"><h2 className="text-sm font-bold text-red-400">Vencidos</h2>{visible.filter(s => s.state === 'vencido').map((s, i) => row(s, i))}</section>
           )}
-          {paid.length > 0 && <section className="space-y-2"><h2 className="text-sm font-bold text-emerald-400 flex items-center gap-1"><CheckCircle2 size={14} /> Pagados</h2>{paid.map((s, i) => <Row key={s.bill.id} s={s} i={i} />)}</section>}
+          {paid.length > 0 && <section className="space-y-2"><h2 className="text-sm font-bold text-emerald-400 flex items-center gap-1"><CheckCircle2 size={14} /> Pagados</h2>{paid.map((s, i) => row(s, i))}</section>}
         </>
       )}
 

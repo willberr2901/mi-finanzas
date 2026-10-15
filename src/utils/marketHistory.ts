@@ -29,3 +29,17 @@ export const lastPriceOf = (name: string): number | null => {
   }
   return null;
 };
+
+/** Productos comprados antes (para sugerir mientras escribes): nombre, último precio y cuántas veces. */
+export const knownProducts = (): { name: string; price: number; times: number }[] => {
+  const map = new Map<string, { name: string; price: number; times: number }>();
+  for (const p of getMarketHistory()) {          // del más reciente al más antiguo
+    for (const i of p.items) {
+      const k = i.name.trim().toLowerCase();
+      const cur = map.get(k);
+      if (cur) cur.times++;
+      else map.set(k, { name: i.name.trim(), price: i.price, times: 1 });
+    }
+  }
+  return [...map.values()].sort((a, b) => b.times - a.times);
+};

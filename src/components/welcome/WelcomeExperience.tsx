@@ -43,7 +43,7 @@ export default function WelcomeExperience({ firstTime, onDone }: { firstTime: bo
   // Regreso: saludo breve que se cierra solo.
   useEffect(() => {
     if (firstTime) return;
-    const t = setTimeout(onDone, 2200);
+    const t = setTimeout(onDone, 2400);
     return () => clearTimeout(t);
   }, [firstTime, onDone]);
 
@@ -64,7 +64,9 @@ export default function WelcomeExperience({ firstTime, onDone }: { firstTime: bo
           <AppLogo size={88} />
         </motion.div>
         <motion.p className="relative text-slate-400 mt-6 text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>{greet}</motion.p>
-        <h1 className="relative text-white text-3xl font-extrabold mt-1"><Letters text={savedName ? `¡Hola de nuevo, ${savedName}!` : '¡Qué bueno verte de nuevo!'} delay={0.35} /></h1>
+        <motion.h1 className="relative text-white text-3xl font-extrabold mt-1 leading-tight" initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ delay: 0.35, duration: 0.6 }}>
+          {savedName ? <>¡Hola de nuevo,<br /><span className="bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">{savedName}!</span></> : '¡Qué bueno verte de nuevo!'}
+        </motion.h1>
         <motion.p className="relative text-violet-300 mt-2 font-medium" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>{APP_NAME}</motion.p>
       </motion.div>
     );

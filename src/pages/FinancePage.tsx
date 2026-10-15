@@ -10,8 +10,10 @@ import { generateFinancialReport } from '../services/exportService';
 import { triggerLocalRules, type RuleAlert } from '../services/financialIntelligence';
 
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, guessCategory, segmentOf, SEGMENT_INFO } from '../utils/categories';
-import HelpTip from '../components/ui/HelpTip';
+import { usePageTour } from '../components/tour/Tour';
 import ModuleHeader from '../components/ui/ModuleHeader';
+import { motion, AnimatePresence } from 'framer-motion';
+import { findMatchingBill, markPaidFromTransaction, createBillFromTransaction, RECURRING_CATEGORIES } from '../services/billsService';
 
 const categoriesFor = (t: 'income' | 'expense'): readonly string[] => (t === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES);
 
@@ -26,6 +28,13 @@ export default function FinancePage() {
   const [txType, setTxType] = useState<'income' | 'expense'>('expense');
   const [txAmount, setTxAmount] = useState(0);
   const [editingTxId, setEditingTxId] = useState<string | null>(null);
+  const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+  usePageTour('finanzas', [
+    { target: 'fin-tabs', title: 'Tres secciones', text: 'Movimientos para registrar lo que entra y sale, Metas para tus ahorros y Reportes para descargar todo en PDF o Excel.' },
+    { target: 'fin-form', title: 'Registra un movimiento', text: 'Elige si es gasto o ingreso, escribe el monto y una descripción corta. Toca "Registrar movimiento" y listo.' },
+    { target: 'fin-desc', title: 'Se clasifica solo', text: 'Mientras escribes ("Arriendo", "Uber", "Netflix") la app elige la categoría y el grupo: obligatorio, necesario, gusto o ahorro. Si es arriendo o un servicio, te ofrece programarlo cada mes en Pagos.' },
+  ]);
+  const [recurringAsk, setRecurringAsk] = useState<{ name: string; category: string; amount: number; date: Date } | null>(null);
   const [txCategory, setTxCategory] = useState<string>('Mercado');
   const [categoryTouched, setCategoryTouched] = useState(false);
   const [txDesc, setTxDesc] = useState('');
@@ -38,6 +47,9 @@ export default function FinancePage() {
 
   useEffect(() => {
     initializePage();
+    const onChange = () => { loadData(); };
+    window.addEventListener('mf:data-changed', onChange);
+    return () => window.removeEventListener('mf:data-changed', onChange);
   }, []);
 
   const initializePage = async () => {
@@ -103,9 +115,32 @@ export default function FinancePage() {
     const alerts: RuleAlert[] = triggerLocalRules(newTx, updatedTx);
     alerts.forEach((alert: RuleAlert) => notify({ title: 'Aviso', message: alert.message, type: alert.type as any }));
 
+    setLastAddedId(newTx.id);
     await loadData();
     resetTxForm();
     notify({ title: `${txType === 'income' ? 'Ingreso' : 'Gasto'} registrado`, message: `${newTx.description}: ${formatCOP(newTx.amount)}`, type: 'success' });
+
+    // Sincroniza con Pagos: si es un pago del mes, lo marca; si parece recurrente, ofrece programarlo.
+    if (newTx.type === 'expense') {
+      const when = parseLocalDate(newTx.date);
+      const bill = await findMatchingBill(newTx.description, newTx.category);
+      if (bill) {
+        if (await markPaidFromTransaction(bill, newTx.amount, when)) {
+          notify({ title: `${bill.name} quedó pagado`, message: `Lo marcamos en Pagos para ${when.toLocaleDateString('es-CO', { month: 'long' })}.`, type: 'info' });
+          window.dispatchEvent(new Event('mf:data-changed'));
+        }
+      } else if (RECURRING_CATEGORIES.has(newTx.category)) {
+        setRecurringAsk({ name: newTx.description, category: newTx.category, amount: newTx.amount, date: when });
+      }
+    }
+  };
+
+  const confirmRecurring = async () => {
+    if (!recurringAsk) return;
+    const b = await createBillFromTransaction(recurringAsk.name, recurringAsk.category, recurringAsk.amount, recurringAsk.date);
+    notify({ title: 'Pago programado cada mes', message: `${b.name} · día ${b.dueDay}. Lo verás en el calendario de Pagos.`, type: 'success' });
+    window.dispatchEvent(new Event('mf:data-changed'));
+    setRecurringAsk(null);
   };
 
   const handleEditTx = (tx: Transaction) => {
@@ -165,7 +200,7 @@ export default function FinancePage() {
     <div className="pb-24 space-y-6">
       <ModuleHeader module="finanzas" />
 
-      <div className="flex gap-2 bg-slate-900/50 p-1 rounded-xl">
+      <div data-tour="fin-tabs" className="flex gap-2 bg-slate-900/50 p-1 rounded-xl">
         {(['transactions', 'goals', 'export'] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${activeTab === tab ? 'bg-emerald-500 text-black' : 'text-slate-400 hover:text-white'}`}>
             {tab === 'transactions' ? '💰 Movimientos' : tab === 'goals' ? '🎯 Metas' : '📤 Reportes'}
@@ -175,7 +210,7 @@ export default function FinancePage() {
 
       {activeTab === 'transactions' && (
         <>
-          <div className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
+          <div data-tour="fin-form" className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
             <div className="grid grid-cols-2 gap-2">
               <input type="date" value={txDate} onChange={e => setTxDate(e.target.value)} className="input-modern" />
               <select value={txType} onChange={e => onTypeChange(e.target.value as 'income' | 'expense')} className="input-modern">
@@ -190,7 +225,7 @@ export default function FinancePage() {
                 {categoriesFor(txType).map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <input type="text" placeholder="Descripción (ej: Arriendo, Luz, Uber)" value={txDesc} onChange={e => onDescChange(e.target.value)} className="input-modern" />
+            <input data-tour="fin-desc" type="text" placeholder="Descripción (ej: Arriendo, Luz, Uber)" value={txDesc} onChange={e => onDescChange(e.target.value)} className="input-modern" />
             {txType === 'expense' && (
               <p className="text-[11px] text-slate-400 -mt-1">Se clasifica como <span className={SEGMENT_INFO[segmentOf('expense', txCategory) as 'obligatorio'].color}>{SEGMENT_INFO[segmentOf('expense', txCategory) as 'obligatorio'].label}</span> · {txCategory}</p>
             )}
@@ -201,10 +236,9 @@ export default function FinancePage() {
           </div>
 
           {monthTotal > 0 && (
-            <div className="bg-slate-900/50 p-4 rounded-2xl border border-white/5">
+            <div data-tour="fin-segments" className="bg-slate-900/50 p-4 rounded-2xl border border-white/5">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs text-slate-400">Gastos de este mes por segmento</p>
-                <HelpTip text="Cada gasto se clasifica solo según lo que escribes: obligatorios y recurrentes (arriendo, mercado, servicios, deudas), necesarios variables, gustos y ahorro." />
               </div>
               <div className="flex h-2.5 rounded-full overflow-hidden bg-slate-800">
                 {SEGS.map(k => <div key={k} className={`${SEGMENT_INFO[k].bar} transition-all duration-700`} style={{ width: `${(monthSplit[k] / monthTotal) * 100}%` }} />)}
@@ -218,8 +252,12 @@ export default function FinancePage() {
           )}
 
           <div className="space-y-2">
+            <AnimatePresence initial={false}>
             {transactions.length > 0 ? transactions.map(tx => (
-              <div key={tx.id} className="glass-panel p-3 flex justify-between items-center">
+              <motion.div key={tx.id} layout
+                initial={{ opacity: 0, y: -16, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, x: 80, height: 0, marginTop: 0, paddingTop: 0, paddingBottom: 0 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 260 }}
+                className={`glass-panel p-3 flex justify-between items-center ${tx.id === lastAddedId ? 'ring-2 ring-emerald-400/60 animate-[pulse_1.2s_ease-in-out_2]' : ''}`}>
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tx.type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
                     {tx.type === 'income' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
@@ -236,8 +274,9 @@ export default function FinancePage() {
                   <button onClick={() => handleEditTx(tx)} aria-label={`Editar ${tx.description}`} className="text-slate-400 hover:text-blue-400 p-2"><Pencil size={16} /></button>
                   <button onClick={() => { if (window.confirm(`¿Eliminar "${tx.description}"?`)) handleDeleteTx(tx.id); }} aria-label={`Eliminar ${tx.description}`} className="text-slate-400 hover:text-red-400 p-2"><Trash2 size={16} /></button>
                 </div>
-              </div>
-            )) : <p className="text-center text-slate-500 py-8">No hay movimientos registrados</p>}
+              </motion.div>
+            )) : <p className="text-center text-slate-500 py-8">Aún no hay movimientos. Registra tu primer ingreso o gasto arriba.</p>}
+            </AnimatePresence>
           </div>
         </>
       )}
@@ -302,6 +341,24 @@ export default function FinancePage() {
           </button>
         </div>
       )}
+      <AnimatePresence>
+        {recurringAsk && (
+          <motion.div className="fixed inset-0 z-[95] bg-black/70 backdrop-blur-sm flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setRecurringAsk(null)}>
+            <motion.div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="rec-title"
+              className="w-full max-w-md bg-[#111827] border border-white/10 rounded-t-3xl p-6 pb-10" initial={{ y: 120 }} animate={{ y: 0 }} exit={{ y: 120 }} transition={{ type: 'spring', damping: 24, stiffness: 260 }}>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-3 shadow-lg shadow-amber-500/30">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M12 14v3"/></svg>
+              </div>
+              <h2 id="rec-title" className="text-white text-lg font-bold">¿{recurringAsk.name} se paga cada mes?</h2>
+              <p className="text-slate-400 text-sm mt-1">Si dices que sí, lo programamos el día <strong className="text-white">{recurringAsk.date.getDate()}</strong> de cada mes en el calendario de Pagos. Cada mes solo te preguntaremos si ya lo pagaste.</p>
+              <div className="flex flex-col gap-2 mt-5">
+                <button onClick={confirmRecurring} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-bold">Sí, programarlo cada mes</button>
+                <button onClick={() => setRecurringAsk(null)} className="w-full py-3 rounded-2xl border border-white/15 text-white">No, fue un gasto de una sola vez</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

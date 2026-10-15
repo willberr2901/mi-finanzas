@@ -31,19 +31,19 @@ export default function BillForm({ initial, onSave, onClose }: Props) {
     setName(v);
     if (!categoryTouched) {
       const g = guessCategory(v);
-      if (g) { setCategory(g); if (g === 'Deudas') setKind('deuda'); }
+      if (g) { setCategory(g); if (/tarjeta/i.test(v)) setKind('tarjeta'); }
     }
   };
 
   const submit = () => {
     const day = parseInt(dueDay);
     if (!name.trim()) return setError('Escribe el nombre del pago.');
-    if (!amount) return setError('Escribe el valor.');
+    if (!amount) return setError(kind === 'tarjeta' ? 'Escribe un valor aproximado (lo puedes cambiar cada mes al pagar).' : 'Escribe el valor.');
     if (!day || day < 1 || day > 31) return setError('El día de pago va de 1 a 31.');
     const totalN = parseInt(total) || undefined;
     if (kind === 'deuda' && !totalN) return setError('Escribe cuántas cuotas tiene la deuda.');
     onSave({
-      name: name.trim(), kind, category: kind === 'deuda' ? 'Deudas' : category, amount, dueDay: day, owner,
+      name: name.trim(), kind, category: kind !== 'fijo' ? 'Deudas' : category, amount, dueDay: day, owner,
       totalInstallments: kind === 'deuda' ? totalN : undefined,
       paidInstallments: kind === 'deuda' ? Math.min(parseInt(paid) || 0, totalN ?? 0) : undefined,
     });
@@ -62,18 +62,23 @@ export default function BillForm({ initial, onSave, onClose }: Props) {
           <button onClick={onClose} aria-label="Cerrar" className="p-2 text-slate-400 hover:text-white"><X size={20} /></button>
         </div>
 
-        <div className="grid grid-cols-2 gap-1 bg-slate-900 p-1 rounded-xl mb-4">
-          {(['fijo', 'deuda'] as const).map(k => (
-            <button key={k} onClick={() => { setKind(k); if (k === 'deuda') setCategory('Deudas'); }}
-              className={`py-2 rounded-lg text-sm font-semibold transition-all ${kind === k ? 'bg-violet-600 text-white' : 'text-slate-400'}`}>
-              {k === 'fijo' ? 'Pago fijo mensual' : 'Deuda con cuotas'}
+        <div className="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-xl mb-2">
+          {(['fijo', 'tarjeta', 'deuda'] as const).map(k => (
+            <button key={k} onClick={() => { setKind(k); if (k !== 'fijo') setCategory('Deudas'); }}
+              className={`py-2 rounded-lg text-xs font-semibold transition-all ${kind === k ? 'bg-amber-500 text-black' : 'text-slate-400'}`}>
+              {k === 'fijo' ? 'Pago fijo' : k === 'tarjeta' ? 'Tarjeta crédito' : 'Crédito en cuotas'}
             </button>
           ))}
         </div>
+        <p className="text-[11px] text-slate-400 mb-4">
+          {kind === 'fijo' ? 'Arriendo, servicios, internet: mismo día cada mes. Se programa solo mes a mes.'
+            : kind === 'tarjeta' ? 'La fecha de pago es fija y el valor cambia cada mes: al pagar escribes cuánto pagaste.'
+            : 'Préstamo con un número de cuotas: te mostramos cuántas llevas y cuánto falta.'}
+        </p>
 
         <div className="space-y-3">
           <label className="block"><span className={label}>Nombre</span>
-            <input value={name} onChange={e => onName(e.target.value)} placeholder={kind === 'deuda' ? 'Ej: Tarjeta Nu, Crédito Fincomercio' : 'Ej: Arriendo, Luz Enel, Internet'} className="input-modern w-full" /></label>
+            <input value={name} onChange={e => onName(e.target.value)} placeholder={kind === 'tarjeta' ? 'Ej: Tarjeta Nu, Visa Bancolombia' : kind === 'deuda' ? 'Ej: Crédito Fincomercio, Préstamo moto' : 'Ej: Arriendo, Luz Enel, Internet'} className="input-modern w-full" /></label>
 
           {kind === 'fijo' && (
             <label className="block"><span className={label}>Categoría {OBLIGATORY.has(category) && <span className="text-violet-300">· obligatorio y recurrente</span>}</span>
@@ -83,9 +88,9 @@ export default function BillForm({ initial, onSave, onClose }: Props) {
           )}
 
           <div className="grid grid-cols-2 gap-3">
-            <label className="block"><span className={label}>{kind === 'deuda' ? 'Valor de la cuota' : 'Valor mensual'}</span>
+            <label className="block"><span className={label}>{kind === 'deuda' ? 'Valor de la cuota' : kind === 'tarjeta' ? 'Valor aproximado' : 'Valor mensual'}</span>
               <MoneyInput value={amount} onChange={setAmount} prefix placeholder="$ 0" className="input-modern w-full" /></label>
-            <label className="block"><span className={label}>Día de pago</span>
+            <label className="block"><span className={label}>{kind === 'tarjeta' ? 'Fecha límite (día)' : 'Día de pago'}</span>
               <input type="number" inputMode="numeric" min={1} max={31} value={dueDay} onChange={e => setDueDay(e.target.value)} placeholder="Ej: 5" className="input-modern w-full" /></label>
           </div>
 

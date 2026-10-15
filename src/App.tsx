@@ -1,7 +1,6 @@
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation, NavLink } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu } from 'lucide-react';
 import UpdateManager from './components/pwa/UpdateManager';
 import WhatsNew, { shouldShowWhatsNew, markWhatsNewSeen } from './components/pwa/WhatsNew';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -12,7 +11,8 @@ import TermsModal, { termsAccepted } from './components/TermsModal';
 import WelcomeExperience from './components/welcome/WelcomeExperience';
 import SidebarMenu from './components/SidebarMenu';
 import { AppMenuContext } from './components/ui/ModuleHeader';
-import { MODULES } from './utils/modules';
+import QuickAdd from './components/QuickAdd';
+import { TourProvider } from './components/tour/Tour';
 import { db, migrateData } from './utils/database';
 import { guessCategory } from './utils/categories';
 import { dailySystemReminder } from './services/alertsService';
@@ -35,7 +35,7 @@ const LegalPage = lazyWithRetry(() => import('./pages/LegalPage'));
 
 /** Reclasifica una sola vez los gastos viejos con la nueva clasificación automática. */
 const reclassifyOnce = async () => {
-  if (localStorage.getItem('mf_reclass_v1')) return;
+  if (localStorage.getItem('mf_reclass_v2')) return;
   try {
     const txs = await db.transactions.toArray();
     for (const t of txs) {
@@ -45,37 +45,13 @@ const reclassifyOnce = async () => {
       else if (['Alimentación', 'Otros', 'Servicios', 'Hogar'].includes(t.category)) cat = guessCategory(t.description);
       if (cat && cat !== t.category) await db.transactions.update(t.id, { category: cat });
     }
-    localStorage.setItem('mf_reclass_v1', '1');
+    // Las tarjetas de crédito que se guardaron como "deuda" pasan a tipo tarjeta (valor variable, fecha fija).
+    for (const b of await db.bills.toArray()) {
+      if (b.kind === 'deuda' && /tarjeta/i.test(b.name)) await db.bills.update(b.id, { kind: 'tarjeta', totalInstallments: undefined, paidInstallments: undefined, active: true });
+    }
+    localStorage.setItem('mf_reclass_v2', '1');
   } catch { /* se intenta de nuevo la próxima vez */ }
 };
-
-// --- Barra inferior: cada módulo con su ícono y su color ---
-function BottomNav({ onMenu }: { onMenu: () => void }) {
-  const items = (['inicio', 'mercado', 'finanzas', 'pagos'] as const).map(k => MODULES[k]);
-  return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[94%] max-w-md z-50">
-      <nav aria-label="Navegación" className="bg-[#111827]/90 backdrop-blur-xl border border-white/10 rounded-3xl px-2 py-2 flex justify-around items-center shadow-2xl shadow-black/50">
-        {items.map(m => {
-          const Icon = m.icon;
-          return (
-            <NavLink key={m.path} to={m.path} end className="flex-1">
-              {({ isActive }) => (
-                <span className="relative flex flex-col items-center gap-0.5 py-1">
-                  {isActive && <motion.span layoutId="nav-pill" className={`absolute inset-x-2 -inset-y-0.5 rounded-2xl bg-gradient-to-br ${m.gradient} opacity-20`} transition={{ type: 'spring', damping: 24, stiffness: 300 }} />}
-                  <Icon size={21} className={`relative transition-colors ${isActive ? m.accent : 'text-slate-500'}`} strokeWidth={isActive ? 2.4 : 2} />
-                  <span className={`relative text-[10px] font-medium ${isActive ? 'text-white' : 'text-slate-500'}`}>{m.label}</span>
-                </span>
-              )}
-            </NavLink>
-          );
-        })}
-        <button onClick={onMenu} className="flex-1 flex flex-col items-center gap-0.5 py-1 text-slate-500" aria-label="Abrir menú con más opciones">
-          <Menu size={21} /><span className="text-[10px] font-medium">Más</span>
-        </button>
-      </nav>
-    </div>
-  );
-}
 
 function AppContent() {
   const [firstTime] = useState(() => !localStorage.getItem('miFinanzasWelcomeDone'));
@@ -107,10 +83,11 @@ function AppContent() {
 
   return (
     <AppMenuContext.Provider value={{ openMenu: () => setMenuOpen(true) }}>
+     <TourProvider ready={!showWelcome && !showTerms && !showWhatsNew && !(isSetup && isLocked)}>
       <div className="min-h-screen bg-[#070B14] text-white font-sans selection:bg-violet-500/30">
         {isSetup && isLocked && <SecurityLock />}
 
-        <main className="pb-32 pt-5 px-4 max-w-md mx-auto">
+        <main className="pb-28 pt-5 px-4 max-w-md mx-auto">
           <AnimatePresence mode="wait">
             <motion.div key={location.pathname} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}>
               <Suspense fallback={<div className="h-40 flex items-center justify-center text-slate-500">Cargando…</div>}>
@@ -130,7 +107,7 @@ function AppContent() {
           </AnimatePresence>
         </main>
 
-        <BottomNav onMenu={() => setMenuOpen(true)} />
+        <QuickAdd hidden={location.pathname === '/mercado' || location.pathname === '/legal'} />
         <SidebarMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
         <UpdateManager />
         <ToastProvider />
@@ -138,6 +115,7 @@ function AppContent() {
         {showTerms && <TermsModal onAccept={afterTerms} />}
         <AnimatePresence>{showWhatsNew && <WhatsNew onClose={() => setShowWhatsNew(false)} />}</AnimatePresence>
       </div>
+     </TourProvider>
     </AppMenuContext.Provider>
   );
 }

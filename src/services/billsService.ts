@@ -77,3 +77,87 @@ export const describeDue = (s: BillStatus): string => {
   if (s.daysLeft === 1) return 'Vence mañana';
   return `En ${s.daysLeft} días`;
 };
+
+// ---------- Sincronización Finanzas → Pagos ----------
+const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+
+/** Busca un pago fijo que corresponda a un gasto (por nombre parecido o misma categoría única). */
+export const findMatchingBill = async (description: string, category: string): Promise<Bill | null> => {
+  const bills = (await db.bills.toArray()).filter(b => b.active);
+  const d = norm(description);
+  const byName = bills.find(b => { const n = norm(b.name); return n && (d.includes(n) || n.includes(d)); });
+  if (byName) return byName;
+  const sameCat = bills.filter(b => b.category === category);
+  return sameCat.length === 1 && (category === 'Arriendo') ? sameCat[0] : null;
+};
+
+/** Categorías que normalmente son pagos de cada mes. */
+export const RECURRING_CATEGORIES = new Set(['Arriendo', 'Servicios', 'Deudas']);
+
+/** Marca el pago del mes de ese gasto (sin crear otro gasto: ya se registró en Finanzas). */
+export const markPaidFromTransaction = async (bill: Bill, amount: number, date: Date) => {
+  const period = periodOf(date);
+  const exists = await db.billPayments.where('[billId+period]').equals([bill.id, period]).first();
+  if (exists) return false;
+  await db.billPayments.add({ id: crypto.randomUUID(), billId: bill.id, period, amount, paidAt: Date.now() });
+  if (bill.kind === 'deuda') {
+    const installment = (bill.paidInstallments ?? 0) + 1;
+    await db.bills.update(bill.id, { paidInstallments: installment, active: !(bill.totalInstallments && installment >= bill.totalInstallments) });
+  }
+  return true;
+};
+
+/** Crea un pago mensual a partir de un gasto registrado en Finanzas y lo deja pagado ese mes. */
+export const createBillFromTransaction = async (name: string, category: string, amount: number, date: Date, owner: Bill['owner'] = 'compartido') => {
+  const kind: Bill['kind'] = /tarjeta/i.test(name) ? 'tarjeta' : 'fijo';
+  const bill: Bill = { id: crypto.randomUUID(), name, kind, category: kind === 'tarjeta' ? 'Deudas' : category, amount, dueDay: date.getDate(), owner, active: true, createdAt: Date.now() };
+  await db.bills.add(bill);
+  await db.billPayments.add({ id: crypto.randomUUID(), billId: bill.id, period: periodOf(date), amount, paidAt: Date.now() });
+  return bill;
+};
+
+// ---------- Recordatorios en el calendario del celular ----------
+const pad = (n: number) => String(n).padStart(2, '0');
+const ymd = (d: Date) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+
+const nextDue = (bill: Bill) => {
+  const t = new Date();
+  const thisMonth = dueDateFor(bill, t.getFullYear(), t.getMonth());
+  return thisMonth >= new Date(t.getFullYear(), t.getMonth(), t.getDate()) ? thisMonth : dueDateFor(bill, t.getFullYear(), t.getMonth() + 1);
+};
+
+/** Enlace para crear el recordatorio mensual en Google Calendar (se abre la app del calendario). */
+export const googleCalendarLink = (bill: Bill) => {
+  const d = nextDue(bill);
+  const end = new Date(d); end.setDate(end.getDate() + 1);
+  const day = bill.dueDay >= 29 ? -1 : bill.dueDay; // fin de mes cuando el día no existe en todos los meses
+  const p = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `Pagar ${bill.name}`,
+    dates: `${ymd(d)}/${ymd(end)}`,
+    details: `Recordatorio de Mi Finanzas. Valor aprox: $${Math.round(bill.amount).toLocaleString('es-CO')}. Márcalo como pagado en la app.`,
+    recur: `RRULE:FREQ=MONTHLY;BYMONTHDAY=${day}`,
+  });
+  return `https://calendar.google.com/calendar/render?${p.toString()}`;
+};
+
+/** Archivo .ics con todos los pagos, cada uno repitiéndose cada mes y con aviso un día antes. */
+export const buildICS = (bills: Bill[]) => {
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const events = bills.filter(b => b.active).map(b => {
+    const d = nextDue(b);
+    const end = new Date(d); end.setDate(end.getDate() + 1);
+    const day = b.dueDay >= 29 ? -1 : b.dueDay;
+    return [
+      'BEGIN:VEVENT', `UID:${b.id}@mi-finanzas`, `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${ymd(d)}`, `DTEND;VALUE=DATE:${ymd(end)}`,
+      `RRULE:FREQ=MONTHLY;BYMONTHDAY=${day}`,
+      `SUMMARY:Pagar ${b.name}`,
+      `DESCRIPTION:Recordatorio de Mi Finanzas. Valor aprox: $${Math.round(b.amount).toLocaleString('es-CO')}`,
+      'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:Mañana vence ${b.name}`, 'TRIGGER:-PT15H', 'END:VALARM',
+      'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:Hoy vence ${b.name}`, 'TRIGGER:PT9H', 'END:VALARM',
+      'END:VEVENT',
+    ].join('\r\n');
+  });
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Mi Finanzas//ES', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n');
+};
