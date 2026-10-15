@@ -1,7 +1,7 @@
 import { PieChart, Pie, ResponsiveContainer, Legend, Tooltip, Cell } from 'recharts';
 import { useFinanceStore } from '../store/financeStore';
 
-const COLORS = ['#00FFA3', '#00D1FF', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+const COLORS = ['#C6F432', '#5EEAD4', '#F59E0B', '#EF4444', '#8792C4', '#F472B6'];
 
 export default function ExpenseChart() {
   const { transactions } = useFinanceStore();

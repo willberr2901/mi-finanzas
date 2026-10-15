@@ -160,7 +160,7 @@ export default function MarketList() {
                 <span className="text-purple-400">{percentage.toFixed(0)}%</span>
               </div>
               <div className={`h-1.5 rounded-full ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>
-                <div className={`h-full rounded-full ${percentage>90?'bg-red-500':percentage>70?'bg-yellow-500':'bg-gradient-to-r from-purple-500 to-pink-500'}`} style={{width:`${percentage}%`}}></div>
+                <div className={`h-full rounded-full ${percentage>90?'bg-red-500':percentage>70?'bg-yellow-500':'bg-gradient-to-r from-purple-400 to-purple-600'}`} style={{width:`${percentage}%`}}></div>
               </div>
             </div>
           </div>

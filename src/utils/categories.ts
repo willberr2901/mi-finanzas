@@ -13,9 +13,9 @@ export type Segment = 'obligatorio' | 'necesario' | 'gusto' | 'ahorro' | 'ingres
 
 export const SEGMENT_INFO: Record<Exclude<Segment, 'ingreso'>, { label: string; short: string; color: string; bar: string; help: string }> = {
   obligatorio: { label: 'Obligatorios y recurrentes', short: 'Obligatorios', color: 'text-violet-300', bar: 'bg-violet-500', help: 'Arriendo, mercado, servicios y deudas: llegan cada mes y no se pueden dejar de pagar.' },
-  necesario: { label: 'Necesarios variables', short: 'Necesarios', color: 'text-cyan-300', bar: 'bg-cyan-400', help: 'Transporte, salud, hogar y educación: hacen falta, pero el valor cambia y se puede ajustar.' },
-  gusto: { label: 'Gustos', short: 'Gustos', color: 'text-pink-300', bar: 'bg-pink-400', help: 'Salidas, plataformas, comida por fuera y antojos: lo primero que se recorta si el mes está apretado.' },
-  ahorro: { label: 'Ahorro e inversión', short: 'Ahorro', color: 'text-emerald-300', bar: 'bg-emerald-400', help: 'Lo que guardas o inviertes para tus metas.' },
+  necesario: { label: 'Necesarios variables', short: 'Necesarios', color: 'text-[#A9B2DA]', bar: 'bg-[#8792C4]', help: 'Transporte, salud, hogar y educación: hacen falta, pero el valor cambia y se puede ajustar.' },
+  gusto: { label: 'Gustos', short: 'Gustos', color: 'text-amber-300', bar: 'bg-amber-400', help: 'Salidas, plataformas, comida por fuera y antojos: lo primero que se recorta si el mes está apretado.' },
+  ahorro: { label: 'Ahorro e inversión', short: 'Ahorro', color: 'text-teal-200', bar: 'bg-teal-300', help: 'Lo que guardas o inviertes para tus metas.' },
 };
 
 const SEGMENT_OF: Record<string, Segment> = {

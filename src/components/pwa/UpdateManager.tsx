@@ -116,7 +116,7 @@ export default function UpdateManager() {
             <div className="relative mt-6 space-y-2">
               <button
                 onClick={applyUpdate} disabled={updating}
-                className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 text-white font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-80"
+                className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 text-brand-ink font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-80"
               >
                 <RefreshCw size={18} className={updating ? 'animate-spin' : ''} />
                 {updating ? 'Actualizando…' : 'Actualizar ahora'}

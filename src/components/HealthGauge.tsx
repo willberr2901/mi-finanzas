@@ -25,7 +25,7 @@ export default function HealthGauge({ transactions, goals, balance }: HealthGaug
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const color = score >= 80 ? '#10b981' : score >= 60 ? '#06b6d4' : score >= 40 ? '#f59e0b' : '#ef4444';
+  const color = score >= 80 ? '#C6F432' : score >= 60 ? '#A3E64F' : score >= 40 ? '#f59e0b' : '#ef4444';
 
   return (
     <div className="bg-slate-800/50 rounded-2xl p-4 border border-white/10 flex flex-col items-center">

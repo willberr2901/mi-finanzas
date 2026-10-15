@@ -133,7 +133,7 @@ export default function NotificationBell() {
                             : perm === 'denied' ? 'Están bloqueados. Actívalos en Ajustes del celular → Apps → Chrome → Notificaciones.'
                             : 'Activa los avisos y te recordaremos tus pagos antes de la fecha límite.'}
                         </p>
-                        {perm === 'default' && <button onClick={activate} className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white text-sm font-bold">Activar avisos</button>}
+                        {perm === 'default' && <button onClick={activate} className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-500 text-brand-ink text-sm font-bold">Activar avisos</button>}
                         {perm === 'granted' && <button onClick={() => sendTestNotification()} className="mt-3 text-xs text-violet-300 font-semibold">Enviar notificación de prueba</button>}
                       </div>
                     </div>

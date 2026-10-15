@@ -32,7 +32,7 @@ export default function ToastProvider() {
       }
       .Toastify__progress-bar {
         height: 4px !important;
-        background: #10b981 !important;
+        background: #C6F432 !important;
         border-radius: 0 0 12px 12px !important;
       }
     `;

@@ -165,7 +165,7 @@ export default function BillsPage() {
         <div className="relative w-20 h-20 shrink-0">
           <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90" aria-hidden="true">
             <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(255,255,255,.1)" strokeWidth="8" />
-            <motion.circle cx="40" cy="40" r="34" fill="none" stroke="#34d399" strokeWidth="8" strokeLinecap="round"
+            <motion.circle cx="40" cy="40" r="34" fill="none" stroke="#C6F432" strokeWidth="8" strokeLinecap="round"
               strokeDasharray={213.6} initial={{ strokeDashoffset: 213.6 }} animate={{ strokeDashoffset: 213.6 * (1 - pct / 100) }} transition={{ duration: 1.1, ease: 'easeOut' }} />
           </svg>
           <span className="absolute inset-0 flex items-center justify-center text-white font-bold">{pct}%</span>

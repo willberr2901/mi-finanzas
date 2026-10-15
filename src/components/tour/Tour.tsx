@@ -114,7 +114,7 @@ function Spotlight({ step, index, total, onNext, onSkip }: { step: TourStep; ind
             <div className="flex gap-1.5" aria-hidden="true">{Array.from({ length: total }).map((_, i) => <span key={i} className={`h-1.5 rounded-full ${i === index ? 'w-5 bg-violet-600' : 'w-1.5 bg-slate-300'}`} />)}</div>
             <div className="flex gap-2">
               {index + 1 < total && <button onClick={onSkip} className="px-3 py-2 text-sm text-slate-500">Saltar</button>}
-              <button onClick={onNext} className="px-4 py-2 rounded-xl bg-violet-600 text-white text-sm font-bold flex items-center gap-1">{index + 1 < total ? 'Siguiente' : '¡Entendido!'} <ArrowRight size={14} /></button>
+              <button onClick={onNext} className="px-4 py-2 rounded-xl bg-violet-600 text-brand-ink text-sm font-bold flex items-center gap-1">{index + 1 < total ? 'Siguiente' : '¡Entendido!'} <ArrowRight size={14} /></button>
             </div>
           </div>
         </div>

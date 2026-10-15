@@ -143,12 +143,12 @@ export default function SettingsPage() {
 
         <Section icon={User} title="Perfil" gradient="from-violet-600 to-indigo-500">
           <div className="flex items-center gap-3 px-4 py-4">
-            <span className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center text-white text-2xl font-bold">{(name || '?').trim()[0]?.toUpperCase()}</span>
+            <span className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center text-brand-ink text-2xl font-bold">{(name || '?').trim()[0]?.toUpperCase()}</span>
             <div className="flex-1">
               <label className="text-[11px] text-slate-400">¿Cómo te saludamos?</label>
               <div className="flex gap-2 mt-1">
                 <input value={name} onChange={e => setName(e.target.value)} maxLength={24} placeholder="Tu nombre o apodo" className="input-modern flex-1 !py-2" />
-                <button onClick={saveName} aria-label="Guardar nombre" className="px-3 rounded-xl bg-violet-600 text-white"><Check size={18} /></button>
+                <button onClick={saveName} aria-label="Guardar nombre" className="px-3 rounded-xl bg-violet-600 text-brand-ink"><Check size={18} /></button>
               </div>
               <p className="text-[10px] text-slate-500 mt-1">Queda solo en este celular.</p>
             </div>
@@ -158,7 +158,7 @@ export default function SettingsPage() {
         <Section icon={Bell} title="Notificaciones" gradient="from-fuchsia-500 to-violet-600">
           <Row title={perm === 'granted' ? 'Avisos en el celular: activados' : 'Avisos en el celular'}
             desc={perm === 'granted' ? 'Te avisamos 2 días antes, el día del pago y si algo se vence.' : perm === 'denied' ? 'Bloqueados. Actívalos en Ajustes del celular → Apps → Chrome → Notificaciones.' : 'Actívalos para que no se te pase ninguna fecha de pago.'}
-            right={perm === 'granted' ? <span className="text-emerald-400 text-xs font-bold">ACTIVOS</span> : perm === 'default' ? <button onClick={async () => setPerm(await enableReminders())} className="px-3 py-1.5 rounded-xl bg-fuchsia-600 text-white text-xs font-bold">Activar</button> : undefined} />
+            right={perm === 'granted' ? <span className="text-emerald-400 text-xs font-bold">ACTIVOS</span> : perm === 'default' ? <button onClick={async () => setPerm(await enableReminders())} className="px-3 py-1.5 rounded-xl bg-fuchsia-600 text-brand-ink text-xs font-bold">Activar</button> : undefined} />
           {perm === 'granted' && <Row icon={Sparkles} title="Enviar notificación de prueba" onClick={() => sendTestNotification()} />}
           <Link to="/pagos" className="block"><Row icon={CalendarDays} title="Recordatorios en el calendario" desc="Desde Pagos agrega todos tus vencimientos al calendario del celular: avisan aunque no abras la app." right={<ChevronRight size={16} className="text-slate-600" />} /></Link>
         </Section>

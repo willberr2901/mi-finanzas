@@ -17,7 +17,7 @@ const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 
 const MON = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const SEGS = ['obligatorio', 'necesario', 'gusto', 'ahorro'] as const;
-const SEG_HEX: Record<typeof SEGS[number], string> = { obligatorio: '#8b5cf6', necesario: '#22d3ee', gusto: '#f472b6', ahorro: '#34d399' };
+const SEG_HEX: Record<typeof SEGS[number], string> = { obligatorio: '#C6F432', necesario: '#8792C4', gusto: '#F59E0B', ahorro: '#5EEAD4' };
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
 const item = { hidden: { opacity: 0, y: 22 }, show: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 22, stiffness: 200 } } };
@@ -28,7 +28,7 @@ const Card = ({ children, className = '', ...rest }: any) => (
 const Title = ({ icon: Icon, color, children, to, link }: { icon: any; color: string; children: any; to?: string; link?: string }) => (
   <div className="flex items-center justify-between mb-3">
     <div className="flex items-center gap-2">
-      <span className={`w-8 h-8 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center`}><Icon size={16} className="text-white" /></span>
+      <span className={`w-8 h-8 rounded-xl bg-gradient-to-br from-[#232C5A] to-[#0E1430] ring-1 ring-white/10 flex items-center justify-center ${color ? "" : ""}`}><Icon size={16} className="text-brand-lime" /></span>
       <h2 className="text-white font-bold text-[15px]">{children}</h2>
     </div>
     {to && <Link to={to} className="text-xs text-slate-300 font-semibold flex items-center">{link}<ChevronRight size={14} /></Link>}
@@ -106,7 +106,7 @@ export default function HomePage() {
   const totalBalance = tx.reduce((a, t) => a + (t.type === 'income' ? t.amount : -t.amount), 0);
   const recent = tx.some(t => now.getTime() - parseLocalDate(t.date).getTime() < 30 * 86400000);
   const health = recent ? calculateHealthScore(tx, goals, totalBalance) : null;
-  const hColor = !health ? '#64748b' : health.total >= 80 ? '#34d399' : health.total >= 60 ? '#22d3ee' : health.total >= 40 ? '#fbbf24' : '#f87171';
+  const hColor = !health ? '#6A7396' : health.total >= 80 ? '#C6F432' : health.total >= 60 ? '#A3E64F' : health.total >= 40 ? '#fbbf24' : '#f87171';
   const hLabel = !health ? 'Faltan datos' : health.total >= 80 ? 'Excelente' : health.total >= 60 ? 'Buen camino' : health.total >= 40 ? 'Ajustar hábitos' : 'Requiere atención';
 
   const billTotal = bills.reduce((a, b) => a + (b.payment?.amount ?? b.bill.amount), 0);
@@ -133,14 +133,14 @@ export default function HomePage() {
 
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
         {/* 1. Resumen del mes */}
-        <motion.div data-tour="home-hero" variants={item} className="relative overflow-hidden rounded-[30px] p-5 bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-600 shadow-2xl shadow-violet-900/50">
-          <motion.div className="absolute -top-16 -right-10 w-52 h-52 bg-white/15 rounded-full blur-2xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 6, repeat: Infinity }} aria-hidden="true" />
+        <motion.div data-tour="home-hero" variants={item} className="relative overflow-hidden rounded-[30px] p-5 bg-gradient-to-br from-[#232C5A] via-[#141B3D] to-[#0B1026] ring-1 ring-lime-300/20 shadow-2xl shadow-black/50">
+          <motion.div className="absolute -top-16 -right-10 w-52 h-52 bg-lime-300/20 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 6, repeat: Infinity }} aria-hidden="true" />
           <div className="relative flex gap-4 items-center">
             <div className="flex-1 min-w-0">
               {s.income > 0 ? (
                 <>
                   <p className="text-white/80 text-sm">{balance >= 0 ? `Te queda en ${MONTHS[now.getMonth()]}` : `Gastaste más de lo que entró`}</p>
-                  <CountUp value={Math.abs(balance)} className="block text-[34px] leading-tight font-extrabold text-white tracking-tight" />
+                  <CountUp value={Math.abs(balance)} className={`block text-[34px] leading-tight font-extrabold tracking-tight ${balance >= 0 ? 'text-brand-lime' : 'text-rose-300'}`} />
                   <p className="text-white/75 text-xs">{balance >= 0 ? `de ${formatCOP(s.income)} que entraron` : `por encima de tus ingresos de ${formatCOP(s.income)}`}</p>
                 </>
               ) : (
@@ -153,8 +153,8 @@ export default function HomePage() {
             </div>
             <div className="relative w-24 h-24 shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-hidden="true">
-                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.2)" strokeWidth="10" />
-                <motion.circle cx="50" cy="50" r="42" fill="none" stroke="#fff" strokeWidth="10" strokeLinecap="round" strokeDasharray={263.9}
+                <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.12)" strokeWidth="10" />
+                <motion.circle cx="50" cy="50" r="42" fill="none" stroke="#C6F432" strokeWidth="10" strokeLinecap="round" strokeDasharray={263.9}
                   initial={{ strokeDashoffset: 263.9 }} animate={{ strokeDashoffset: 263.9 * (1 - Math.min(spentPct, 100) / 100) }} transition={{ duration: 1.3, delay: 0.3 }} />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
@@ -164,12 +164,12 @@ export default function HomePage() {
             </div>
           </div>
           <div className="relative grid grid-cols-2 gap-2 mt-4">
-            <Link to="/finanzas" className="bg-white/15 rounded-2xl px-3 py-2.5">
+            <Link to="/finanzas" className="bg-white/[0.06] ring-1 ring-white/10 rounded-2xl px-3 py-2.5">
               <p className="text-[11px] text-white/80">Entró</p>
               <p className="text-white font-bold">{formatCOP(s.income)}</p>
               <Delta pct={s.incomeDelta} goodWhenDown={false} />
             </Link>
-            <Link to="/finanzas" className="bg-white/15 rounded-2xl px-3 py-2.5">
+            <Link to="/finanzas" className="bg-white/[0.06] ring-1 ring-white/10 rounded-2xl px-3 py-2.5">
               <p className="text-[11px] text-white/80">Salió</p>
               <p className="text-white font-bold">{formatCOP(s.expense)}</p>
               <span className="flex items-center gap-1"><Delta pct={s.expenseDelta} /><span className="text-[10px] text-white/60">vs. {MON[prevDate.getMonth()]}</span></span>
@@ -219,7 +219,7 @@ export default function HomePage() {
                     const soon = b.state === 'pronto';
                     const frac = Math.max(0, Math.min(1, 1 - b.daysLeft / 30));
                     const grad = urgent ? 'from-rose-500/30 to-red-600/10 border-rose-400/40' : soon ? 'from-amber-500/25 to-orange-500/10 border-amber-400/40' : 'from-violet-500/20 to-indigo-500/5 border-violet-400/25';
-                    const ring = urgent ? '#fb7185' : soon ? '#fbbf24' : '#a78bfa';
+                    const ring = urgent ? '#fb7185' : soon ? '#fbbf24' : '#C6F432';
                     return (
                       <motion.div key={b.bill.id} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 + i * 0.07 }} className="snap-start shrink-0">
                         <Link to="/pagos" className={`block w-40 rounded-3xl p-3.5 bg-gradient-to-br border ${grad}`}>

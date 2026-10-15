@@ -23,7 +23,7 @@ export default function ModuleHeader({ module, title, subtitle, right }: { modul
         initial={{ scale: 0.5, rotate: -15, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }} transition={{ type: 'spring', damping: 12, stiffness: 220 }}
         className={`w-11 h-11 shrink-0 rounded-2xl bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-lg ${m.glow}`}>
         <motion.span animate={{ y: [0, -2, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }} className="flex">
-          <Icon size={22} className="text-white" strokeWidth={2.2} />
+          <Icon size={22} className="text-brand-lime" strokeWidth={2.2} />
         </motion.span>
       </motion.div>
       <motion.div className="flex-1 min-w-0" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.08 }}>

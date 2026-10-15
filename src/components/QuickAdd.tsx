@@ -50,7 +50,7 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
           <motion.button data-tour="fab" onClick={() => setOpen(true)} aria-label="Registro rápido"
             initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} whileTap={{ scale: 0.88 }}
             className="fixed bottom-6 right-5 z-50 w-16 h-16 rounded-[22px] bg-gradient-to-br from-violet-600 via-indigo-500 to-cyan-500 shadow-2xl shadow-violet-600/50 flex items-center justify-center">
-            <motion.span animate={{ rotate: open ? 45 : 0 }}><Plus size={30} className="text-white" strokeWidth={2.6} /></motion.span>
+            <motion.span animate={{ rotate: open ? 45 : 0 }}><Plus size={30} className="text-brand-ink" strokeWidth={2.6} /></motion.span>
             <motion.span className="absolute inset-0 rounded-[22px] border-2 border-violet-300/60" animate={{ scale: [1, 1.25], opacity: [0.7, 0] }} transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 1.5 }} />
           </motion.button>
         )}
@@ -101,7 +101,7 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
                       )}
                       <div className="flex gap-2 mt-5">
                         <button onClick={reset} className="px-5 py-3.5 rounded-2xl border border-white/15 text-white">Atrás</button>
-                        <button onClick={save} className={`flex-1 py-3.5 rounded-2xl font-bold text-white bg-gradient-to-r ${mode === 'income' ? 'from-emerald-500 to-teal-500' : 'from-rose-500 to-pink-600'}`}>Guardar</button>
+                        <button onClick={save} className={`flex-1 py-3.5 rounded-2xl font-bold bg-gradient-to-r ${mode === 'income' ? 'from-emerald-400 to-emerald-500 text-brand-ink' : 'from-rose-500 to-pink-600 text-white'}`}>Guardar</button>
                       </div>
                     </motion.div>
                   )}

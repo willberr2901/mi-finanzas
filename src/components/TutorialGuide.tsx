@@ -23,7 +23,7 @@ const steps = [
     icon: Scan,
     title: '🧾 Escáner',
     description: 'Escanea facturas del mercado con OCR. Compara precios planificados vs reales.',
-    color: 'from-purple-500 to-pink-500',
+    color: 'from-purple-400 to-purple-600',
     route: '/escaner'
   },
   {
@@ -127,7 +127,7 @@ export default function TutorialGuide({ onDismiss }: TutorialGuideProps) {
           </button>
           <button
             onClick={handleNext}
-            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 rounded-xl transition-all"
+            className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-brand-ink font-bold py-3 rounded-xl transition-all"
           >
             {currentStep === steps.length - 1 ? '¡Comenzar!' : 'Siguiente →'}
           </button>

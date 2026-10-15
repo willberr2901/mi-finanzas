@@ -29,7 +29,7 @@ export default function WhatsNew({ onClose }: { onClose: () => void }) {
             </motion.li>
           ))}
         </ul>
-        <button onClick={close} className="relative mt-6 w-full bg-gradient-to-r from-violet-600 to-cyan-600 text-white font-bold py-3.5 rounded-2xl active:scale-[0.98]">¡Genial, a verlo!</button>
+        <button onClick={close} className="relative mt-6 w-full bg-gradient-to-r from-violet-600 to-cyan-600 text-brand-ink font-bold py-3.5 rounded-2xl active:scale-[0.98]">¡Genial, a verlo!</button>
       </motion.div>
     </motion.div>
   );

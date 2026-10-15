@@ -46,7 +46,7 @@ export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onCl
                       <motion.button key={k} onClick={() => go(m.path)}
                         initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 + (gi * 4 + i) * 0.035 }}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left transition-colors ${active ? 'bg-white/10' : 'hover:bg-white/5'}`}>
-                        <span className={`w-9 h-9 rounded-xl bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-md ${m.glow}`}><Icon size={18} className="text-white" /></span>
+                        <span className={`w-9 h-9 rounded-xl bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-md ${m.glow}`}><Icon size={18} className="text-brand-lime" /></span>
                         <span className="flex-1 min-w-0">
                           <span className={`block text-sm font-semibold ${active ? m.accent : 'text-white'}`}>{m.label}</span>
                           <span className="block text-[11px] text-slate-400 truncate">{m.tagline}</span>

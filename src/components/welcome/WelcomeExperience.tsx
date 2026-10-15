@@ -87,7 +87,7 @@ export default function WelcomeExperience({ firstTime, onDone }: { firstTime: bo
               El mercado, los pagos y las cuentas de tu hogar, claros y en un solo lugar.
             </motion.p>
             <motion.button onClick={() => setStep('name')} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.7 }}
-              className="mt-10 px-10 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-bold text-lg shadow-xl shadow-violet-600/40 flex items-center gap-2 active:scale-95">
+              className="mt-10 px-10 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 text-brand-ink font-bold text-lg shadow-xl shadow-violet-600/40 flex items-center gap-2 active:scale-95">
               Empezar <ArrowRight size={20} />
             </motion.button>
           </motion.div>
@@ -102,7 +102,7 @@ export default function WelcomeExperience({ firstTime, onDone }: { firstTime: bo
               onKeyDown={e => { if (e.key === 'Enter') { if (name.trim()) localStorage.setItem('miFinanzasUserName', name.trim()); setStep('tour'); } }}
               className="mt-6 w-full p-4 bg-white/5 border border-white/15 rounded-2xl text-white text-center text-lg outline-none focus:border-violet-400" />
             <button onClick={() => { if (name.trim()) localStorage.setItem('miFinanzasUserName', name.trim()); setStep('tour'); }}
-              className="mt-4 w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-bold">{name.trim() ? `Mucho gusto, ${name.trim()}` : 'Continuar'}</button>
+              className="mt-4 w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 text-brand-ink font-bold">{name.trim() ? `Mucho gusto, ${name.trim()}` : 'Continuar'}</button>
             <button onClick={() => setStep('tour')} className="mt-2 text-slate-400 text-sm py-2">Saltar</button>
           </motion.div>
         )}
@@ -115,7 +115,7 @@ export default function WelcomeExperience({ firstTime, onDone }: { firstTime: bo
                 <>
                   <motion.div initial={{ scale: 0.3, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', damping: 10 }}
                     className={`w-28 h-28 mx-auto rounded-[32px] bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-2xl ${m.glow}`}>
-                    <Icon size={52} className="text-white" />
+                    <Icon size={52} className="text-brand-lime" />
                   </motion.div>
                   <p className={`mt-8 text-xs uppercase tracking-[0.2em] font-bold ${m.accent}`}>{m.label}</p>
                   <h2 className="text-white text-2xl font-bold mt-1">{m.tagline}</h2>
@@ -127,7 +127,7 @@ export default function WelcomeExperience({ firstTime, onDone }: { firstTime: bo
               {TOUR.map((_, i) => <span key={i} className={`h-2 rounded-full transition-all ${i === slide ? 'w-6 bg-white' : 'w-2 bg-white/25'}`} />)}
             </div>
             <button onClick={() => (slide < TOUR.length - 1 ? setSlide(s => s + 1) : finish())}
-              className="mt-8 w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 text-white font-bold flex items-center justify-center gap-2">
+              className="mt-8 w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-cyan-500 text-brand-ink font-bold flex items-center justify-center gap-2">
               {slide < TOUR.length - 1 ? 'Siguiente' : '¡Vamos!'} <ArrowRight size={18} />
             </button>
             {slide < TOUR.length - 1 && <button onClick={finish} className="mt-2 text-slate-400 text-sm py-2">Saltar recorrido</button>}

@@ -3,28 +3,29 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #020617;
-  --bg-secondary: #0f172a;
-  --bg-tertiary: #1e293b;
+  --bg-primary: #070B18;
+  --bg-secondary: #0B1026;
+  --bg-tertiary: #1A2140;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
-  --accent-primary: #10b981;
-  --accent-secondary: #06b6d4;
+  --accent-primary: #C6F432;
+  --accent-secondary: #A3E64F;
   --border-subtle: rgba(255, 255, 255, 0.08);
-  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-bg: rgba(15, 21, 48, 0.6);
   --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 @layer base {
   html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
   body { @apply bg-[var(--bg-primary)] text-[var(--text-primary)] min-h-screen; }
+  ::selection { background: rgba(198, 244, 50, 0.35); }
   * { -webkit-tap-highlight-color: transparent; }
 }
 
 @layer components {
   .glass-panel { @apply bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-2xl shadow-lg; }
-  .btn-primary { @apply bg-gradient-to-r from-emerald-500 to-cyan-500 text-black font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-emerald-500/20 transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed; }
-  .input-modern { @apply w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all; }
+  .btn-primary { @apply bg-brand-lime text-brand-ink font-bold py-3 px-6 rounded-xl shadow-lg shadow-lime-400/20 hover:shadow-lime-400/30 transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed; }
+  .input-modern { @apply w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-lime-400/40 focus:border-lime-400 transition-all; }
 }
 
 @layer utilities {

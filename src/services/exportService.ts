@@ -25,7 +25,7 @@ const SEG_COLOR: Record<Exclude<Segment, 'ingreso'>, RGB> = {
   obligatorio: NAVY,
   necesario: [100, 116, 139],
   gusto: [245, 158, 11],
-  ahorro: [132, 204, 22],
+  ahorro: [20, 184, 166],
 };
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
