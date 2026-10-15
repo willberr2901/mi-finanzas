@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Download, Bell, Target, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Trash2, Download, Bell, Target, TrendingUp, TrendingDown, Pencil, PiggyBank } from 'lucide-react';
+import MoneyInput from '../components/ui/MoneyInput';
+import { formatCOP, todayISO, parseLocalDate } from '../utils/format';
 import type { Transaction, SavingsGoal } from '../utils/database';
 import { notify } from '../services/notificationService';
 import { db, migrateData } from '../utils/database';
@@ -16,14 +18,17 @@ export default function FinancePage() {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const [txDate, setTxDate] = useState(new Date().toISOString().split('T')[0]);
+  const [txDate, setTxDate] = useState(todayISO());
   const [txType, setTxType] = useState<'income' | 'expense'>('expense');
-  const [txAmount, setTxAmount] = useState('');
+  const [txAmount, setTxAmount] = useState(0);
+  const [editingTxId, setEditingTxId] = useState<string | null>(null);
   const [txCategory, setTxCategory] = useState(CATEGORIES[0]);
   const [txDesc, setTxDesc] = useState('');
 
   const [goalName, setGoalName] = useState('');
-  const [goalTarget, setGoalTarget] = useState('');
+  const [goalTarget, setGoalTarget] = useState(0);
+  const [depositGoalId, setDepositGoalId] = useState<string | null>(null);
+  const [depositAmount, setDepositAmount] = useState(0);
   const [goalDeadline, setGoalDeadline] = useState('');
 
   useEffect(() => {
@@ -69,36 +74,59 @@ export default function FinancePage() {
   };
 
   const handleAddTransaction = async () => {
-    if (!txAmount || !txDesc) { notify({ title: '❌ Error', message: 'Completa monto y descripción.', type: 'error' }); return; }
+    if (!txAmount || !txDesc.trim()) { notify({ title: 'Faltan datos', message: 'Completa el monto y la descripción.', type: 'error' }); return; }
+
+    if (editingTxId) {
+      await db.transactions.update(editingTxId, { date: txDate, type: txType, amount: txAmount, category: txCategory, description: txDesc.trim() });
+      await loadData();
+      resetTxForm();
+      notify({ title: 'Movimiento actualizado', message: `${txDesc.trim()}: ${formatCOP(txAmount)}`, type: 'success' });
+      return;
+    }
+
     const newTx: Transaction = {
       id: crypto.randomUUID(),
       date: txDate,
       type: txType,
-      amount: parseFloat(txAmount),
+      amount: txAmount,
       category: txCategory,
-      description: txDesc,
-      createdAt: Date.now() // ✅ FIX: Agregado
+      description: txDesc.trim(),
+      createdAt: Date.now()
     };
     await db.transactions.add(newTx);
-    
+
     const updatedTx = await db.transactions.toArray();
-    const alerts: RuleAlert[] = triggerLocalRules(newTx, updatedTx); // ✅ FIX: Tipo explícito
-    alerts.forEach((alert: RuleAlert) => notify({ title: '🤖 Regla Local', message: alert.message, type: alert.type as any }));
+    const alerts: RuleAlert[] = triggerLocalRules(newTx, updatedTx);
+    alerts.forEach((alert: RuleAlert) => notify({ title: 'Aviso', message: alert.message, type: alert.type as any }));
 
     await loadData();
     resetTxForm();
-    notify({ title: '✅ Registrado', message: `${txType === 'income' ? 'Ingreso' : 'Gasto'}: $${txAmount}`, type: 'success' });
+    notify({ title: `${txType === 'income' ? 'Ingreso' : 'Gasto'} registrado`, message: `${newTx.description}: ${formatCOP(newTx.amount)}`, type: 'success' });
   };
 
-  const resetTxForm = () => { setTxDate(new Date().toISOString().split('T')[0]); setTxAmount(''); setTxDesc(''); setTxType('expense'); };
+  const handleEditTx = (tx: Transaction) => {
+    setEditingTxId(tx.id);
+    setTxDate(tx.date); setTxType(tx.type); setTxAmount(tx.amount); setTxCategory(tx.category); setTxDesc(tx.description);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const resetTxForm = () => { setTxDate(todayISO()); setTxAmount(0); setTxDesc(''); setTxType('expense'); setEditingTxId(null); };
+
+  const handleDeposit = async (g: SavingsGoal) => {
+    if (!depositAmount) return;
+    await db.goals.update(g.id, { currentAmount: g.currentAmount + depositAmount });
+    await loadData();
+    notify({ title: 'Abono a tu meta', message: `${formatCOP(depositAmount)} para ${g.name}`, type: 'success' });
+    setDepositGoalId(null); setDepositAmount(0);
+  };
 
   const handleAddGoal = async () => {
-    if (!goalName || !goalTarget || !goalDeadline) { notify({ title: '❌ Error', message: 'Completa todos los campos.', type: 'error' }); return; }
-    const newGoal: SavingsGoal = { id: crypto.randomUUID(), name: goalName, targetAmount: parseFloat(goalTarget), currentAmount: 0, deadline: goalDeadline, createdAt: new Date().toISOString() };
+    if (!goalName.trim() || !goalTarget || !goalDeadline) { notify({ title: 'Faltan datos', message: 'Completa nombre, monto y fecha.', type: 'error' }); return; }
+    const newGoal: SavingsGoal = { id: crypto.randomUUID(), name: goalName, targetAmount: goalTarget, currentAmount: 0, deadline: goalDeadline, createdAt: new Date().toISOString() };
     await db.goals.add(newGoal);
     await loadData();
-    setGoalName(''); setGoalTarget(''); setGoalDeadline('');
-    notify({ title: '🎯 Meta creada', message: goalName, type: 'success' });
+    setGoalName(''); setGoalTarget(0); setGoalDeadline('');
+    notify({ title: 'Meta creada', message: goalName, type: 'success' });
   };
 
   const handleDeleteTx = async (id: string) => { await db.transactions.delete(id); await loadData(); };
@@ -140,15 +168,16 @@ export default function FinancePage() {
               </select>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <input type="number" placeholder="Monto" value={txAmount} onChange={e => setTxAmount(e.target.value)} className="input-modern" />
+              <MoneyInput value={txAmount} onChange={setTxAmount} placeholder="Monto" prefix className="input-modern" />
               <select value={txCategory} onChange={e => setTxCategory(e.target.value)} className="input-modern">
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <input type="text" placeholder="Descripción" value={txDesc} onChange={e => setTxDesc(e.target.value)} className="input-modern" />
             <button onClick={handleAddTransaction} className="btn-primary w-full flex items-center justify-center gap-2">
-              <Plus size={18} /> Registrar Movimiento
+              {editingTxId ? <Pencil size={18} /> : <Plus size={18} />} {editingTxId ? 'Guardar cambios' : 'Registrar movimiento'}
             </button>
+            {editingTxId && <button onClick={resetTxForm} className="w-full text-xs text-slate-400 py-1">Cancelar edición</button>}
           </div>
 
           <div className="space-y-2">
@@ -160,14 +189,15 @@ export default function FinancePage() {
                   </div>
                   <div>
                     <p className="text-white font-medium">{tx.description}</p>
-                    <p className="text-xs text-slate-400">{tx.category} • {format(new Date(tx.date), 'dd/MM/yy')}</p>
+                    <p className="text-xs text-slate-400">{tx.category} • {format(parseLocalDate(tx.date), 'dd/MM/yy')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {tx.type === 'income' ? '+' : '-'}${tx.amount.toLocaleString('es-CO')}
+                    {tx.type === 'income' ? '+' : '-'}{formatCOP(tx.amount)}
                   </span>
-                  <button onClick={() => handleDeleteTx(tx.id)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
+                  <button onClick={() => handleEditTx(tx)} aria-label={`Editar ${tx.description}`} className="text-slate-500 hover:text-blue-400 p-1"><Pencil size={14} /></button>
+                  <button onClick={() => { if (window.confirm(`¿Eliminar "${tx.description}"?`)) handleDeleteTx(tx.id); }} aria-label={`Eliminar ${tx.description}`} className="text-slate-500 hover:text-red-400 p-1"><Trash2 size={14} /></button>
                 </div>
               </div>
             )) : <p className="text-center text-slate-500 py-8">No hay movimientos registrados</p>}
@@ -180,7 +210,7 @@ export default function FinancePage() {
           <div className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
             <input type="text" placeholder="Nombre de la meta" value={goalName} onChange={e => setGoalName(e.target.value)} className="input-modern" />
             <div className="grid grid-cols-2 gap-2">
-              <input type="number" placeholder="Monto objetivo" value={goalTarget} onChange={e => setGoalTarget(e.target.value)} className="input-modern" />
+              <MoneyInput value={goalTarget} onChange={setGoalTarget} placeholder="Monto objetivo" prefix className="input-modern" />
               <input type="date" value={goalDeadline} onChange={e => setGoalDeadline(e.target.value)} className="input-modern" />
             </div>
             <button onClick={handleAddGoal} className="btn-primary w-full flex items-center justify-center gap-2">
@@ -196,17 +226,28 @@ export default function FinancePage() {
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h3 className="text-white font-bold">{g.name}</h3>
-                      <p className="text-xs text-slate-400">Meta: ${g.targetAmount.toLocaleString('es-CO')} • {daysLeft} días restantes</p>
+                      <p className="text-xs text-slate-400">Meta: {formatCOP(g.targetAmount)} • {daysLeft} días restantes</p>
                     </div>
                     <button onClick={() => handleDeleteGoal(g.id)} className="text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
                   </div>
                   <div className="w-full bg-slate-800 rounded-full h-2 mb-2">
-                    <div className="bg-emerald-500 h-2 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                    <div className="bg-emerald-500 h-2 rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-400">Progreso: {progress.toFixed(1)}%</span>
-                    <span className="text-emerald-400">Necesitas ahorrar: ${dailyNeed.toLocaleString('es-CO')}/día</span>
+                    <span className="text-emerald-400">{progress >= 100 ? '¡Meta cumplida!' : `Ahorra ${formatCOP(dailyNeed)}/día`}</span>
                   </div>
+                  <p className="text-xs text-slate-400 mt-1">Llevas {formatCOP(g.currentAmount)} de {formatCOP(g.targetAmount)}</p>
+                  {depositGoalId === g.id ? (
+                    <div className="flex gap-2 mt-3">
+                      <MoneyInput value={depositAmount} onChange={setDepositAmount} placeholder="¿Cuánto abonas?" prefix className="input-modern flex-1" />
+                      <button onClick={() => handleDeposit(g)} className="btn-primary px-4">Abonar</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => { setDepositGoalId(g.id); setDepositAmount(0); }} className="mt-3 w-full flex items-center justify-center gap-2 text-sm text-emerald-400 border border-emerald-500/30 rounded-xl py-2 hover:bg-emerald-500/10">
+                      <PiggyBank size={16} /> Abonar a esta meta
+                    </button>
+                  )}
                 </div>
               );
             }) : <p className="text-center text-slate-500 py-8">No hay metas activas</p>}

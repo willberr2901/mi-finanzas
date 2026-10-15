@@ -1,3 +1,4 @@
+import { formatCOP } from '../utils/format';
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, ResponsiveContainer, XAxis } from 'recharts';
 import { Plus, Pencil, ArrowUpRight, TrendingUp, X, Calendar, Clock } from 'lucide-react';
@@ -94,7 +95,8 @@ export default function ProfitabilityPage() {
     }
   };
 
-  const formatMoney = (val: number) => `$${val.toLocaleString('es-CO', { minimumFractionDigits: 2 })}`;
+  // Pesos colombianos: sin decimales en saldos grandes; con 2 decimales solo en valores pequeños (ej. interés del día).
+  const formatMoney = (val: number) => formatCOP(val, Math.abs(val) < 1000);
 
   return (
     <div className="min-h-screen bg-[#0A0F1C] text-white pb-24 font-sans">

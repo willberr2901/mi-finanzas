@@ -1,10 +1,21 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import type { Plugin } from 'vite';
+import { APP_VERSION, RELEASE_NOTES } from './src/version';
+
+// Publica /version.json con la versión y sus novedades para el aviso de actualización.
+const versionFile = (): Plugin => ({
+  name: 'version-file',
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: APP_VERSION, notes: RELEASE_NOTES }) });
+  },
+});
 
 export default defineConfig({
   plugins: [
     react(),
+    versionFile(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png', 'favicon.ico'],
@@ -23,6 +34,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        globIgnores: ['**/version.json'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true

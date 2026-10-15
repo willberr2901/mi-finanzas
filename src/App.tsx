@@ -1,7 +1,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Wallet, ShoppingCart, Settings, RefreshCw } from 'lucide-react';
+import { Home, Wallet, ShoppingCart, Settings } from 'lucide-react';
+import UpdateManager from './components/pwa/UpdateManager';
 import { NavLink } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
@@ -11,18 +12,22 @@ import WelcomeModal from './components/WelcomeModal';
 import TermsModal from './components/TermsModal';
 import OnboardingTour from './components/OnboardingTour';
 import { db, migrateData } from './utils/database';
-// 1. Importa el nuevo componente arriba
-import RentabilidadPremium from './pages/RentabilidadPremium';
 
-// Lazy loading de páginas
-const HomePage = React.lazy(() => import('./pages/HomePage'));
-const MarketPage = React.lazy(() => import('./pages/MarketPage'));
-const ReceiptScannerPage = React.lazy(() => import('./pages/ReceiptScannerPage'));
-const CreditPage = React.lazy(() => import('./pages/CreditPage'));
-const ProfitabilityPage = React.lazy(() => import('./pages/ProfitabilityPage'));
-const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
-const ReceiptHistoryPage = React.lazy(() => import('./pages/ReceiptHistoryPage'));
-const FinancePage = React.lazy(() => import('./pages/FinancePage'));
+// Lazy loading de páginas. Si tras una actualización falla la carga de una página
+// (quedó la versión vieja en memoria), se recarga una sola vez para traer la nueva.
+const lazyWithRetry = (factory: () => Promise<{ default: React.ComponentType<any> }>) =>
+  React.lazy(() => factory().then(m => { sessionStorage.removeItem('chunkReload'); return m; }).catch(err => {
+    if (!sessionStorage.getItem('chunkReload')) { sessionStorage.setItem('chunkReload', '1'); window.location.reload(); }
+    throw err;
+  }));
+const HomePage = lazyWithRetry(() => import('./pages/HomePage'));
+const MarketPage = lazyWithRetry(() => import('./pages/MarketPage'));
+const ReceiptScannerPage = lazyWithRetry(() => import('./pages/ReceiptScannerPage'));
+const CreditPage = lazyWithRetry(() => import('./pages/CreditPage'));
+const ProfitabilityPage = lazyWithRetry(() => import('./pages/ProfitabilityPage'));
+const SettingsPage = lazyWithRetry(() => import('./pages/SettingsPage'));
+const ReceiptHistoryPage = lazyWithRetry(() => import('./pages/ReceiptHistoryPage'));
+const FinancePage = lazyWithRetry(() => import('./pages/FinancePage'));
 
 // --- COMPONENTE: NAVEGACIÓN FLOTANTE PREMIUM ---
 function BottomNav() {
@@ -50,38 +55,6 @@ function BottomNav() {
             <span className="text-[10px] font-medium tracking-wide">{label}</span>
           </NavLink>
         ))}
-      </div>
-    </div>
-  );
-}
-
-// --- COMPONENTE: ACTUALIZACIÓN PWA ---
-function PwaUpdateBanner() {
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then(reg => {
-        reg.addEventListener('updatefound', () => {
-          const worker = reg.installing;
-          if (worker) {
-            worker.addEventListener('statechange', () => {
-              if (worker.state === 'installed' && navigator.serviceWorker.controller) setShow(true);
-            });
-          }
-        });
-      });
-    }
-  }, []);
-
-  if (!show) return null;
-  return (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-sm animate-slide-up">
-      <div className="bg-[#111827] border border-violet-500/30 rounded-3xl p-4 shadow-2xl backdrop-blur-xl">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-violet-500/20 rounded-xl"><RefreshCw size={20} className="text-violet-400" /></div>
-          <div><h3 className="text-white font-semibold text-sm">Nueva versión</h3><p className="text-slate-400 text-xs">Mejoras listas.</p></div>
-        </div>
-        <button onClick={() => window.location.reload()} className="w-full mt-2 bg-violet-600 text-white font-bold py-2 rounded-xl">Actualizar</button>
       </div>
     </div>
   );
@@ -138,7 +111,6 @@ function AppContent() {
                 <Route path="/rentabilidad" element={<ProfitabilityPage />} />
                 <Route path="/ajustes" element={<SettingsPage />} />
                 <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
-                <Route path="/rentabilidad" element={<RentabilidadPremium />} />
               </Routes>
             </Suspense>
           </motion.div>
@@ -147,7 +119,7 @@ function AppContent() {
 
       {/* Elementos Globales */}
       <BottomNav />
-      <PwaUpdateBanner />
+      <UpdateManager />
       <ToastProvider />
       {showWelcome && <WelcomeModal onDismiss={() => setShowWelcome(false)} userName={userName} setUserName={setUserName} />}
       {showTerms && <TermsModal onAccept={() => setShowTerms(false)} />}

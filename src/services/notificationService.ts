@@ -33,7 +33,9 @@ export const notify = ({
   log?: boolean;
   module?: string;
 }) => {
-  const safeTitle = sanitizeInput(title);
+  // Quita emojis/símbolos del inicio del título: el aviso ya pone su propio ícono
+  // (antes salía "✅ ✅ Agregado" repetido).
+  const safeTitle = sanitizeInput(title).replace(/^[^\p{L}\p{N}]+/u, '').trim() || sanitizeInput(title);
   const safeMessage = message ? sanitizeInput(message) : '';
   const safeModule = sanitizeInput(module);
   
@@ -50,18 +52,19 @@ export const notify = ({
     draggable: true,
   };
 
+  // El ícono lo pone el propio aviso (un solo ícono, sin duplicados).
   switch (type) {
     case 'success':
-      toast.success(`✅ ${fullMessage}`, toastOptions);
+      toast.success(fullMessage, toastOptions);
       break;
     case 'error':
-      toast.error(`❌ ${fullMessage}`, toastOptions);
+      toast.error(fullMessage, toastOptions);
       break;
     case 'warning':
-      toast.warning(`⚠️ ${fullMessage}`, toastOptions);
+      toast.warning(fullMessage, toastOptions);
       break;
     default:
-      toast.info(`ℹ️ ${fullMessage}`, toastOptions);
+      toast.info(fullMessage, toastOptions);
   }
 
   if (log && auditLogFn) {
@@ -87,7 +90,8 @@ export const notify = ({
     });
   }
 
-  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+  // Notificación del sistema solo si la app está en segundo plano; con la app abierta basta el aviso en pantalla.
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
     try {
       new Notification(safeTitle, {
         body: safeMessage || '',

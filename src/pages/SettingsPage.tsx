@@ -1,3 +1,4 @@
+import { APP_VERSION } from '../version';
 import { useState } from 'react';
 import { Trash2, MessageSquare } from 'lucide-react';
 import { secureStorage } from '../utils/security';
@@ -88,7 +89,7 @@ export default function SettingsPage() {
       </div>
       
       <div className="text-center text-xs text-slate-500 mt-8">
-        <p>Mi Finanzas v1.1.0 Pro</p>
+        <p>Mi Finanzas v{APP_VERSION} Pro</p>
         <p className="mt-1">Desarrollado con ❤️</p>
       </div>
     </div>

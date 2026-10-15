@@ -39,8 +39,10 @@ export const calculateHealthScore = (transactions: Transaction[], goals: Savings
   const emergencyFund = currentBalance > 0 ? Math.min(100, (currentBalance / 1000000) * 100) : 0;
   const debtRatio = Math.min(100, 100 - (expenses / Math.max(1, income)) * 100);
 
-  const total = (savingsRate * 0.3) + (debtRatio * 0.25) + (emergencyFund * 0.25) + (goalConsistency * 0.2);
-  return { total: Math.round(total), savingsRate: Math.round(savingsRate), debtRatio: Math.round(debtRatio), emergencyFund: Math.round(emergencyFund), goalConsistency: Math.round(goalConsistency) };
+  // Cada componente queda entre 0 y 100 (antes, sin ingresos, el puntaje salía en negativo).
+  const clamp = (v: number) => Math.max(0, Math.min(100, Number.isFinite(v) ? v : 0));
+  const total = clamp((clamp(savingsRate) * 0.3) + (clamp(debtRatio) * 0.25) + (clamp(emergencyFund) * 0.25) + (clamp(goalConsistency) * 0.2));
+  return { total: Math.round(total), savingsRate: Math.round(clamp(savingsRate)), debtRatio: Math.round(clamp(debtRatio)), emergencyFund: Math.round(clamp(emergencyFund)), goalConsistency: Math.round(clamp(goalConsistency)) };
 };
 
 export const predictCashFlow = (transactions: Transaction[], currentBalance: number): CashFlowPrediction => {
