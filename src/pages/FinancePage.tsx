@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Download, Target, TrendingUp, TrendingDown, Pencil, PiggyBank } from 'lucide-react';
+import { Plus, Trash2, Target, TrendingUp, TrendingDown, Pencil, PiggyBank, FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 import MoneyInput from '../components/ui/MoneyInput';
 import { formatCOP, todayISO, parseLocalDate } from '../utils/format';
 import type { Transaction, SavingsGoal } from '../utils/database';
 import { notify } from '../services/notificationService';
 import { db, migrateData } from '../utils/database';
 import { format } from 'date-fns';
-import { generateFinancialReport } from '../services/exportService';
+import { generateFinancialReport, availablePeriods, periodLabel } from '../services/exportService';
 import { triggerLocalRules, type RuleAlert } from '../services/financialIntelligence';
 
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, guessCategory, segmentOf, SEGMENT_INFO } from '../utils/categories';
@@ -19,6 +19,8 @@ const categoriesFor = (t: 'income' | 'expense'): readonly string[] => (t === 'in
 
 export default function FinancePage() {
   const [activeTab, setActiveTab] = useState<'transactions' | 'goals' | 'export'>('transactions');
+  const [reportPeriod, setReportPeriod] = useState(() => todayISO().slice(0, 7));
+  const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [pushEnabled, setPushEnabled] = useState(false);
@@ -331,16 +333,37 @@ export default function FinancePage() {
         </>
       )}
 
-      {activeTab === 'export' && (
-        <div className="space-y-4">
-          <button onClick={() => generateFinancialReport(transactions, goals, 'pdf')} className="btn-primary w-full flex items-center justify-center gap-2">
-            <Download size={18} /> Exportar PDF
+      {activeTab === 'export' && (() => {
+        const periods = availablePeriods(transactions);
+        const monthTx = transactions.filter(t => t.date?.startsWith(reportPeriod));
+        const inc = monthTx.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
+        const exp = monthTx.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
+        const run = async (f: 'pdf' | 'csv') => { setExporting(f); try { await generateFinancialReport(reportPeriod, f); } catch (e) { console.error(e); notify({ title: 'No se pudo generar', message: 'Intenta de nuevo.', type: 'error' }); } finally { setExporting(null); } };
+        return (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          <div className="card-modern p-4">
+            <p className="text-sm font-bold text-white mb-1">Reporte del mes</p>
+            <p className="text-xs text-slate-400 mb-3">Incluye tus métricas, en qué se fue la plata, pagos fijos, tarjetas, deudas, metas, mercado y todos los movimientos.</p>
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+              {periods.map(p => (
+                <button key={p} onClick={() => setReportPeriod(p)} className={`shrink-0 px-3 py-2 rounded-xl text-xs font-bold border transition-all ${reportPeriod === p ? 'bg-lime-300 text-slate-900 border-lime-300' : 'border-white/10 text-slate-300 bg-white/5'}`}>{periodLabel(p)}</button>
+              ))}
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+              <div className="rounded-xl bg-white/5 py-2"><p className="text-[10px] text-slate-400">Ingresos</p><p className="text-sm font-bold text-emerald-300">{formatCOP(inc)}</p></div>
+              <div className="rounded-xl bg-white/5 py-2"><p className="text-[10px] text-slate-400">Gastos</p><p className="text-sm font-bold text-rose-300">{formatCOP(exp)}</p></div>
+              <div className="rounded-xl bg-white/5 py-2"><p className="text-[10px] text-slate-400">Movimientos</p><p className="text-sm font-bold text-white">{monthTx.length}</p></div>
+            </div>
+          </div>
+          <button disabled={!!exporting} onClick={() => run('pdf')} className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-60">
+            {exporting === 'pdf' ? <Loader2 size={18} className="animate-spin" /> : <FileText size={18} />} Descargar reporte PDF
           </button>
-          <button onClick={() => generateFinancialReport(transactions, goals, 'csv')} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2">
-            <Download size={18} /> Exportar CSV
+          <button disabled={!!exporting} onClick={() => run('csv')} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60">
+            {exporting === 'csv' ? <Loader2 size={18} className="animate-spin" /> : <FileSpreadsheet size={18} />} Descargar para Excel (CSV)
           </button>
-        </div>
-      )}
+        </motion.div>
+        );
+      })()}
       <AnimatePresence>
         {recurringAsk && (
           <motion.div className="fixed inset-0 z-[95] bg-black/70 backdrop-blur-sm flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setRecurringAsk(null)}>
