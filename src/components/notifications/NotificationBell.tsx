@@ -91,7 +91,7 @@ export default function NotificationBell() {
                 <div className="p-5 pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-600/40"><BellRing size={22} className="text-white" /></span>
+                      <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-600/40"><BellRing size={22} className="text-brand-ink" /></span>
                       <div>
                         <h2 id="notif-title" className="text-white text-lg font-bold leading-tight">Notificaciones</h2>
                         <p className="text-xs text-slate-400">{alerts.length ? `${alerts.length} ${alerts.length === 1 ? 'aviso necesita' : 'avisos necesitan'} tu atención` : 'Todo al día'}</p>
