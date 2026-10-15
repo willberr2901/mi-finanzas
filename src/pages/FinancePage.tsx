@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Download, Bell, Target, TrendingUp, TrendingDown, Pencil, PiggyBank } from 'lucide-react';
+import { Plus, Trash2, Download, Target, TrendingUp, TrendingDown, Pencil, PiggyBank } from 'lucide-react';
 import MoneyInput from '../components/ui/MoneyInput';
 import { formatCOP, todayISO, parseLocalDate } from '../utils/format';
 import type { Transaction, SavingsGoal } from '../utils/database';
@@ -9,7 +9,11 @@ import { format } from 'date-fns';
 import { generateFinancialReport } from '../services/exportService';
 import { triggerLocalRules, type RuleAlert } from '../services/financialIntelligence';
 
-const CATEGORIES = ['Alimentación', 'Transporte', 'Servicios', 'Entretenimiento', 'Salud', 'Hogar', 'Inversiones', 'Otros'];
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, guessCategory, segmentOf, SEGMENT_INFO } from '../utils/categories';
+import HelpTip from '../components/ui/HelpTip';
+import ModuleHeader from '../components/ui/ModuleHeader';
+
+const categoriesFor = (t: 'income' | 'expense'): readonly string[] => (t === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES);
 
 export default function FinancePage() {
   const [activeTab, setActiveTab] = useState<'transactions' | 'goals' | 'export'>('transactions');
@@ -22,7 +26,8 @@ export default function FinancePage() {
   const [txType, setTxType] = useState<'income' | 'expense'>('expense');
   const [txAmount, setTxAmount] = useState(0);
   const [editingTxId, setEditingTxId] = useState<string | null>(null);
-  const [txCategory, setTxCategory] = useState(CATEGORIES[0]);
+  const [txCategory, setTxCategory] = useState<string>('Mercado');
+  const [categoryTouched, setCategoryTouched] = useState(false);
   const [txDesc, setTxDesc] = useState('');
 
   const [goalName, setGoalName] = useState('');
@@ -40,7 +45,6 @@ export default function FinancePage() {
       setLoading(true);
       await migrateData();
       await loadData();
-      await checkPushPermission();
     } catch (err) {
       console.error('Error inicialización:', err);
     } finally {
@@ -106,11 +110,21 @@ export default function FinancePage() {
 
   const handleEditTx = (tx: Transaction) => {
     setEditingTxId(tx.id);
-    setTxDate(tx.date); setTxType(tx.type); setTxAmount(tx.amount); setTxCategory(tx.category); setTxDesc(tx.description);
+    setTxDate(tx.date); setTxType(tx.type); setTxAmount(tx.amount); setTxCategory(tx.category); setTxDesc(tx.description); setCategoryTouched(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const resetTxForm = () => { setTxDate(todayISO()); setTxAmount(0); setTxDesc(''); setTxType('expense'); setEditingTxId(null); };
+  const resetTxForm = () => { setTxDate(todayISO()); setTxAmount(0); setTxDesc(''); setTxType('expense'); setTxCategory('Mercado'); setCategoryTouched(false); setEditingTxId(null); };
+
+  // Clasifica sola la categoría según lo que se escribe en la descripción.
+  const onDescChange = (v: string) => {
+    setTxDesc(v);
+    if (!categoryTouched) { const g = guessCategory(v, txType); if (g) setTxCategory(g); }
+  };
+  const onTypeChange = (t: 'income' | 'expense') => {
+    setTxType(t);
+    if (!categoriesFor(t).includes(txCategory)) setTxCategory(guessCategory(txDesc, t) ?? categoriesFor(t)[0]);
+  };
 
   const handleDeposit = async (g: SavingsGoal) => {
     if (!depositAmount) return;
@@ -138,16 +152,18 @@ export default function FinancePage() {
     return { progress: g.targetAmount > 0 ? (g.currentAmount / g.targetAmount) * 100 : 0, dailyNeed: remaining / daysLeft, daysLeft };
   };
 
+  const monthKey = todayISO().slice(0, 7);
+  const SEGS = ['obligatorio', 'necesario', 'gusto', 'ahorro'] as const;
+  const monthSplit = transactions
+    .filter(t => t.type === 'expense' && (t.date || '').startsWith(monthKey))
+    .reduce((acc, t) => { const seg = segmentOf('expense', t.category) as typeof SEGS[number]; acc[seg] = (acc[seg] || 0) + t.amount; return acc; }, { obligatorio: 0, necesario: 0, gusto: 0, ahorro: 0 } as Record<typeof SEGS[number], number>);
+  const monthTotal = SEGS.reduce((s, k) => s + monthSplit[k], 0);
+
   if (loading) return <div className="flex h-screen items-center justify-center text-emerald-400">Sincronizando datos locales...</div>;
 
   return (
-    <div className="p-4 pb-24 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white">Finanzas</h1>
-        <button onClick={() => checkPushPermission()} className={`p-2 rounded-full ${pushEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
-          <Bell size={20} />
-        </button>
-      </div>
+    <div className="pb-24 space-y-6">
+      <ModuleHeader module="finanzas" />
 
       <div className="flex gap-2 bg-slate-900/50 p-1 rounded-xl">
         {(['transactions', 'goals', 'export'] as const).map(tab => (
@@ -162,23 +178,44 @@ export default function FinancePage() {
           <div className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
             <div className="grid grid-cols-2 gap-2">
               <input type="date" value={txDate} onChange={e => setTxDate(e.target.value)} className="input-modern" />
-              <select value={txType} onChange={e => setTxType(e.target.value as 'income' | 'expense')} className="input-modern">
+              <select value={txType} onChange={e => onTypeChange(e.target.value as 'income' | 'expense')} className="input-modern">
                 <option value="expense">💸 Gasto</option>
                 <option value="income">💵 Ingreso</option>
               </select>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <MoneyInput value={txAmount} onChange={setTxAmount} placeholder="Monto" prefix className="input-modern" />
-              <select value={txCategory} onChange={e => setTxCategory(e.target.value)} className="input-modern">
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              <select value={txCategory} onChange={e => { setTxCategory(e.target.value); setCategoryTouched(true); }} className="input-modern" aria-label="Categoría">
+                {!categoriesFor(txType).includes(txCategory) && <option value={txCategory}>{txCategory}</option>}
+                {categoriesFor(txType).map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <input type="text" placeholder="Descripción" value={txDesc} onChange={e => setTxDesc(e.target.value)} className="input-modern" />
+            <input type="text" placeholder="Descripción (ej: Arriendo, Luz, Uber)" value={txDesc} onChange={e => onDescChange(e.target.value)} className="input-modern" />
+            {txType === 'expense' && (
+              <p className="text-[11px] text-slate-400 -mt-1">Se clasifica como <span className={SEGMENT_INFO[segmentOf('expense', txCategory) as 'obligatorio'].color}>{SEGMENT_INFO[segmentOf('expense', txCategory) as 'obligatorio'].label}</span> · {txCategory}</p>
+            )}
             <button onClick={handleAddTransaction} className="btn-primary w-full flex items-center justify-center gap-2">
               {editingTxId ? <Pencil size={18} /> : <Plus size={18} />} {editingTxId ? 'Guardar cambios' : 'Registrar movimiento'}
             </button>
             {editingTxId && <button onClick={resetTxForm} className="w-full text-xs text-slate-400 py-1">Cancelar edición</button>}
           </div>
+
+          {monthTotal > 0 && (
+            <div className="bg-slate-900/50 p-4 rounded-2xl border border-white/5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-slate-400">Gastos de este mes por segmento</p>
+                <HelpTip text="Cada gasto se clasifica solo según lo que escribes: obligatorios y recurrentes (arriendo, mercado, servicios, deudas), necesarios variables, gustos y ahorro." />
+              </div>
+              <div className="flex h-2.5 rounded-full overflow-hidden bg-slate-800">
+                {SEGS.map(k => <div key={k} className={`${SEGMENT_INFO[k].bar} transition-all duration-700`} style={{ width: `${(monthSplit[k] / monthTotal) * 100}%` }} />)}
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs mt-2">
+                {SEGS.filter(k => monthSplit[k] > 0).map(k => (
+                  <span key={k} className={SEGMENT_INFO[k].color}>{SEGMENT_INFO[k].short} {formatCOP(monthSplit[k])}</span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             {transactions.length > 0 ? transactions.map(tx => (
@@ -189,15 +226,15 @@ export default function FinancePage() {
                   </div>
                   <div>
                     <p className="text-white font-medium">{tx.description}</p>
-                    <p className="text-xs text-slate-400">{tx.category} • {format(parseLocalDate(tx.date), 'dd/MM/yy')}</p>
+                    <p className="text-xs text-slate-400">{tx.category}{tx.type === 'expense' ? ` · ${SEGMENT_INFO[segmentOf('expense', tx.category) as 'obligatorio'].short}` : ''} • {format(parseLocalDate(tx.date), 'dd/MM/yy')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
                     {tx.type === 'income' ? '+' : '-'}{formatCOP(tx.amount)}
                   </span>
-                  <button onClick={() => handleEditTx(tx)} aria-label={`Editar ${tx.description}`} className="text-slate-500 hover:text-blue-400 p-1"><Pencil size={14} /></button>
-                  <button onClick={() => { if (window.confirm(`¿Eliminar "${tx.description}"?`)) handleDeleteTx(tx.id); }} aria-label={`Eliminar ${tx.description}`} className="text-slate-500 hover:text-red-400 p-1"><Trash2 size={14} /></button>
+                  <button onClick={() => handleEditTx(tx)} aria-label={`Editar ${tx.description}`} className="text-slate-400 hover:text-blue-400 p-2"><Pencil size={16} /></button>
+                  <button onClick={() => { if (window.confirm(`¿Eliminar "${tx.description}"?`)) handleDeleteTx(tx.id); }} aria-label={`Eliminar ${tx.description}`} className="text-slate-400 hover:text-red-400 p-2"><Trash2 size={16} /></button>
                 </div>
               </div>
             )) : <p className="text-center text-slate-500 py-8">No hay movimientos registrados</p>}

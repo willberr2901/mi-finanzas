@@ -1,6 +1,9 @@
 import { APP_VERSION } from '../version';
 import { useState } from 'react';
-import { Trash2, MessageSquare } from 'lucide-react';
+import { Trash2, MessageSquare, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import ModuleHeader from '../components/ui/ModuleHeader';
+import { db } from '../utils/database';
 import { secureStorage } from '../utils/security';
 import { notify } from '../services/notificationService';
 
@@ -9,8 +12,10 @@ export default function SettingsPage() {
   const [feedbackText, setFeedbackText] = useState('');
   const [name, setName] = useState('');
 
-  const handleClearData = () => {
-    if (confirm('⚠️ ¿Borrar todos los datos locales? Esta acción no se puede deshacer.')) {
+  const handleClearData = async () => {
+    if (confirm('¿Borrar todos tus datos de este celular? Movimientos, mercado, pagos, metas y facturas se eliminan para siempre.')) {
+      // Antes solo se borraba una parte; ahora también la base de datos del celular.
+      try { db.close(); await db.delete(); } catch { /* ya no existe */ }
       localStorage.clear();
       sessionStorage.clear();
       notify({ title: '🗑️ Datos Eliminados', message: 'La app se recargará.', type: 'info' });
@@ -33,6 +38,17 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6 pb-24 max-w-md mx-auto">
+      <ModuleHeader module="ajustes" />
+      <Link to="/legal" className="flex justify-between items-center p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/25">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-emerald-500/15 rounded-xl"><ShieldCheck size={20} className="text-emerald-400" /></div>
+          <div>
+            <h3 className="font-bold">Privacidad y términos</h3>
+            <p className="text-xs text-slate-400">Tus datos viven solo en tu celular</p>
+          </div>
+        </div>
+        <ChevronRight size={18} className="text-slate-500" />
+      </Link>
       
       {showFeedback && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">

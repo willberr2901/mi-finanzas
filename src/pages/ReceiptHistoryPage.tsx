@@ -1,3 +1,4 @@
+import ModuleHeader from '../components/ui/ModuleHeader';
 import { useState, useEffect } from 'react';
 import { secureStorage } from '../utils/security';
 import { DollarSign, Calendar, Trash2, AlertTriangle } from 'lucide-react';
@@ -39,7 +40,7 @@ export default function ReceiptHistoryPage() {
 
   return (
     <div className="p-4 pb-24 space-y-4">
-      <h1 className="text-2xl font-bold text-white mb-4">Historial de Facturas</h1>
+      <ModuleHeader module="facturas" />
       
       {invoices.length === 0 ? (
         <div className="text-center py-10 opacity-50">

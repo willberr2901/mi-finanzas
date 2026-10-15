@@ -1,104 +1,227 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Wallet, CreditCard, TrendingUp, TrendingDown, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { TrendingUp, TrendingDown, ChevronRight, Plus, CalendarPlus, ScanLine, ShoppingCart, Sparkles } from 'lucide-react';
 import { db, type Transaction, type SavingsGoal } from '../utils/database';
 import { calculateHealthScore } from '../services/financialIntelligence';
-import { formatCOP, parseLocalDate } from '../utils/format';
+import { loadBillStatuses, describeDue, type BillStatus } from '../services/billsService';
+import { formatCOP, parseLocalDate, todayISO } from '../utils/format';
+import { segmentOf, SEGMENT_INFO } from '../utils/categories';
 import { getMarketHistory, type MarketPurchase } from '../utils/marketHistory';
+import { secureStorage } from '../utils/security';
+import { MODULES } from '../utils/modules';
+import ModuleHeader from '../components/ui/ModuleHeader';
+import HelpTip from '../components/ui/HelpTip';
+import CountUp from '../components/ui/CountUp';
 
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const SEGS = ['obligatorio', 'necesario', 'gusto', 'ahorro'] as const;
+
+const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
+const item = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 22, stiffness: 220 } } };
 
 export default function HomePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
+  const [bills, setBills] = useState<BillStatus[]>([]);
   const [lastMarket, setLastMarket] = useState<MarketPurchase | null>(null);
+  const name = localStorage.getItem('miFinanzasUserName');
 
   useEffect(() => {
-    Promise.all([db.transactions.toArray(), db.goals.toArray()])
-      .then(([txs, gls]) => { setTransactions(txs); setGoals(gls); })
+    Promise.all([db.transactions.toArray(), db.goals.toArray(), loadBillStatuses()])
+      .then(([txs, gls, bs]) => { setTransactions(txs); setGoals(gls); setBills(bs); })
       .catch(() => {});
     setLastMarket(getMarketHistory()[0] ?? null);
   }, []);
 
   const now = new Date();
-  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const monthKey = todayISO().slice(0, 7);
   const monthTx = transactions.filter(t => (t.date || '').startsWith(monthKey));
   const income = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const expense = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const balance = income - expense;
+  const spentPct = income > 0 ? Math.min(100, Math.round((expense / income) * 100)) : 0;
+
+  const split = monthTx.filter(t => t.type === 'expense').reduce((acc, t) => {
+    const k = segmentOf('expense', t.category) as typeof SEGS[number]; acc[k] = (acc[k] || 0) + t.amount; return acc;
+  }, { obligatorio: 0, necesario: 0, gusto: 0, ahorro: 0 } as Record<typeof SEGS[number], number>);
 
   const totalBalance = transactions.reduce((s, t) => s + (t.type === 'income' ? t.amount : -t.amount), 0);
   const hasRecentData = transactions.some(t => now.getTime() - parseLocalDate(t.date).getTime() < 30 * 86400000);
   const score = hasRecentData ? calculateHealthScore(transactions, goals, totalBalance).total : null;
-  const health = score === null
-    ? { label: 'Sin datos aún', chip: 'bg-slate-500/20 text-slate-300 border-slate-500/20', bar: 'bg-slate-500' }
-    : score >= 80 ? { label: 'Excelente', chip: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20', bar: 'bg-emerald-500' }
-    : score >= 60 ? { label: 'Buen camino', chip: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/20', bar: 'bg-cyan-500' }
-    : score >= 40 ? { label: 'Ajustar hábitos', chip: 'bg-amber-500/20 text-amber-400 border-amber-500/20', bar: 'bg-amber-500' }
-    : { label: 'Requiere atención', chip: 'bg-red-500/20 text-red-400 border-red-500/20', bar: 'bg-red-500' };
+  const scoreColor = score === null ? '#64748b' : score >= 80 ? '#34d399' : score >= 60 ? '#22d3ee' : score >= 40 ? '#fbbf24' : '#f87171';
+  const scoreLabel = score === null ? 'Sin datos aún' : score >= 80 ? 'Excelente' : score >= 60 ? 'Buen camino' : score >= 40 ? 'Ajustar hábitos' : 'Requiere atención';
+
+  const pending = bills.filter(b => !b.paid);
+  const pendingTotal = pending.reduce((s, b) => s + b.bill.amount, 0);
+
+  const marketItems = secureStorage.getItem('marketItems');
+  const marketBudget = secureStorage.getItem('marketBudget');
+  const listTotal = Array.isArray(marketItems) ? marketItems.reduce((s: number, i: any) => s + i.price * i.quantity, 0) : 0;
+  const marketPct = typeof marketBudget === 'number' && marketBudget > 0 ? Math.round((listTotal / marketBudget) * 100) : 0;
+
+  const actions = [
+    { to: '/finanzas', label: 'Movimiento', icon: Plus, m: MODULES.finanzas, help: 'Registra un ingreso o un gasto.' },
+    { to: '/mercado', label: 'Mercado', icon: ShoppingCart, m: MODULES.mercado, help: 'Abre tu lista de compras.' },
+    { to: '/pagos', label: 'Pago fijo', icon: CalendarPlus, m: MODULES.pagos, help: 'Agrega arriendo, servicios o una deuda.' },
+    { to: '/escaner', label: 'Escanear', icon: ScanLine, m: MODULES.escaner, help: 'Lee una factura con la cámara.' },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-end">
-        <div>
-          <p className="text-slate-400 text-sm mb-1">Bienvenido de nuevo 👋</p>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Mi Finanzas</h1>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 flex items-center justify-center text-white font-bold shadow-lg shadow-violet-500/20">G</div>
-      </div>
+    <div>
+      <ModuleHeader module="inicio" title={name ? `Hola, ${name}` : 'Mi Finanzas'} subtitle={`${DAYS[now.getDay()][0].toUpperCase()}${DAYS[now.getDay()].slice(1)} ${now.getDate()} de ${MONTHS[now.getMonth()]}`} />
 
-      <div className="bg-gradient-to-br from-violet-600 to-cyan-600 rounded-3xl p-6 shadow-xl shadow-violet-900/40 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-        <p className="text-white/80 text-sm font-medium">Balance de {MONTHS[now.getMonth()]}</p>
-        <h2 className={`text-4xl font-bold mt-2 ${balance < 0 ? 'text-red-100' : 'text-white'}`}>{formatCOP(balance)}</h2>
-        <div className="flex gap-3 mt-6">
-          <Link to="/finanzas" className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm py-2 px-3 rounded-xl text-white text-left">
-            <span className="flex items-center gap-1 text-xs text-white/80"><TrendingUp size={12} /> Ingresos</span>
-            <span className="block text-sm font-bold">{formatCOP(income)}</span>
-          </Link>
-          <Link to="/finanzas" className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm py-2 px-3 rounded-xl text-white text-left">
-            <span className="flex items-center gap-1 text-xs text-white/80"><TrendingDown size={12} /> Gastos</span>
-            <span className="block text-sm font-bold">{formatCOP(expense)}</span>
-          </Link>
-        </div>
-      </div>
-
-      <div className="bg-[#111827] border border-white/5 rounded-2xl p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-slate-400 text-xs uppercase font-bold tracking-wider">Salud Financiera</p>
-            {score === null
-              ? <h3 className="text-base font-semibold text-white mt-1">Registra tus movimientos para calcularla</h3>
-              : <h3 className="text-2xl font-bold text-white mt-1">{score}<span className="text-sm text-slate-500">/100</span></h3>}
+      <motion.div variants={container} initial="hidden" animate="show" className="space-y-5">
+        {/* Balance del mes */}
+        <motion.div variants={item} className="relative overflow-hidden rounded-[28px] p-6 bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-600 shadow-2xl shadow-violet-900/50">
+          <motion.div className="absolute -top-16 -right-10 w-48 h-48 bg-white/15 rounded-full blur-2xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 6, repeat: Infinity }} aria-hidden="true" />
+          <motion.div className="absolute -bottom-20 -left-10 w-48 h-48 bg-cyan-300/20 rounded-full blur-2xl" animate={{ scale: [1.2, 1, 1.2] }} transition={{ duration: 7, repeat: Infinity }} aria-hidden="true" />
+          <div className="relative">
+            <div className="flex items-center justify-between">
+              <p className="text-white/80 text-sm font-medium">Te queda en {MONTHS[now.getMonth()]}</p>
+              <HelpTip title="Balance del mes" text="Lo que entró este mes menos lo que has gastado. Se actualiza con cada movimiento, mercado o pago que registres." />
+            </div>
+            <CountUp value={balance} className={`block text-[40px] leading-tight font-extrabold mt-1 tracking-tight ${balance < 0 ? 'text-red-100' : 'text-white'}`} />
+            <div className="h-2 bg-white/20 rounded-full mt-3 overflow-hidden">
+              <motion.div className="h-full bg-white rounded-full" initial={{ width: 0 }} animate={{ width: `${spentPct}%` }} transition={{ duration: 1.2, delay: 0.3 }} />
+            </div>
+            <p className="text-white/80 text-xs mt-1.5">{income > 0 ? `Has gastado el ${spentPct}% de lo que entró` : 'Registra tus ingresos para ver tu avance'}</p>
+            <div className="flex gap-3 mt-4">
+              <Link to="/finanzas" className="flex-1 bg-white/15 hover:bg-white/25 backdrop-blur-sm py-2.5 px-3 rounded-2xl text-white">
+                <span className="flex items-center gap-1 text-[11px] text-white/80"><TrendingUp size={12} /> Ingresos</span>
+                <span className="block text-sm font-bold">{formatCOP(income)}</span>
+              </Link>
+              <Link to="/finanzas" className="flex-1 bg-white/15 hover:bg-white/25 backdrop-blur-sm py-2.5 px-3 rounded-2xl text-white">
+                <span className="flex items-center gap-1 text-[11px] text-white/80"><TrendingDown size={12} /> Gastos</span>
+                <span className="block text-sm font-bold">{formatCOP(expense)}</span>
+              </Link>
+            </div>
           </div>
-          <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full border whitespace-nowrap ${health.chip}`}>{health.label}</span>
-        </div>
-        <div className="w-full bg-slate-700 rounded-full h-1.5 mt-4">
-          <div className={`${health.bar} h-1.5 rounded-full transition-all duration-1000`} style={{ width: `${score ?? 0}%` }}></div>
-        </div>
-      </div>
+        </motion.div>
 
-      {lastMarket && (
-        <Link to="/mercado" className="flex items-center gap-3 bg-[#111827] border border-white/5 rounded-2xl p-4 hover:border-emerald-500/40 transition-all active:scale-[0.98]">
-          <div className="p-2 bg-emerald-500/15 rounded-xl"><ShoppingCart className="text-emerald-400" size={20} /></div>
-          <div className="flex-1">
-            <p className="text-white font-medium text-sm">Último mercado</p>
-            <p className="text-slate-400 text-xs">{new Date(lastMarket.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })} · {lastMarket.itemsCount} productos</p>
+        {/* Accesos rápidos */}
+        <motion.div variants={item}>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-white font-bold">¿Qué quieres hacer?</h2>
+            <HelpTip text="Atajos a lo que más se usa: registrar un movimiento, ir al mercado, agregar un pago fijo o escanear una factura." />
           </div>
-          <span className="text-white font-bold text-sm">{formatCOP(lastMarket.total)}</span>
-          <ChevronRight className="text-slate-500" size={16} />
-        </Link>
-      )}
+          <div className="grid grid-cols-4 gap-2">
+            {actions.map(a => (
+              <Link key={a.to} to={a.to} title={a.help} className="flex flex-col items-center gap-1.5 group">
+                <motion.span whileTap={{ scale: 0.88 }} whileHover={{ y: -3 }} className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${a.m.gradient} flex items-center justify-center shadow-lg ${a.m.glow}`}>
+                  <a.icon size={24} className="text-white" />
+                </motion.span>
+                <span className="text-[11px] text-slate-300 font-medium">{a.label}</span>
+              </Link>
+            ))}
+          </div>
+        </motion.div>
 
-      <div>
-        <h3 className="text-white font-bold mb-3">Accesos Rápidos</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <Link to="/mercado" className="block group"><div className="bg-[#111827] border border-white/5 p-4 rounded-2xl hover:border-violet-500/50 transition-all active:scale-95"><ShoppingCart className="text-emerald-400 mb-2" size={24} /><p className="text-white font-medium text-sm">Mercado</p></div></Link>
-          <Link to="/finanzas" className="block group"><div className="bg-[#111827] border border-white/5 p-4 rounded-2xl hover:border-violet-500/50 transition-all active:scale-95"><Wallet className="text-blue-400 mb-2" size={24} /><p className="text-white font-medium text-sm">Finanzas</p></div></Link>
-          <Link to="/creditos" className="block group"><div className="bg-[#111827] border border-white/5 p-4 rounded-2xl hover:border-violet-500/50 transition-all active:scale-95"><CreditCard className="text-purple-400 mb-2" size={24} /><p className="text-white font-medium text-sm">Créditos</p></div></Link>
-          <Link to="/rentabilidad" className="block group"><div className="bg-[#111827] border border-white/5 p-4 rounded-2xl hover:border-violet-500/50 transition-all active:scale-95"><TrendingUp className="text-orange-400 mb-2" size={24} /><p className="text-white font-medium text-sm">Rentabilidad</p></div></Link>
-        </div>
-      </div>
+        {/* Próximos pagos */}
+        <motion.div variants={item} className="bg-[#111827] border border-white/5 rounded-3xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className={`w-8 h-8 rounded-xl bg-gradient-to-br ${MODULES.pagos.gradient} flex items-center justify-center`}><MODULES.pagos.icon size={16} className="text-white" /></span>
+              <div>
+                <h2 className="text-white font-bold text-sm">Próximos pagos</h2>
+                <p className="text-[11px] text-slate-400">{pending.length ? `${pending.length} pendientes · ${formatCOP(pendingTotal)}` : 'Al día este mes'}</p>
+              </div>
+            </div>
+            <Link to="/pagos" className="text-xs text-amber-300 font-semibold flex items-center">Calendario <ChevronRight size={14} /></Link>
+          </div>
+          {bills.length === 0 ? (
+            <Link to="/pagos" className="block text-center border border-dashed border-amber-500/30 rounded-2xl py-4 text-sm text-slate-300">
+              Agrega tu arriendo, servicios o deudas y te avisamos antes de cada vencimiento
+            </Link>
+          ) : (
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x">
+              {(pending.length ? pending : bills).slice(0, 6).map(b => (
+                <Link key={b.bill.id} to="/pagos" className={`snap-start shrink-0 w-36 rounded-2xl p-3 border ${b.state === 'vencido' ? 'bg-red-500/10 border-red-500/30' : b.state === 'hoy' || b.state === 'pronto' ? 'bg-amber-500/10 border-amber-500/30' : 'bg-white/5 border-white/10'}`}>
+                  <p className="text-white text-sm font-semibold truncate">{b.bill.name}</p>
+                  <p className="text-white font-bold mt-1">{formatCOP(b.bill.amount)}</p>
+                  <p className={`text-[11px] mt-0.5 ${b.state === 'vencido' ? 'text-red-300' : b.state === 'pagado' ? 'text-emerald-300' : 'text-amber-200'}`}>{describeDue(b)}</p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* ¿En qué se va la plata? */}
+        <motion.div variants={item} className="bg-[#111827] border border-white/5 rounded-3xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-white font-bold text-sm">¿En qué se va tu plata este mes?</h2>
+            <HelpTip title="Clasificación automática" text="Cada gasto se ordena solo según lo que escribes. Obligatorios y recurrentes: arriendo, mercado, servicios y deudas. Necesarios: transporte, salud, hogar, educación. Gustos: salidas, plataformas, comida por fuera." />
+          </div>
+          {expense === 0 ? (
+            <p className="text-sm text-slate-400">Cuando registres gastos verás aquí cómo se reparten.</p>
+          ) : (
+            <>
+              <div className="flex h-3 rounded-full overflow-hidden bg-slate-800">
+                {SEGS.map((k, i) => split[k] > 0 && (
+                  <motion.div key={k} className={SEGMENT_INFO[k].bar} initial={{ width: 0 }} animate={{ width: `${(split[k] / expense) * 100}%` }} transition={{ duration: 0.9, delay: 0.2 + i * 0.12 }} />
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                {SEGS.map(k => (
+                  <div key={k} className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${SEGMENT_INFO[k].bar}`} />
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-slate-400 truncate">{SEGMENT_INFO[k].short}</p>
+                      <p className="text-sm text-white font-semibold">{formatCOP(split[k])}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </motion.div>
+
+        {/* Salud + Mercado */}
+        <motion.div variants={item} className="grid grid-cols-2 gap-3">
+          <div className="bg-[#111827] border border-white/5 rounded-3xl p-4 flex flex-col items-center text-center">
+            <div className="self-stretch flex justify-between items-center"><p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Salud</p>
+              <HelpTip text="Puntaje de 0 a 100 según cuánto ahorras, cuánto gastas frente a lo que entra, tu colchón de dinero y el avance de tus metas (últimos 30 días)." /></div>
+            <div className="relative w-24 h-24 mt-1">
+              <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-hidden="true">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#1e293b" strokeWidth="9" />
+                <motion.circle cx="50" cy="50" r="42" fill="none" stroke={scoreColor} strokeWidth="9" strokeLinecap="round" strokeDasharray={263.9}
+                  initial={{ strokeDashoffset: 263.9 }} animate={{ strokeDashoffset: 263.9 * (1 - (score ?? 0) / 100) }} transition={{ duration: 1.3, delay: 0.4 }} />
+              </svg>
+              <span className="absolute inset-0 flex flex-col items-center justify-center"><span className="text-2xl font-extrabold text-white">{score ?? '—'}</span><span className="text-[10px] text-slate-500">/100</span></span>
+            </div>
+            <p className="text-xs font-semibold mt-1" style={{ color: scoreColor }}>{scoreLabel}</p>
+          </div>
+
+          <Link to="/mercado" className="bg-[#111827] border border-white/5 rounded-3xl p-4 flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className={`w-8 h-8 rounded-xl bg-gradient-to-br ${MODULES.mercado.gradient} flex items-center justify-center`}><ShoppingCart size={16} className="text-white" /></span>
+              <p className="text-white font-bold text-sm">Mercado</p>
+            </div>
+            {listTotal > 0 ? (
+              <>
+                <p className="text-[11px] text-slate-400 mt-3">Lista actual</p>
+                <p className="text-white font-bold">{formatCOP(listTotal)}</p>
+                <div className="h-1.5 bg-slate-800 rounded-full mt-2 overflow-hidden"><motion.div className={`h-full rounded-full ${marketPct >= 100 ? 'bg-red-500' : marketPct >= 85 ? 'bg-amber-400' : 'bg-emerald-400'}`} initial={{ width: 0 }} animate={{ width: `${Math.min(marketPct, 100)}%` }} transition={{ duration: 1, delay: 0.5 }} /></div>
+                <p className="text-[11px] text-slate-400 mt-1">{marketPct}% del presupuesto</p>
+              </>
+            ) : lastMarket ? (
+              <>
+                <p className="text-[11px] text-slate-400 mt-3">Último mercado</p>
+                <p className="text-white font-bold">{formatCOP(lastMarket.total)}</p>
+                <p className="text-[11px] text-slate-400 mt-1">{new Date(lastMarket.date).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })} · {lastMarket.itemsCount} productos</p>
+              </>
+            ) : (
+              <p className="text-xs text-slate-400 mt-3 flex-1">Arma tu primera lista y lleva la cuenta en vivo.</p>
+            )}
+            <span className="text-xs text-emerald-300 font-semibold mt-auto pt-2 flex items-center">Abrir <ChevronRight size={14} /></span>
+          </Link>
+        </motion.div>
+
+        <motion.p variants={item} className="text-center text-[11px] text-slate-500 flex items-center justify-center gap-1 pt-1">
+          <Sparkles size={12} className="text-violet-400" /> Toca el <span className="font-bold text-slate-300">(?)</span> en cualquier sección para saber para qué sirve
+        </motion.p>
+      </motion.div>
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { Lock, AlertTriangle, Fingerprint } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 
 export default function SecurityLock() {
-  const { unlock, isSetup } = useSecurity();
+  const { unlockWithPin, isSetup } = useSecurity();
   const { theme } = useTheme();
   
   const [pin, setPin] = useState('');
@@ -41,7 +41,7 @@ export default function SecurityLock() {
     }
 
     setIsLoading(true);
-    const success = await unlock(pin);
+    const success = unlockWithPin(pin);
     
     if (!success) {
       setError('PIN incorrecto');

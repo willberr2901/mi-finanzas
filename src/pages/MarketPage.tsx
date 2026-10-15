@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { ShoppingCart, Plus, Trash2, Check, Edit, TrendingUp } from 'lucide-react';
+import { Plus, Trash2, Check, Edit, TrendingUp } from 'lucide-react';
 import { notify } from '../services/notificationService';
 import { secureStorage } from '../utils/security';
 import { db } from '../utils/database';
 import { formatCOP, todayISO } from '../utils/format';
 import { addMarketPurchase, lastPriceOf } from '../utils/marketHistory';
 import MoneyInput from '../components/ui/MoneyInput';
+import ModuleHeader from '../components/ui/ModuleHeader';
+import HelpTip from '../components/ui/HelpTip';
 
 interface MarketItem {
   id: string;
@@ -104,7 +106,7 @@ export default function MarketPage() {
         date: todayISO(),
         type: 'expense',
         amount: total,
-        category: 'Alimentación',
+        category: 'Mercado',
         description: `Mercado · ${toClose.length} productos`,
         createdAt: Date.now(),
       });
@@ -124,17 +126,12 @@ export default function MarketPage() {
   };
 
   return (
-    <div className="p-4 pb-28 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2"><ShoppingCart size={24} /> Mi Mercado</h1>
-          <p className="text-slate-400 text-sm">Lista inteligente de compras</p>
-        </div>
-      </div>
+    <div className="pb-28 space-y-6">
+      <ModuleHeader module="mercado" />
 
       <div className="glass-panel p-4">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-slate-400 text-sm">PRESUPUESTO</span>
+          <span className="text-slate-400 text-sm flex items-center gap-1">PRESUPUESTO <HelpTip align="left" text="Cuánto piensas gastar en este mercado. Tócalo para cambiarlo. La barra se pone amarilla al 85% y roja si te pasas." /></span>
           <MoneyInput
             value={budgetLimit}
             onChange={setBudgetLimit}
@@ -207,7 +204,7 @@ export default function MarketPage() {
           <button onClick={handleFinalize} className="w-full btn-primary mt-2 flex items-center justify-center gap-2">
             <Check size={18} /> Finalizar compra • {formatCOP(purchased.length > 0 ? purchasedTotal : totalSpent)}
           </button>
-          <p className="text-center text-[11px] text-slate-500">
+          <p className="text-center text-[11px] text-slate-500 flex items-center justify-center gap-1"><HelpTip text="Marca la casilla de cada producto cuando lo eches al carrito. Al finalizar, el total se guarda como gasto de Mercado en Finanzas y queda en tu historial para comparar precios." />
             {purchased.length > 0 ? 'Se registran los productos marcados.' : 'Sin productos marcados: se registra toda la lista.'} El total queda como gasto en Finanzas.
           </p>
         </div>
