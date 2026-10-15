@@ -18,18 +18,19 @@ export default defineConfig({
     versionFile(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon-192.png', 'icon-512.png', 'favicon.ico'],
+      includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon.svg', 'favicon-32.png'],
       manifest: {
         name: 'Mi Finanzas',
         short_name: 'Finanzas',
-        description: 'Gestión financiera inteligente y segura',
-        theme_color: '#0B0F19',
-        background_color: '#0B0F19',
+        description: 'Las finanzas de tu hogar, claras y en orden',
+        theme_color: '#0B1026',
+        background_color: '#0B1026',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       // Service worker propio (src/sw.ts): guarda la app sin internet y revisa pagos en segundo plano.
