@@ -7,7 +7,7 @@
  * Si lo cambias: Para renombrar un módulo, cámbialo aquí.
  * ════════════════════════════════════════════════════════════════════
  */
-import { Home, ShoppingCart, Wallet, CalendarClock, Settings, ScanLine, FileText, ShieldCheck, type LucideIcon } from 'lucide-react';
+import { Home, ShoppingCart, Wallet, CalendarClock, Settings, ScanLine, FileText, ShieldCheck, BarChart3, type LucideIcon } from 'lucide-react';
 
 export interface ModuleInfo {
   path: string;
@@ -29,5 +29,6 @@ export const MODULES: Record<string, ModuleInfo> = {
   escaner: { path: '/escaner', label: 'Escáner', tagline: 'Lee tus facturas', help: 'Toma foto a una factura y la app lee los productos y el total. La foto se procesa en tu celular.', icon: ScanLine, gradient: 'theme-dark from-[#232C5A] to-[#0E1430] ring-1 ring-white/10', accent: 'text-brand-lime', glow: 'shadow-black/40' },
   facturas: { path: '/historial-facturas', label: 'Facturas', tagline: 'Historial de facturas escaneadas', help: 'Las facturas que has escaneado, guardadas en tu celular.', icon: FileText, gradient: 'theme-dark from-[#232C5A] to-[#0E1430] ring-1 ring-white/10', accent: 'text-brand-lime', glow: 'shadow-black/40' },
   ajustes: { path: '/ajustes', label: 'Ajustes', tagline: 'Preferencias y privacidad', help: 'Tu nombre, respaldo de datos, términos, privacidad y borrar todo.', icon: Settings, gradient: 'theme-dark from-[#232C5A] to-[#0E1430] ring-1 ring-white/10', accent: 'text-brand-lime', glow: 'shadow-black/40' },
+  reportes: { path: '/reportes', label: 'Reportes', tagline: 'Cuántas personas usan la app', help: 'Solo para la administradora: personas que abrieron e instalaron la app, activas por día y enlaces compartidos. Son sumas anónimas.', icon: BarChart3, gradient: 'theme-dark from-[#232C5A] to-[#0E1430] ring-1 ring-white/10', accent: 'text-brand-lime', glow: 'shadow-black/40' },
   legal: { path: '/legal', label: 'Privacidad', tagline: 'Términos y política de privacidad', help: 'Cómo funciona la app, por qué tus finanzas nunca salen de tu celular y cómo se cifra el hogar sincronizado.', icon: ShieldCheck, gradient: 'theme-dark from-[#232C5A] to-[#0E1430] ring-1 ring-white/10', accent: 'text-brand-lime', glow: 'shadow-black/40' },
 };

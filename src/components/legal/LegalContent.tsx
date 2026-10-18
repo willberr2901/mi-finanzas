@@ -8,7 +8,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 
-export const TERMS_VERSION = '2026-10-18';
+export const TERMS_VERSION = '2026-10-18-b';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="space-y-1.5">
@@ -42,7 +42,7 @@ export default function LegalContent() {
       </Section>
       <Section title="4. Lo que sí se conecta a internet">
         <p>La descarga de la app y de sus actualizaciones desde el servidor donde está publicada. Ese servidor, como cualquier página web, puede registrar datos técnicos básicos de la visita (como la dirección IP), pero no tus datos financieros.</p>
-        <p>Y, solo si tú lo activas, el hogar sincronizado (punto 5).</p>
+        <p>Las estadísticas anónimas (punto 6), que puedes apagar, y, solo si tú lo activas, el hogar sincronizado (punto 5).</p>
       </Section>
       <Section title="5. Hogar sincronizado (opcional)">
         <p>Sirve para compartir la lista de mercado, el historial de compras y los precios con las personas de tu hogar. Está apagado hasta que tú creas un hogar o te unes a uno.</p>
@@ -51,15 +51,22 @@ export default function LegalContent() {
         <p><strong>Dónde y cuánto tiempo:</strong> las cajas cifradas se guardan en un servidor de Supabase en São Paulo (Brasil). Se borran solas si nadie usa el hogar durante 60 días, y puedes borrarlas cuando quieras en Mercado → Hogar → «Borrar del servidor». Como cualquier servicio en internet, el servidor ve datos técnicos de la conexión (como la dirección IP) mientras sincroniza.</p>
         <p><strong>Tu responsabilidad:</strong> quien tenga el código del hogar puede ver y editar la lista. Compártelo solo con personas de tu confianza.</p>
       </Section>
-      <Section title="6. Notificaciones">
+      <Section title="6. Estadísticas anónimas">
+        <p>Para saber cuántas personas usan la app, cada celular suma +1 al servidor la primera vez que abre la app, cuando la instala y máximo una vez al día si la usa. Solo se envía: el tipo de evento, si el celular es Android, iPhone o computador, si la app está instalada o en el navegador, y el código del enlace con el que llegaste (si alguien te la compartió).</p>
+        <p>No se envía tu nombre, correo, teléfono, montos, listas ni ningún identificador de tu celular: el servidor solo guarda sumas por día y no puede saber quién es quién. Puedes apagarlas en Ajustes → Tus datos → Estadísticas anónimas.</p>
+      </Section>
+      <Section title="7. Notificaciones">
         <p>Los recordatorios de pagos los genera tu propio celular a partir de lo que registraste. Puedes desactivarlos en cualquier momento desde la configuración del navegador.</p>
       </Section>
-      <Section title="7. Tus derechos y cómo borrar todo">
+      <Section title="8. Tus derechos y cómo borrar todo">
         <p>Como tus datos solo están en tu celular, tú tienes el control total. En Ajustes → «Borrar todos mis datos» se elimina todo de forma permanente. Si desinstalas la app o borras los datos del navegador, la información también se elimina.</p>
         <p>Si usas el hogar sincronizado, en Mercado → Hogar puedes salir del hogar o borrarlo del servidor.</p>
         <p>Puedes exportar un respaldo en PDF o Excel desde Finanzas cuando quieras.</p>
       </Section>
-      <Section title="8. Ley colombiana">
+      <Section title="9. Seguridad">
+        <p>La app se protege contra ataques comunes: solo ejecuta su propio código (bloquea código inyectado), no se deja meter dentro de otras páginas, avisa si la abres desde una dirección falsa, guarda el PIN cifrado y limita los intentos, revisa los respaldos antes de abrirlos y usa conexiones seguras (HTTPS). Ninguna app es 100% invulnerable; te recomendamos activar el PIN.</p>
+      </Section>
+      <Section title="10. Ley colombiana">
         <p>Esta política se inspira en la Ley 1581 de 2012 de protección de datos personales. La app no recoge datos que identifiquen a las personas; la información del hogar sincronizado viaja y se guarda cifrada de forma que nadie distinto a los celulares del hogar puede leerla.</p>
       </Section>
 

@@ -74,3 +74,28 @@ end $$;
 grant execute on function public.sync_push(text, jsonb) to anon;
 grant execute on function public.sync_pull(text, bigint) to anon;
 grant execute on function public.sync_delete_room(text) to anon;
+
+-- ════════════════════════════════════════════════════════════════════
+-- 📊 ESTADÍSTICAS ANÓNIMAS (v1.8) · solo sumas por día, sin identificadores
+-- ════════════════════════════════════════════════════════════════════
+create table if not exists relay.stats_daily (
+  day date not null,
+  kind text not null check (kind in ('first_open','install','active')),
+  ref text not null default '' check (ref ~ '^([a-z0-9]{8})?$'),     -- código del enlace compartido
+  platform text not null check (platform in ('android','ios','desktop','otro')),
+  mode text not null check (mode in ('app','web')),
+  n integer not null default 0,
+  primary key (day, kind, ref, platform, mode)
+);
+alter table relay.stats_daily enable row level security;
+
+-- Clave de administradora: solo se guarda su huella SHA-256 (la clave nunca está en el servidor).
+create table if not exists relay.admin_key (id int primary key default 1 check (id = 1), key_hash text not null);
+alter table relay.admin_key enable row level security;
+-- insert into relay.admin_key(id, key_hash) values (1, '<sha256 de la clave>');   ← ya configurado
+
+alter table relay.rooms add column if not exists created_at timestamptz not null default now();
+
+-- Funciones: public.stats_ping(kind, ref, platform, mode) suma +1;
+-- public.stats_report(clave) devuelve el resumen (espera 1,5 s si la clave es incorrecta).
+-- public.sync_push limita a 300 hogares nuevos por hora y cajas de máx. 60.000 caracteres.

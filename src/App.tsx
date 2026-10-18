@@ -31,6 +31,10 @@ import { dailySystemReminder } from './services/alertsService';
 import { ConfirmHost } from './components/ui/ConfirmDialog';
 import HouseholdSheet, { handleInvite } from './components/household/HouseholdSheet';
 import { startHouseholdSync } from './services/household/householdSync';
+import InstallAppSheet from './components/pwa/InstallAppSheet';
+import SecurityCenter, { securityIntroSeen } from './components/security/SecurityCenter';
+import { InstagramMoment } from './components/social/Instagram';
+import { startStats } from './services/statsService';
 
 // Lazy loading de páginas. Si tras una actualización falla la carga de una página
 // (quedó la versión vieja en memoria), se recarga una sola vez para traer la nueva.
@@ -48,6 +52,7 @@ const loaders = {
   finance: () => import('./pages/FinancePage'),
   bills: () => import('./pages/BillsPage'),
   legal: () => import('./pages/LegalPage'),
+  reports: () => import('./pages/ReportsPage'),
 };
 const HomePage = lazyWithRetry(loaders.home);
 const MarketPage = lazyWithRetry(loaders.market);
@@ -57,6 +62,7 @@ const ReceiptHistoryPage = lazyWithRetry(loaders.history);
 const FinancePage = lazyWithRetry(loaders.finance);
 const BillsPage = lazyWithRetry(loaders.bills);
 const LegalPage = lazyWithRetry(loaders.legal);
+const ReportsPage = lazyWithRetry(loaders.reports);
 
 /** Deja todas las pantallas cargadas en segundo plano: así abrir Ajustes u otro módulo
  *  es instantáneo y no depende de archivos que una actualización pudo reemplazar. */
@@ -93,6 +99,7 @@ function AppContent() {
     try { return firstTime || !sessionStorage.getItem('mf_welcomed'); } catch { return true; }
   });
   const [showTerms, setShowTerms] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { isLocked, isSetup } = useSecurity();
@@ -119,6 +126,7 @@ function AppContent() {
     reclassifyOnce();
     if (sharedText !== null) setTimeout(() => openPasteMovement(sharedText), 600);
     startHouseholdSync();
+    startStats();
     if (invite) setTimeout(() => handleInvite(invite), 900);
     const onVisible = () => { if (document.visibilityState === 'visible') checkDailyReminderInApp(); };
     document.addEventListener('visibilitychange', onVisible);
@@ -131,11 +139,19 @@ function AppContent() {
   const afterWelcome = useCallback(() => {
     try { sessionStorage.setItem('mf_welcomed', '1'); } catch { /* sin almacenamiento de sesión */ }
     setShowWelcome(false);
-    if (!termsAccepted()) setShowTerms(true);
+    // Orden: 1) pantalla de privacidad y seguridad (una vez) → 2) términos → 3) novedades
+    if (!securityIntroSeen()) setShowIntro(true);
+    else if (!termsAccepted()) setShowTerms(true);
     else if (shouldShowWhatsNew()) setShowWhatsNew(true);
     dailySystemReminder();
     checkDailyReminderInApp();
   }, []);
+
+  const afterIntro = () => {
+    setShowIntro(false);
+    if (!termsAccepted()) setShowTerms(true);
+    else if (shouldShowWhatsNew()) setShowWhatsNew(true);
+  };
 
   const afterTerms = () => {
     setShowTerms(false);
@@ -144,7 +160,7 @@ function AppContent() {
 
   return (
     <AppMenuContext.Provider value={{ openMenu: () => setMenuOpen(true) }}>
-     <TourProvider ready={!showWelcome && !showTerms && !showWhatsNew && !(isSetup && isLocked)}>
+     <TourProvider ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)}>
       <div className="min-h-screen bg-appbg text-white font-sans selection:bg-violet-500/30">
         {isSetup && isLocked && <SecurityLock />}
 
@@ -162,6 +178,7 @@ function AppContent() {
                   <Route path="/ajustes" element={<SettingsPage />} />
                   <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
                   <Route path="/legal" element={<LegalPage />} />
+                  <Route path="/reportes" element={<ReportsPage />} />
                   <Route path="/hogar" element={<Navigate to="/mercado" replace />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
@@ -169,12 +186,15 @@ function AppContent() {
           </motion.div>
         </main>
 
-        <QuickAdd hidden={['/mercado', '/legal', '/escaner'].includes(location.pathname)} />
+        <QuickAdd hidden={['/mercado', '/legal', '/escaner', '/reportes'].includes(location.pathname)} />
         <SidebarMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
         <ShareAppSheet />
         <PasteMovementSheet />
         <HouseholdSheet />
         <ConfirmHost />
+        <InstallAppSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
+        <SecurityCenter autoIntro={showIntro} onIntroDone={afterIntro} />
+        <InstagramMoment />
         <UpdateManager />
         <ToastProvider />
         <AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence>

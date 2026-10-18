@@ -416,7 +416,12 @@ export const generateFinancialReport = async (period: string, format: 'pdf' | 'c
   notify({ title: 'Reporte listo', message: `PDF de ${periodLabel(period)} descargado.`, type: 'success' });
 };
 
-const csvCell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
+// 🛡️ Evita la "inyección de fórmulas" en Excel: un texto que empiece por = + - @ se trata como texto, no como fórmula.
+const csvCell = (v: string | number) => {
+  let t = String(v);
+  if (typeof v === 'string' && /^[=+\-@\t\r]/.test(t)) t = `'${t}`;
+  return `"${t.replace(/"/g, '""')}"`;
+};
 
 const exportCSV = (period: string, txs: Transaction[], statuses: BillStatus[]) => {
   const lines: string[] = [];

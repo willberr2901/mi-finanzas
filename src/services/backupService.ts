@@ -34,6 +34,8 @@ export const exportBackup = async (password: string) => {
 };
 
 export const importBackup = async (file: File, password: string) => {
+  // 🛡️ Un respaldo real pesa pocos MB: si es enorme, no es nuestro (evita que un archivo malicioso bloquee la app).
+  if (file.size > 25 * 1024 * 1024) throw new Error('El archivo es demasiado grande para ser un respaldo de Mi Finanzas');
   const text = await file.text();
   let data: any;
   try { data = JSON.parse(await decryptWithPassword(text, password)); }

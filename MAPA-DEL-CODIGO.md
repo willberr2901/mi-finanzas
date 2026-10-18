@@ -42,6 +42,13 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | Hojas que suben desde abajo | `src/components/ui/BottomSheet.tsx` |
 | Texto de privacidad y términos | `src/components/legal/LegalContent.tsx` |
 | Número de versión y novedades | `src/version.ts` |
+| Botón e instrucciones para **descargar la app** | `src/components/pwa/InstallAppSheet.tsx` |
+| Pantalla **Tu privacidad y tu seguridad** | `src/components/security/SecurityCenter.tsx` |
+| Protecciones al arrancar (páginas falsas, marcos) | `src/utils/hardening.ts` |
+| **Instagram** (botón y tarjeta de logro) | `src/components/social/Instagram.tsx` |
+| Estadísticas anónimas | `src/services/statsService.ts` |
+| Pantalla **Reportes** (solo administradora) | `src/pages/ReportsPage.tsx` |
+| Revisión de seguridad completa | `docs/SEGURIDAD.md` |
 | Reporte PDF / Excel | `src/services/exportService.ts` |
 
 ---
@@ -64,6 +71,7 @@ src/
 │   ├── SettingsPage     ⚙️ Ajustes
 │   ├── ReceiptScannerPage 📷 Escáner
 │   ├── ReceiptHistoryPage 🧾 Facturas
+│   ├── ReportsPage      📊 Reportes (solo administradora)
 │   └── LegalPage        ⚖️ Privacidad
 │
 ├── components/          🧱 Piezas de pantalla
@@ -78,6 +86,8 @@ src/
 │   ├── tour/            🧭 Guías "Guíame"
 │   ├── pwa/             ⬆️ Aviso de actualización y novedades
 │   ├── welcome/         👋 Bienvenida
+│   ├── security/        🛡️ Pantalla de privacidad y seguridad
+│   ├── social/          📸 Instagram
 │   └── legal/           ⚖️ Textos legales
 │
 ├── services/            🧠 Lógica (no dibuja nada)
@@ -106,6 +116,7 @@ supabase/sync.sql        🏠 Copia de lo que hay en el servidor del hogar (solo
 | Preferencias (día de pago, nombres, tema…) | `utils/prefs.ts` | ❌ Nunca |
 | Lista de mercado, historial de compras y precios | `services/market/marketStore.ts` | 🔐 Solo si creas un hogar, **cifrado** |
 | Llave del hogar | Solo en los celulares (dentro del QR) | ❌ Nunca va al servidor |
+| Estadísticas | +1 anónimo por día (`services/statsService.ts`) | 📊 Solo sumas, se puede apagar |
 
 ---
 

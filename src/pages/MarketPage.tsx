@@ -33,6 +33,7 @@ import TrendBadge from '../components/market/TrendBadge';
 import ItemSheet from '../components/market/ItemSheet';
 import FinishSheet from '../components/market/FinishSheet';
 import { TripsHistory, PricesHistory } from '../components/market/MarketHistory';
+import { celebrateWithInstagram } from '../components/social/Instagram';
 
 type Mode = 'plan' | 'shop';
 type Tab = 'lista' | 'historial' | 'precios';
@@ -386,7 +387,7 @@ export default function MarketPage() {
       </>}
 
       <ItemSheet item={sheet?.item ?? null} mode={sheet?.mode ?? 'edit'} onClose={() => setSheet(null)} />
-      <FinishSheet open={finishing} items={items} onClose={() => setFinishing(false)} onDone={t => { setFinishing(false); setCelebrate(t); setMode('plan'); setTimeout(() => setCelebrate(null), 3200); }} />
+      <FinishSheet open={finishing} items={items} onClose={() => setFinishing(false)} onDone={t => { setFinishing(false); setCelebrate(t); setMode('plan'); setTimeout(() => setCelebrate(null), 3200); celebrateWithInstagram('primer-mercado', '¡Terminaste tu primer mercado! 🎉'); }} />
 
       {/* Celebración al terminar */}
       <AnimatePresence>

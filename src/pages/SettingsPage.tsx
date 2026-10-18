@@ -8,12 +8,12 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, ShieldCheck, Database, LifeBuoy, Info, ChevronRight, Fingerprint, Lock, KeyRound, Download, Upload, Trash2, CalendarDays,
   Sparkles, X, Check, Delete, Users, Wallet, PiggyBank, AlarmClock, Palette, Moon, Sun, MonitorSmartphone, Heart, Wand2, CalendarPlus, Pencil,
-  Home,
+  Home, BarChart3, Instagram,
 } from 'lucide-react';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import MoneyInput from '../components/ui/MoneyInput';
@@ -31,6 +31,10 @@ import { formatCOP } from '../utils/format';
 import { APP_VERSION } from '../version';
 import { openHousehold } from '../components/household/HouseholdSheet';
 import { useHousehold } from '../services/household/householdSync';
+import { openSecurityCenter } from '../components/security/SecurityCenter';
+import { statsEnabled, setStatsEnabled } from '../services/statsService';
+import { openInstall, canOfferInstall } from '../components/pwa/InstallAppSheet';
+import { openInstagram, INSTAGRAM_USER } from '../components/social/Instagram';
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 22, stiffness: 220 } } };
@@ -107,6 +111,9 @@ export default function SettingsPage() {
   const sec = useSecurity();
   const [prefs, setPrefs] = usePrefs();
   const { household } = useHousehold();
+  const [statsOn, setStatsOn] = useState(statsEnabled());
+  const [versionTaps, setVersionTaps] = useState(0);
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [name, setName] = useState(localStorage.getItem('miFinanzasUserName') || '');
   const [partner, setPartner] = useState(prefs.names.pareja);
@@ -354,6 +361,7 @@ export default function SettingsPage() {
         </Section>
 
         <Section icon={ShieldCheck} title="Seguridad">
+          <Row icon={ShieldCheck} title="Centro de seguridad" desc="Revisa tu celular y mira de qué ataques te protege la app." onClick={openSecurityCenter} />
           <Row icon={KeyRound} title={sec.isSetup ? 'PIN de acceso activado' : 'Proteger con PIN'}
             desc={sec.isSetup ? 'La app pide tu PIN al abrirla. Se guarda cifrado (hash PBKDF2), nunca el número.' : 'Pide un PIN de 4 dígitos cada vez que abras la app.'}
             right={<Toggle on={sec.isSetup} label="PIN de acceso" onChange={v => setSheet(v ? 'pin' : 'removePin')} />} />
@@ -375,6 +383,9 @@ export default function SettingsPage() {
         </Section>
 
         <Section icon={Database} title="Tus datos">
+          <Row icon={BarChart3} title="Estadísticas anónimas" desc="Solo contamos cuántas personas usan la app (+1 al día). Nada que te identifique."
+            onClick={() => { setStatsEnabled(!statsOn); setStatsOn(!statsOn); }}
+            right={<span role="switch" aria-checked={statsOn} className={`w-11 h-6 shrink-0 rounded-full p-0.5 transition-colors ${statsOn ? 'bg-brand-lime' : 'bg-white/15'}`}><span className={`block w-5 h-5 rounded-full bg-[#fff] shadow transition-transform ${statsOn ? 'translate-x-5' : ''}`} /></span>} />
           <Row icon={Download} title="Descargar respaldo cifrado" desc="Un archivo protegido con contraseña (AES-256). Guárdalo en Drive por si cambias de celular." onClick={() => setSheet('export')} />
           <Row icon={Upload} title="Restaurar un respaldo" desc="Recupera tus datos desde un archivo .mfbackup." onClick={() => setSheet('import')} />
           <Link to="/finanzas" className="block"><Row icon={Download} title="Reportes en PDF o Excel" desc="En Finanzas → Reportes." right={<ChevronRight size={16} className="text-slate-600" />} /></Link>
@@ -387,7 +398,10 @@ export default function SettingsPage() {
         </Section>
 
         <Section icon={Info} title="Acerca de">
-          <Row title="Mi Finanzas" desc={`Versión ${APP_VERSION} · Hecho en Colombia`} />
+          {canOfferInstall() && <Row icon={Download} title="Descargar la app" desc="Instálala en tu pantalla de inicio" onClick={openInstall} />}
+          <Row icon={Instagram} title="Síguenos en Instagram" desc={`@${INSTAGRAM_USER} · trucos de ahorro y novedades`} onClick={openInstagram} />
+          {/* Tocar 7 veces la versión abre Reportes (solo administradora) */}
+          <Row title="Mi Finanzas" desc={`Versión ${APP_VERSION} · Hecho en Colombia`} onClick={() => { const n = versionTaps + 1; setVersionTaps(n); if (n >= 7) { setVersionTaps(0); navigate('/reportes'); } }} right={<span />} />
         </Section>
       </motion.div>
 
