@@ -1,3 +1,12 @@
+/* ════════════════════════════════════════════════════════════════════
+   🎨 ESTILOS GLOBALES Y COLORES DE MARCA
+   ────────────────────────────────────────────────────────────────────
+   Qué hace: define los colores (azul noche + verde lima) del tema oscuro
+             (:root) y del claro (html.light). Las tarjetas .theme-dark
+             siguen oscuras aunque el tema sea claro.
+   Si lo cambias: cambian los colores de TODA la app.
+   Al final: estilos de los avisos (toasts).
+   ════════════════════════════════════════════════════════════════════ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -159,3 +168,26 @@ html.light .theme-dark .text-amber-300 { color: #fcd34d; }
 .theme-swatch-light .swatch-line { background: rgba(15,21,48,.18); }
 .theme-swatch-auto { background: linear-gradient(135deg, #0B1026 50%, #F2F4FA 50%); }
 .theme-swatch-auto .swatch-line { background: rgba(128,136,170,.45); }
+
+/* ═══ SECCIÓN: Avisos (toasts) · diseño de marca ═══
+   Afecta a todos los avisos de arriba. El contenido lo dibuja ToastCard.tsx. */
+.Toastify__toast-container { padding: 10px 12px 0 !important; width: min(420px, 100vw) !important; }
+.Toastify__toast.mf-toast {
+  background: linear-gradient(135deg, #1D2550 0%, #111735 55%, #0B1026 100%) !important;
+  border: 1px solid rgba(198, 244, 50, 0.18) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  padding: 12px 14px 14px !important;
+  margin-bottom: 8px !important;
+  min-height: 0 !important;
+  color: #fff !important;
+  font-family: inherit !important;
+  overflow: hidden;
+}
+.Toastify__toast.mf-toast-error { border-color: rgba(244, 63, 94, 0.45) !important; }
+.Toastify__toast.mf-toast-warning { border-color: rgba(251, 191, 36, 0.4) !important; }
+.Toastify__toast.mf-toast .Toastify__toast-body { padding: 0 !important; margin: 0 !important; align-items: flex-start !important; }
+.Toastify__toast.mf-toast .Toastify__progress-bar { height: 3px !important; background: #C6F432 !important; }
+.Toastify__toast.mf-toast-error .Toastify__progress-bar { background: #fb7185 !important; }
+.Toastify__toast.mf-toast-warning .Toastify__progress-bar { background: #fbbf24 !important; }
+.Toastify__toast.mf-toast .Toastify__progress-bar--bg { background: rgba(255,255,255,0.06) !important; opacity: 1 !important; }

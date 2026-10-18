@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🛡️ ALMACENAMIENTO LOCAL PROTEGIDO
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: secureStorage guarda listas y preferencias ofuscadas en el celular (soporta tildes y emojis desde v1.7).
+ * Dónde se ve: Mercado, facturas y otros.
+ * Si lo cambias: Si cambias el formato, conserva la lectura del formato anterior.
+ * ════════════════════════════════════════════════════════════════════
+ */
 export const sanitizeInput = (input: string): string => {
   if (typeof input !== 'string') return '';
   const div = document.createElement('div');
@@ -82,6 +91,12 @@ export const secureStorage = {
     try {
       const raw = localStorage.getItem(`${this.KEY_PREFIX}${key}`);
       if (!raw) return null;
+      // Formato nuevo (v1.7): "u8:" + bytes UTF-8 ofuscados. Soporta tildes, ñ y emojis.
+      if (raw.startsWith('u8:')) {
+        const bytes = Uint8Array.from(atob(raw.slice(3)), c => c.charCodeAt(0));
+        const k = new TextEncoder().encode(this.ENCRYPT_KEY);
+        return JSON.parse(new TextDecoder().decode(bytes.map((b, i) => b ^ k[i % k.length])));
+      }
       try {
         const decrypted = atob(raw).split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ this.ENCRYPT_KEY.charCodeAt(i % this.ENCRYPT_KEY.length))).join('');
         return JSON.parse(decrypted);
@@ -90,10 +105,13 @@ export const secureStorage = {
   },
   setItem(key: string, value: any): void {
     try {
-      const json = JSON.stringify(value);
-      const encrypted = json.split('').map((c, i) => String.fromCharCode(c.charCodeAt(0) ^ this.ENCRYPT_KEY.charCodeAt(i % this.ENCRYPT_KEY.length))).join('');
-      localStorage.setItem(`${this.KEY_PREFIX}${key}`, btoa(encrypted));
-    } catch {}
+      // Antes: XOR por caracteres + btoa, que fallaba en silencio con emojis (😋) y no guardaba nada.
+      const bytes = new TextEncoder().encode(JSON.stringify(value));
+      const k = new TextEncoder().encode(this.ENCRYPT_KEY);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i] ^ k[i % k.length]);
+      localStorage.setItem(`${this.KEY_PREFIX}${key}`, 'u8:' + btoa(bin));
+    } catch { /* almacenamiento lleno o bloqueado */ }
   },
   removeItem(key: string): void { localStorage.removeItem(`${this.KEY_PREFIX}${key}`); },
   clear(): void {

@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * ⚙️ PREFERENCIAS
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Día de pago, nombres del hogar, presupuestos, recordatorio, tema y división de compartidos. Ciclo financiero.
+ * Dónde se ve: Ajustes y cálculos de Inicio.
+ * Si lo cambias: Cambia los cálculos por ciclo en toda la app.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect, useState } from 'react';
 
 // Preferencias de la app. Viven solo en este celular (no son datos financieros).

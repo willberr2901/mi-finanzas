@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🔢 NÚMERO QUE SUBE ANIMADO
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Anima un número de 0 hasta su valor.
+ * Dónde se ve: Inicio.
+ * Si lo cambias: Solo la animación.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect, useState } from 'react';
 import { animate } from 'framer-motion';
 import { formatCOP } from '../../utils/format';

@@ -1,5 +1,13 @@
-// Criptografía real del navegador (Web Crypto API). Nada sale del celular.
-
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🔑 CIFRADO CON CONTRASEÑA
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: AES-256 del navegador para el respaldo y el PIN.
+ * Dónde se ve: Respaldo y seguridad.
+ * Si lo cambias: No cambiar sin migrar los respaldos existentes.
+ * Nota: Criptografía real del navegador (Web Crypto API). Nada sale del celular.
+ * ════════════════════════════════════════════════════════════════════
+ */
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 

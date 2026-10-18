@@ -1,4 +1,13 @@
-// Modo "ocultar saldos": las cifras se muestran como $ ••••• en pantalla.
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 👁 OCULTAR SALDOS
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Activa/desactiva mostrar las cifras como $ •••••.
+ * Dónde se ve: Botón 👁 en Inicio.
+ * Si lo cambias: Solo la vista; los datos no cambian.
+ * Nota: Modo "ocultar saldos": las cifras se muestran como $ ••••• en pantalla.
+ * ════════════════════════════════════════════════════════════════════
+ */
 const KEY = 'mf_hide_amounts';
 let hidden = (() => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } })();
 export const amountsHidden = () => hidden;

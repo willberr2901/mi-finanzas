@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 📜 VENTANA "ACEPTO LOS TÉRMINOS"
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Muestra la política y los términos y guarda que se aceptaron.
+ * Dónde se ve: La primera vez y cada vez que sube TERMS_VERSION (legal/LegalContent.tsx).
+ * Si lo cambias: Si se rompe, nadie podría pasar de esta ventana.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck } from 'lucide-react';

@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🚀 ARRANQUE
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Pone el tema (claro/oscuro) antes de pintar y monta <App />.
+ * Dónde se ve: Al abrir la app.
+ * Si lo cambias: Si falla, la app queda en blanco.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';

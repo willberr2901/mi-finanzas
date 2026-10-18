@@ -1,14 +1,13 @@
-// Clasificación automática de gastos del hogar.
-//
-// Se basa en la forma usual de ordenar un presupuesto familiar:
-//  · Obligatorios y recurrentes: llegan cada mes y hay que pagarlos sí o sí
-//    (arriendo, servicios, deudas). El mercado también va aquí, como pidió el hogar.
-//  · Necesarios variables: hacen falta, pero el monto cambia y se puede ajustar
-//    (transporte, salud, aseo del hogar, educación).
-//  · Gustos: se pueden recortar si el mes viene apretado (salidas, plataformas,
-//    comida por fuera).
-//  · Ahorro e inversión.
-
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🏷️ CATEGORÍAS DE GASTOS
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Adivina la categoría por la descripción y agrupa en obligatorios, necesarios, gustos y ahorro.
+ * Dónde se ve: Finanzas, Inicio, PDF.
+ * Si lo cambias: Cambia cómo se clasifican los gastos.
+ * Nota: Clasificación automática de gastos del hogar.  Se basa en la forma usual de ordenar un presupuesto familiar: · Obligatorios y recurrentes: llegan cada mes y hay que pagarlos sí o sí (arriendo, servicios, deudas). El mercado también va aquí, como pidió el hogar. · Necesarios variables: hacen falta, pero el monto cambia y se puede ajustar (transporte, salud, aseo del hogar, educación). · Gustos: se pueden recortar si el mes viene apretado (salidas, plataformas, comida por fuera). · Ahorro e inversión.
+ * ════════════════════════════════════════════════════════════════════
+ */
 export type Segment = 'obligatorio' | 'necesario' | 'gusto' | 'ahorro' | 'ingreso';
 
 export const SEGMENT_INFO: Record<Exclude<Segment, 'ingreso'>, { label: string; short: string; color: string; bar: string; help: string }> = {

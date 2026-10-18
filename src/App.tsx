@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🧭 APP PRINCIPAL (rutas y piezas globales)
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Decide qué pantalla se ve según la dirección (/, /mercado, /pagos…) y monta lo que está en toda la app: menú, botón +, avisos, bloqueo con PIN, bienvenida, hogar sincronizado.
+ * Dónde se ve: En toda la app.
+ * Si lo cambias: Puedes dejar pantallas sin abrir o romper el arranque. Para agregar una pantalla: agrégala en "loaders" y en <Routes>.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +28,9 @@ import { TourProvider } from './components/tour/Tour';
 import { db, migrateData } from './utils/database';
 import { guessCategory } from './utils/categories';
 import { dailySystemReminder } from './services/alertsService';
+import { ConfirmHost } from './components/ui/ConfirmDialog';
+import HouseholdSheet, { handleInvite } from './components/household/HouseholdSheet';
+import { startHouseholdSync } from './services/household/householdSync';
 
 // Lazy loading de páginas. Si tras una actualización falla la carga de una página
 // (quedó la versión vieja en memoria), se recarga una sola vez para traer la nueva.
@@ -92,6 +104,13 @@ function AppContent() {
     window.history.replaceState(null, '', '/');
     return [sp.get('title'), sp.get('text'), sp.get('url')].filter(Boolean).join(' ');
   });
+  // Invitación al hogar (/hogar#k=…): la llave viene después de "#" y nunca llega a ningún servidor.
+  const [invite] = useState<string | null>(() => {
+    if (window.location.pathname !== '/hogar') return null;
+    const h = window.location.hash;
+    window.history.replaceState(null, '', '/mercado');
+    return h || null;
+  });
   const [maskTick, setMaskTick] = useState(0);
   useEffect(() => { const on = () => setMaskTick(t => t + 1); window.addEventListener('mf:mask-changed', on); return () => window.removeEventListener('mf:mask-changed', on); }, []);
 
@@ -99,6 +118,8 @@ function AppContent() {
     migrateData().then(() => db.settings.update('global', { onboardingCompleted: true })).catch(() => {});
     reclassifyOnce();
     if (sharedText !== null) setTimeout(() => openPasteMovement(sharedText), 600);
+    startHouseholdSync();
+    if (invite) setTimeout(() => handleInvite(invite), 900);
     const onVisible = () => { if (document.visibilityState === 'visible') checkDailyReminderInApp(); };
     document.addEventListener('visibilitychange', onVisible);
     preloadPages();
@@ -141,6 +162,7 @@ function AppContent() {
                   <Route path="/ajustes" element={<SettingsPage />} />
                   <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
                   <Route path="/legal" element={<LegalPage />} />
+                  <Route path="/hogar" element={<Navigate to="/mercado" replace />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>
@@ -151,6 +173,8 @@ function AppContent() {
         <SidebarMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
         <ShareAppSheet />
         <PasteMovementSheet />
+        <HouseholdSheet />
+        <ConfirmHost />
         <UpdateManager />
         <ToastProvider />
         <AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence>

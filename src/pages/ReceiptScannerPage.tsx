@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 📷 PANTALLA ESCÁNER
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Foto de una factura → lectura real con OCR en el celular → revisar y registrar como gasto.
+ * Dónde se ve: Menú → Escáner.
+ * Si lo cambias: La lectura está en services/ocrService.ts.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';

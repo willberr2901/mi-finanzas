@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🟢 LOGO DE LA APP
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Las tres barras con el punto lima (opción C · Crecimiento).
+ * Dónde se ve: Bienvenida, recomendar, PDF.
+ * Si lo cambias: Cambia el logo en todas partes donde se dibuja.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { motion } from 'framer-motion';
 
 /** Logo de la app: tres barras que crecen y un punto lima (cada mes, un paso más arriba). */

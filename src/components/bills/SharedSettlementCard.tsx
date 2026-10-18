@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * ⚖️ CUENTAS CLARAS (gastos compartidos)
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Reparte los pagos compartidos del mes entre los dos según el porcentaje y dice quién le debe a quién.
+ * Dónde se ve: Pagos, cuando hay pagos "Compartido".
+ * Si lo cambias: Cambia el cálculo de quién debe cuánto.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Scale, ArrowRight, Check, Share2, SlidersHorizontal, Info } from 'lucide-react';

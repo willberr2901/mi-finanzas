@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🏠 PANTALLA INICIO
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Resumen del ciclo: 1) saldo del mes, 2) indicadores, presupuestos, 3) pagos del mes, 4) tendencia, 5) en qué se va la plata, 6) mercado y metas, 7) deudas y salud financiera.
+ * Dónde se ve: Al abrir la app.
+ * Si lo cambias: Solo lee datos; no guarda nada. Cada bloque tiene su comentario numerado (1. … 7.).
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -8,7 +17,7 @@ import { loadBillStatuses, type BillStatus } from '../services/billsService';
 import { formatCOP, parseLocalDate, todayISO } from '../utils/format';
 import { segmentOf, SEGMENT_INFO } from '../utils/categories';
 import { getMarketHistory } from '../utils/marketHistory';
-import { secureStorage } from '../utils/security';
+import { listItems, getBudget, estimateList } from '../services/market/marketStore';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import CountUp from '../components/ui/CountUp';
 import { usePageTour } from '../components/tour/Tour';
@@ -70,6 +79,7 @@ export default function HomePage() {
 
   const now = new Date();
   const todayKey = todayISO();
+  // ═══ SECCIÓN: Cálculos del ciclo (lo que entra, lo que sale, proyección) ═══
   // Ciclo financiero: del día de pago al día anterior del siguiente pago (o el mes calendario).
   const cycle = useMemo(() => cycleFor(new Date(todayKey + 'T12:00'), prefs.payDay), [todayKey, prefs.payDay]);
   const prevCycle = useMemo(() => cycleFor(new Date(todayKey + 'T12:00'), prefs.payDay, -1), [todayKey, prefs.payDay]);
@@ -121,9 +131,10 @@ export default function HomePage() {
   const upcoming = bills.filter(b => !b.paid);
   const debtLeft = debts.reduce((a, d) => a + Math.max(0, (d.totalInstallments ?? 0) - (d.paidInstallments ?? 0)) * d.amount, 0);
 
-  const marketItems = secureStorage.getItem('marketItems');
-  const marketBudget = secureStorage.getItem('marketBudget');
-  const listTotal = Array.isArray(marketItems) ? marketItems.reduce((a: number, i: any) => a + i.price * i.quantity, 0) : 0;
+  // Mercado: total aproximado de la lista actual (services/market/marketStore.ts)
+  const marketList = listItems();
+  const marketBudget = getBudget();
+  const listTotal = estimateList(marketList).total;
   const lastMarket = getMarketHistory()[0];
   const maxMonth = Math.max(1, ...s.months.map(m => m.value));
   const segTotal = SEGS.reduce((a, k) => a + s.split[k], 0);
@@ -331,7 +342,7 @@ export default function HomePage() {
             {listTotal > 0 ? (
               <>
                 <p className="text-white text-lg font-extrabold mt-1">{formatCOP(listTotal)}</p>
-                <p className="text-[10px] text-slate-400">en la lista · {typeof marketBudget === 'number' && marketBudget ? `${Math.round((listTotal / marketBudget) * 100)}% del presupuesto` : ''}</p>
+                <p className="text-[10px] text-slate-400">≈ {marketList.length} en la lista · {marketBudget ? `${Math.round((listTotal / marketBudget) * 100)}% del presupuesto` : ''}</p>
               </>
             ) : lastMarket ? (
               <>

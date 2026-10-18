@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 📄 REPORTES PDF Y EXCEL
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Arma el PDF con logo, métricas, pagos, deudas y mercado, y el CSV para Excel.
+ * Dónde se ve: Finanzas → Reportes.
+ * Si lo cambias: Solo los archivos descargados.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { db, type Transaction, type Bill, type BillPayment } from '../utils/database';

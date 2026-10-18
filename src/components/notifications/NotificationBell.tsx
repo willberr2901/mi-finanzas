@@ -1,15 +1,27 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🔔 CAMPANA Y CENTRO DE NOTIFICACIONES
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Contador de avisos sin leer, pestaña Pendientes (pagos por vencer, presupuestos) e Historial (avisos pasados y lo que hace tu hogar).
+ * Dónde se ve: Arriba a la derecha en cada módulo.
+ * Si lo cambias: Los avisos se calculan en services/alertsService.ts; todas las campanas comparten el mismo estado.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, X, AlertTriangle, Clock, Info, CheckCheck, BellRing, Smartphone, ChevronRight, History } from 'lucide-react';
+import { Bell, X, AlertTriangle, Clock, Info, CheckCheck, BellRing, Smartphone, ChevronRight, History, Home, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { computeAlerts, getReadIds, markRead, logAlerts, getLog, enableReminders, sendTestNotification, type AppAlert, type LoggedAlert } from '../../services/alertsService';
+import { useAlerts, markRead, clearLog, refreshAlerts, enableReminders, sendTestNotification, type AppAlert, type LoggedAlert } from '../../services/alertsService';
 
 const LEVEL = {
   urgente: { icon: AlertTriangle, ring: 'from-red-500 to-rose-600', tag: 'Urgente', tagCls: 'bg-red-500/15 text-red-300' },
   aviso: { icon: Clock, ring: 'from-amber-400 to-orange-500', tag: 'Pronto', tagCls: 'bg-amber-500/15 text-amber-300' },
-  info: { icon: Info, ring: 'from-cyan-400 to-blue-500', tag: 'Info', tagCls: 'bg-cyan-500/15 text-cyan-300' },
+  info: { icon: Info, ring: 'from-sky-400 to-blue-600', tag: 'Info', tagCls: 'bg-sky-500/15 text-sky-300' },
+  hogar: { icon: Home, ring: 'from-[#2C3560] to-[#0B1026]', tag: 'Hogar', tagCls: 'bg-lime-400/15 text-lime-300' },
 };
+const SEEN_KEY = 'mf_activitySeenAt';
+const seenAt = () => Number(localStorage.getItem(SEEN_KEY) || 0);
 
 const ago = (t: number) => {
   const m = Math.round((Date.now() - t) / 60000);
@@ -23,39 +35,36 @@ const ago = (t: number) => {
 
 /** Campana con contador y centro de notificaciones (pendientes + historial). */
 export default function NotificationBell() {
-  const [alerts, setAlerts] = useState<AppAlert[]>([]);
-  const [log, setLog] = useState<LoggedAlert[]>(getLog());
-  const [read, setRead] = useState<Set<string>>(getReadIds());
+  // Todas las campanas de la app leen el mismo estado (useAlerts): nunca muestran un aviso viejo.
+  const { alerts, log, read, unread: unreadAlerts, activeIds } = useAlerts();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<'ahora' | 'historial'>('ahora');
   const [perm, setPerm] = useState<NotificationPermission | 'none'>('Notification' in window ? Notification.permission : 'none');
   const navigate = useNavigate();
+  useEffect(() => { if (open) refreshAlerts(); }, [open]);
 
-  const refresh = () => computeAlerts().then(a => { setAlerts(a); logAlerts(a); setLog(getLog()); }).catch(() => {});
-  useEffect(() => {
-    refresh();
-    window.addEventListener('focus', refresh);
-    window.addEventListener('mf:data-changed', refresh);
-    return () => { window.removeEventListener('focus', refresh); window.removeEventListener('mf:data-changed', refresh); };
-  }, []);
-
-  const unread = alerts.filter(a => !read.has(a.id)).length;
-  const close = () => { markRead(alerts.map(a => a.id)); setRead(getReadIds()); setOpen(false); };
+  const newActivity = log.filter(l => l.kind === 'hogar' && l.at > seenAt()).length;
+  const unread = unreadAlerts + newActivity;
+  const close = () => { markRead(alerts.map(a => a.id)); localStorage.setItem(SEEN_KEY, String(Date.now())); setOpen(false); };
   const go = (link: string) => { close(); navigate(link); };
   const activate = async () => { const p = await enableReminders(); setPerm(p); if (p === 'granted') sendTestNotification(); };
 
-  const card = (a: AppAlert, i: number, when?: number) => {
-    const L = LEVEL[a.level]; const Icon = L.icon; const isNew = !read.has(a.id) && !when;
+  const card = (a: AppAlert | LoggedAlert, i: number, when?: number) => {
+    const isHogar = 'kind' in a && a.kind === 'hogar';
+    const L = LEVEL[isHogar ? 'hogar' : ((a as AppAlert).level ?? 'info')]; const Icon = L.icon;
+    const isNew = when ? (isHogar && when > seenAt()) : !read.has(a.id);
+    const resolved = !!when && !isHogar && !activeIds.has(a.id);
     return (
       <motion.li key={a.id + (when ?? '')} initial={{ opacity: 0, y: 12, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: i * 0.05, type: 'spring', damping: 22 }}>
         <button onClick={() => go(a.link)} className={`w-full text-left flex gap-3 p-3.5 rounded-2xl border transition-colors ${isNew ? 'border-white/15 bg-white/[0.06]' : 'border-white/5 bg-white/[0.02]'}`}>
-          <span className={`relative w-11 h-11 shrink-0 rounded-2xl bg-gradient-to-br ${L.ring} flex items-center justify-center shadow-lg`}>
-            <Icon size={20} className="text-white" />
+          <span className={`relative w-11 h-11 shrink-0 rounded-2xl bg-gradient-to-br ${L.ring} flex items-center justify-center shadow-lg ${isHogar ? 'ring-1 ring-lime-300/40' : ''} ${resolved ? 'opacity-50' : ''}`}>
+            <Icon size={20} className={isHogar ? 'text-brand-lime' : 'text-white'} />
             {isNew && <motion.span className="absolute inset-0 rounded-2xl border-2 border-white/60" animate={{ scale: [1, 1.25], opacity: [0.8, 0] }} transition={{ duration: 1.6, repeat: Infinity }} />}
           </span>
           <span className="flex-1 min-w-0">
             <span className="flex items-center gap-2">
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${L.tagCls}`}>{L.tag}</span>
+              {resolved && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 flex items-center gap-1"><CheckCheck size={10} /> Resuelto</span>}
               {when && <span className="text-[10px] text-slate-500">{ago(when)}</span>}
             </span>
             <span className="block text-white text-sm font-semibold mt-1">{a.title}</span>
@@ -69,7 +78,7 @@ export default function NotificationBell() {
 
   return (
     <>
-      <button data-tour="bell" onClick={() => { refresh(); setOpen(true); }} aria-label={unread ? `Notificaciones, ${unread} sin leer` : 'Notificaciones'}
+      <button data-tour="bell" onClick={() => setOpen(true)} aria-label={unread ? `Notificaciones, ${unread} sin leer` : 'Notificaciones'}
         className="relative w-10 h-10 shrink-0 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-200 active:scale-95 transition-transform">
         <motion.span animate={unread ? { rotate: [0, -14, 12, -8, 0] } : {}} transition={{ duration: 0.8, repeat: unread ? Infinity : 0, repeatDelay: 4 }} className="flex">
           <Bell size={19} />
@@ -103,7 +112,7 @@ export default function NotificationBell() {
                     {(['ahora', 'historial'] as const).map(t => (
                       <button key={t} onClick={() => setTab(t)} className={`relative py-2 rounded-xl text-sm font-semibold ${tab === t ? 'text-white' : 'text-slate-400'}`}>
                         {tab === t && <motion.span layoutId="notif-tab" className="absolute inset-0 rounded-xl bg-white/10" />}
-                        <span className="relative flex items-center justify-center gap-1.5">{t === 'ahora' ? <>Pendientes{alerts.length > 0 && <span className="text-[10px] bg-red-500 text-white rounded-full px-1.5">{alerts.length}</span>}</> : <><History size={14} /> Historial</>}</span>
+                        <span className="relative flex items-center justify-center gap-1.5">{t === 'ahora' ? <>Pendientes{alerts.length > 0 && <span className="text-[10px] bg-red-500 text-white rounded-full px-1.5">{alerts.length}</span>}</> : <><History size={14} /> Historial{newActivity > 0 && <span className="text-[10px] bg-brand-lime text-brand-ink rounded-full px-1.5">{newActivity}</span>}</>}</span>
                       </button>
                     ))}
                   </div>
@@ -119,8 +128,11 @@ export default function NotificationBell() {
                       </motion.div>
                     ) : <ul className="space-y-2">{alerts.map((a, i) => card(a, i))}</ul>
                   ) : (
-                    log.length === 0 ? <p className="text-center text-slate-400 text-sm py-8">Aquí quedan guardados los avisos que te ha dado la app.</p>
-                      : <ul className="space-y-2">{log.slice(0, 40).map((a, i) => card(a, i, a.at))}</ul>
+                    log.length === 0 ? <p className="text-center text-slate-400 text-sm py-8">Aquí quedan los avisos de la app y lo que hagan en tu hogar.</p>
+                      : <>
+                          <ul className="space-y-2">{log.slice(0, 60).map((a, i) => card(a, i, a.at))}</ul>
+                          <button onClick={clearLog} className="mt-3 mx-auto flex items-center gap-1.5 text-xs text-slate-400 font-semibold"><Trash2 size={13} /> Borrar historial</button>
+                        </>
                   )}
 
                   <div className="mt-4 p-4 rounded-2xl border border-white/10 bg-white/[0.03]">

@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🧠 SALUD FINANCIERA
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Calcula el puntaje de salud financiera y los consejos.
+ * Dónde se ve: Inicio → Salud.
+ * Si lo cambias: Cambia el puntaje y los mensajes.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import type { Transaction, SavingsGoal } from '../utils/database';
 
 export interface HealthScoreResult {

@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🎁 VENTANA DE NOVEDADES
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Lista de lo nuevo de la versión (RELEASE_NOTES de src/version.ts).
+ * Dónde se ve: Después de actualizar.
+ * Si lo cambias: Solo el diseño; el texto está en src/version.ts.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { motion } from 'framer-motion';
 import { Gift, Check } from 'lucide-react';
 import { APP_VERSION, RELEASE_NOTES } from '../../version';

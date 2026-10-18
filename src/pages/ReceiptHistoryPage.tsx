@@ -1,7 +1,17 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🧾 PANTALLA FACTURAS
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Facturas escaneadas guardadas en el celular.
+ * Dónde se ve: Menú → Facturas.
+ * Si lo cambias: Solo esta lista.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import ModuleHeader from '../components/ui/ModuleHeader';
 import { useState, useEffect } from 'react';
 import { secureStorage } from '../utils/security';
 import { DollarSign, Calendar, Trash2, AlertTriangle } from 'lucide-react';
+import { askConfirm } from '../components/ui/ConfirmDialog';
 
 interface Invoice {
   id: string;
@@ -26,8 +36,8 @@ export default function ReceiptHistoryPage() {
     }
   }, []);
 
-  const deleteInvoice = (id: string) => {
-    if (confirm('¿Eliminar esta factura?')) {
+  const deleteInvoice = async (id: string) => {
+    if (await askConfirm({ title: '¿Eliminar esta factura?', icon: 'trash', tone: 'danger', confirmText: 'Sí, eliminar' })) {
       const updated = invoices.filter(inv => inv.id !== id);
       setInvoices(updated);
       secureStorage.setItem('miFinanzasInvoices', updated);

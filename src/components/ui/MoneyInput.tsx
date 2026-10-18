@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 💲 CAMPO DE DINERO
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Pone los puntos de miles mientras escribes y abre el teclado numérico.
+ * Dónde se ve: Todos los campos de precio o valor.
+ * Si lo cambias: Afecta cómo se escriben todos los valores de la app.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { formatThousands, parseMoney } from '../../utils/format';
 
 interface MoneyInputProps {

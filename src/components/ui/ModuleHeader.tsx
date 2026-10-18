@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🔝 ENCABEZADO DE CADA MÓDULO
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Menú ☰, ícono del módulo, nombre, botón Guíame, botón extra (ej. Hogar) y campana.
+ * Dónde se ve: Arriba de cada pantalla.
+ * Si lo cambias: Cambia el encabezado de TODAS las pantallas.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { createContext, useContext, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { Menu, Sparkles } from 'lucide-react';
@@ -30,8 +39,8 @@ export default function ModuleHeader({ module, title, subtitle, right }: { modul
         <div className="flex items-center gap-1.5">
           <h1 className="text-xl font-bold text-white truncate">{title ?? m.label}</h1>
           <button onClick={() => start()} aria-label={`Guíame en ${m.label}`} title="Guíame"
-            className="flex items-center gap-1 text-[10px] font-bold text-violet-200 bg-violet-500/15 border border-violet-400/30 rounded-full px-2 py-0.5 active:scale-95">
-            <Sparkles size={11} /> Guíame
+            className="shrink-0 flex items-center gap-1 text-[10px] font-bold text-violet-200 bg-violet-500/15 border border-violet-400/30 rounded-full px-2 py-0.5 active:scale-95">
+            <Sparkles size={11} />{!right && ' Guíame'}
           </button>
         </div>
         <p className="text-xs text-slate-400 truncate">{subtitle ?? m.tagline}</p>

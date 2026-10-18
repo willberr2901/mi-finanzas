@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * ⬆️ AVISO "HAY UNA ACTUALIZACIÓN"
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Revisa /version.json y, si hay versión nueva, muestra el aviso para actualizar.
+ * Dónde se ve: Cuando publicas una versión nueva (src/version.ts).
+ * Si lo cambias: Si se rompe, la gente se queda con la versión vieja.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Check, RefreshCw } from 'lucide-react';

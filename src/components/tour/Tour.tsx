@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🧭 GUÍAS "GUÍAME"
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Recorrido paso a paso que señala cada botón de un módulo.
+ * Dónde se ve: Botón ✨ Guíame en cada módulo y la primera vez que entras.
+ * Si lo cambias: Los pasos de cada pantalla están en esa pantalla (usePageTour).
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';

@@ -1,0 +1,116 @@
+# 🗺️ Mapa del código de Mi Finanzas
+
+Esta guía es para ubicar rápido **dónde está cada parte de la app** y **qué se afecta si la cambias**.
+Cada archivo empieza con una cabecera en español así:
+
+```
+/**
+ * ════════════════════════════
+ * 🛒 NOMBRE DE LA PIEZA
+ * Qué hace: …
+ * Dónde se ve: …
+ * Si lo cambias: …
+ * ════════════════════════════
+ */
+```
+
+Dentro de los archivos grandes, las partes van separadas con `// ═══ SECCIÓN: … ═══`.
+Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
+
+---
+
+## 1. ¿Qué quiero cambiar? → ¿Dónde está?
+
+| Quiero cambiar… | Archivo |
+|---|---|
+| Colores de la marca, tema claro/oscuro | `src/index.css` y `tailwind.config.js` |
+| Logo | `src/components/ui/AppLogo.tsx` |
+| Nombre, ícono o ayuda de un módulo del menú | `src/utils/modules.ts` |
+| Encabezado de cada pantalla (menú, Guíame, campana) | `src/components/ui/ModuleHeader.tsx` |
+| Pantalla **Inicio** | `src/pages/HomePage.tsx` |
+| Pantalla **Mercado** | `src/pages/MarketPage.tsx` + `src/components/market/` |
+| Lógica del mercado (tachar, extras, precios, historial) | `src/services/market/marketStore.ts` |
+| **Hogar sincronizado** (QR, unirse, salir) | `src/components/household/HouseholdSheet.tsx` |
+| Sincronización cifrada | `src/services/household/householdSync.ts` y `householdCrypto.ts` |
+| Pantalla **Finanzas** (movimientos, metas, reportes) | `src/pages/FinancePage.tsx` |
+| Pantalla **Pagos** | `src/pages/BillsPage.tsx` + `src/components/bills/` |
+| Pantalla **Ajustes** | `src/pages/SettingsPage.tsx` |
+| Escáner de facturas | `src/pages/ReceiptScannerPage.tsx` + `src/services/ocrService.ts` |
+| Diseño de los avisos de arriba (toasts) | `src/components/notifications/ToastCard.tsx` |
+| Qué avisos salen en la campana | `src/services/alertsService.ts` |
+| Ventanas de Sí / No | `src/components/ui/ConfirmDialog.tsx` |
+| Hojas que suben desde abajo | `src/components/ui/BottomSheet.tsx` |
+| Texto de privacidad y términos | `src/components/legal/LegalContent.tsx` |
+| Número de versión y novedades | `src/version.ts` |
+| Reporte PDF / Excel | `src/services/exportService.ts` |
+
+---
+
+## 2. Carpetas
+
+```
+src/
+├── App.tsx              🧭 Rutas y piezas que están en toda la app
+├── main.tsx             🚀 Arranque
+├── index.css            🎨 Colores y estilos globales
+├── version.ts           🏷️ Versión y novedades
+├── sw.ts                ⚙️ Funciona sin internet + avisos del celular
+│
+├── pages/               📱 Una pantalla por archivo
+│   ├── HomePage         🏠 Inicio
+│   ├── MarketPage       🛒 Mercado (Lista · Historial · Precios)
+│   ├── FinancePage      💰 Finanzas
+│   ├── BillsPage        📅 Pagos
+│   ├── SettingsPage     ⚙️ Ajustes
+│   ├── ReceiptScannerPage 📷 Escáner
+│   ├── ReceiptHistoryPage 🧾 Facturas
+│   └── LegalPage        ⚖️ Privacidad
+│
+├── components/          🧱 Piezas de pantalla
+│   ├── market/          🛒 Producto, terminar mercado, historial, flechitas de precio
+│   ├── household/       🏠 Hogar sincronizado
+│   ├── notifications/   🔔 Campana y diseño de avisos
+│   ├── bills/           📅 Formulario de pagos y Cuentas claras
+│   ├── home/            🏠 Tarjetas de Inicio
+│   ├── ui/              🧩 Piezas base (encabezado, dinero, Sí/No, hojas)
+│   ├── quick/           📋 Registrar desde notificación del banco
+│   ├── share/           💚 Recomendar la app
+│   ├── tour/            🧭 Guías "Guíame"
+│   ├── pwa/             ⬆️ Aviso de actualización y novedades
+│   ├── welcome/         👋 Bienvenida
+│   └── legal/           ⚖️ Textos legales
+│
+├── services/            🧠 Lógica (no dibuja nada)
+│   ├── market/          🛒 Datos del mercado
+│   ├── household/       🏠 Sincronización cifrada
+│   ├── alertsService    🚨 Avisos de la campana
+│   ├── notificationService 🔔 notify() para mostrar avisos
+│   ├── billsService     📅 Estados de pagos
+│   ├── exportService    📄 PDF y Excel
+│   ├── ocrService       🔍 Leer facturas
+│   └── bankTextParser   🏦 Leer notificaciones del banco
+│
+├── contexts/            🔐 Seguridad (PIN) y 🌗 Tema
+└── utils/               🔧 Herramientas (formato de pesos, base de datos, preferencias)
+
+supabase/sync.sql        🏠 Copia de lo que hay en el servidor del hogar (solo cajas cifradas)
+```
+
+---
+
+## 3. Dónde se guardan los datos
+
+| Qué | Dónde | ¿Sale del celular? |
+|---|---|---|
+| Ingresos, gastos, metas, pagos, deudas | Base del celular (`utils/database.ts`) | ❌ Nunca |
+| Preferencias (día de pago, nombres, tema…) | `utils/prefs.ts` | ❌ Nunca |
+| Lista de mercado, historial de compras y precios | `services/market/marketStore.ts` | 🔐 Solo si creas un hogar, **cifrado** |
+| Llave del hogar | Solo en los celulares (dentro del QR) | ❌ Nunca va al servidor |
+
+---
+
+## 4. Antes de publicar un cambio
+
+1. Sube el número en `src/version.ts` y escribe las novedades.
+2. Si cambiaste textos legales, sube `TERMS_VERSION` en `LegalContent.tsx`.
+3. Al subir a `main`, la app se publica sola y a todos les sale el aviso de actualización.

@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * ➕ BOTÓN FLOTANTE "+"
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Botón redondo abajo a la derecha para registrar un gasto o ingreso rápido, o pegar la notificación del banco.
+ * Dónde se ve: Inicio, Finanzas, Pagos y Ajustes (se oculta en Mercado, Escáner y Privacidad).
+ * Si lo cambias: Cambia el registro rápido de movimientos.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';

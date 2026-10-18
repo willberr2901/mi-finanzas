@@ -1,4 +1,13 @@
-// Formato de dinero en pesos colombianos, igual en toda la app.
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 💲 FORMATO DE PESOS Y FECHAS
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: formatCOP ($ 1.234.567), miles, fecha de hoy. Respeta "ocultar saldos".
+ * Dónde se ve: Toda la app.
+ * Si lo cambias: Cambia cómo se ven todas las cifras.
+ * Nota: Formato de dinero en pesos colombianos, igual en toda la app.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { amountsHidden } from './privacyMask';
 const cop0 = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
 const cop2 = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🎯 TARJETA DE PRESUPUESTOS
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Barras de cuánto llevas gastado en cada categoría frente a su límite del ciclo.
+ * Dónde se ve: Inicio.
+ * Si lo cambias: Los límites se editan en Ajustes → Presupuestos (utils/prefs.ts).
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PiggyBank, ChevronRight, AlertTriangle, CheckCircle2, Flame } from 'lucide-react';

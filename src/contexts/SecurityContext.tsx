@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🔐 SEGURIDAD (PIN, huella, bloqueo automático)
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Guarda el PIN cifrado, bloquea al salir y desbloquea con PIN o huella.
+ * Dónde se ve: Ajustes → Seguridad y pantalla de bloqueo.
+ * Si lo cambias: Puedes dejar la app bloqueada para siempre: prueba con cuidado.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { hashSecret, randomBytes, toB64, fromB64, safeEqual } from '../utils/crypto';

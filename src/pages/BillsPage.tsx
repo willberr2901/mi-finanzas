@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 📅 PANTALLA PAGOS
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Pagos fijos, tarjetas y deudas del mes: resumen, calendario, "¿Ya lo pagaste?" y deudas con su avance. Incluye Cuentas claras para compartidos.
+ * Dónde se ve: Menú → Pagos.
+ * Si lo cambias: La lógica de estados (vencido, hoy, pronto) está en services/billsService.ts.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ownerLabel } from '../utils/prefs';
 import SharedSettlementCard from '../components/bills/SharedSettlementCard';
@@ -11,6 +20,7 @@ import BillForm from '../components/bills/BillForm';
 import MoneyInput from '../components/ui/MoneyInput';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import { usePageTour } from '../components/tour/Tour';
+import { askConfirm } from '../components/ui/ConfirmDialog';
 
 const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const WEEK = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -82,6 +92,7 @@ export default function BillsPage() {
     notify({ title: 'Recordatorios listos', message: 'Abre el archivo para agregarlos a tu calendario: te avisará un día antes y el mismo día.', type: 'success', duration: 6000 });
   };
 
+  // ═══ SECCIÓN: Guardar, pagar y eliminar pagos ═══
   const saveBill = async (data: Omit<Bill, 'id' | 'createdAt' | 'active'>) => {
     if (editing) {
       await db.bills.update(editing.id, { ...data, active: true });
@@ -91,7 +102,7 @@ export default function BillsPage() {
       await db.bills.add(bill);
       setJustAdded(bill.id);
       // Si el día de pago de este mes ya pasó, pregunta si ya se pagó (para no marcarlo vencido sin razón).
-      if (bill.dueDay < today.getDate() && window.confirm(`El día ${bill.dueDay} ya pasó este mes. ¿Ya pagaste "${bill.name}" este mes?`)) {
+      if (bill.dueDay < today.getDate() && await askConfirm({ title: `¿Ya pagaste ${bill.name} este mes?`, message: `El día ${bill.dueDay} ya pasó. Si ya lo pagaste, lo marcamos y queda como gasto en Finanzas.`, icon: 'question', confirmText: 'Sí, ya lo pagué', cancelText: 'Aún no' })) {
         // Queda pagado este mes y se registra como gasto para que el balance cuadre.
         await db.billPayments.add({ id: crypto.randomUUID(), billId: bill.id, period: periodOf(today), amount: bill.amount, paidAt: Date.now() });
         await db.transactions.add({ id: crypto.randomUUID(), date: todayISO(), type: 'expense', amount: bill.amount, category: bill.category, description: bill.name, createdAt: Date.now() });
@@ -109,7 +120,7 @@ export default function BillsPage() {
   };
 
   const removeBill = async (b: Bill) => {
-    if (!window.confirm(`¿Eliminar "${b.name}"? Los gastos ya registrados se conservan.`)) return;
+    if (!await askConfirm({ title: `¿Eliminar ${b.name}?`, message: 'Los gastos que ya registraste se conservan en Finanzas.', icon: 'trash', tone: 'danger', confirmText: 'Sí, eliminar' })) return;
     await db.bills.delete(b.id);
     notify({ title: 'Pago eliminado', message: b.name, type: 'info' });
     reload();
@@ -117,6 +128,7 @@ export default function BillsPage() {
 
   const undo = async (s: BillStatus) => { await unpayBill(s); notify({ title: 'Pago desmarcado', message: s.bill.name, type: 'info' }); reload(); };
 
+  // ═══ SECCIÓN: Fila de un pago (nombre, estado, botón Pagar) ═══
   const row = (s: BillStatus, i: number) => (
     <motion.div key={s.bill.id} layout initial={s.bill.id === justAdded ? { opacity: 0, scale: 0.8, y: -20 } : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={s.bill.id === justAdded ? { type: 'spring', damping: 12, stiffness: 200 } : { delay: i * 0.04 }}

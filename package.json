@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/realtime-js": "^2.118.0",
     "@types/react-leaflet": "^2.8.3",
     "axios": "^1.16.0",
     "date-fns": "^4.1.0",

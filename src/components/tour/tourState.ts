@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🧭 GUÍAS: tipos y "ya la vio"
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Define un paso de la guía y recuerda qué guías ya se vieron.
+ * Dónde se ve: Guíame.
+ * Si lo cambias: Cambia cuándo se muestran las guías.
+ * ════════════════════════════════════════════════════════════════════
+ */
 export interface TourStep {
   target: string;   // valor de data-tour del elemento a señalar
   title: string;

@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🗄️ BASE DE DATOS DEL CELULAR (Dexie / IndexedDB)
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Tablas: transactions (movimientos), goals (metas), bills (pagos), billPayments (pagos hechos), settings.
+ * Dónde se ve: Toda la app.
+ * Si lo cambias: Cambiar una tabla requiere una nueva versión de la base; si no, se pueden perder datos.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import Dexie from 'dexie';
 
 export interface Transaction {

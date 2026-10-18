@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 💰 PANTALLA FINANZAS
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Pestañas: Movimientos (ingresos y gastos), Metas de ahorro y Reportes (PDF/Excel).
+ * Dónde se ve: Menú → Finanzas.
+ * Si lo cambias: Los movimientos se guardan en utils/database.ts (tabla transactions).
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, Target, TrendingUp, TrendingDown, Pencil, PiggyBank, FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 import MoneyInput from '../components/ui/MoneyInput';
@@ -15,6 +24,7 @@ import { usePageTour } from '../components/tour/Tour';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import { motion, AnimatePresence } from 'framer-motion';
 import { findMatchingBill, markPaidFromTransaction, createBillFromTransaction, RECURRING_CATEGORIES } from '../services/billsService';
+import { askConfirm } from '../components/ui/ConfirmDialog';
 
 const categoriesFor = (t: 'income' | 'expense'): readonly string[] => (t === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES);
 
@@ -92,6 +102,7 @@ export default function FinancePage() {
     }
   };
 
+  // ═══ SECCIÓN: Guardar, editar y borrar movimientos y metas ═══
   const handleAddTransaction = async () => {
     if (!txAmount || !txDesc.trim()) { notify({ title: 'Faltan datos', message: 'Completa el monto y la descripción.', type: 'error' }); return; }
 
@@ -211,6 +222,7 @@ export default function FinancePage() {
         ))}
       </div>
 
+      {/* ═══ SECCIÓN: Pestaña Movimientos (formulario + lista) ═══ */}
       {activeTab === 'transactions' && (
         <>
           <div data-tour="fin-form" className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
@@ -275,7 +287,7 @@ export default function FinancePage() {
                     {tx.type === 'income' ? '+' : '-'}{formatCOP(tx.amount)}
                   </span>
                   <button onClick={() => handleEditTx(tx)} aria-label={`Editar ${tx.description}`} className="text-slate-400 hover:text-blue-400 p-2"><Pencil size={16} /></button>
-                  <button onClick={() => { if (window.confirm(`¿Eliminar "${tx.description}"?`)) handleDeleteTx(tx.id); }} aria-label={`Eliminar ${tx.description}`} className="text-slate-400 hover:text-red-400 p-2"><Trash2 size={16} /></button>
+                  <button onClick={async () => { if (await askConfirm({ title: `¿Eliminar ${tx.description}?`, message: `${tx.type === 'income' ? 'Ingreso' : 'Gasto'} de ${formatCOP(tx.amount)}. Esto no se puede deshacer.`, icon: 'trash', tone: 'danger', confirmText: 'Sí, eliminar' })) handleDeleteTx(tx.id); }} aria-label={`Eliminar ${tx.description}`} className="text-slate-400 hover:text-red-400 p-2"><Trash2 size={16} /></button>
                 </div>
               </motion.div>
             )) : <p className="text-center text-slate-500 py-8">Aún no hay movimientos. Registra tu primer ingreso o gasto arriba.</p>}
@@ -284,6 +296,7 @@ export default function FinancePage() {
         </>
       )}
 
+      {/* ═══ SECCIÓN: Pestaña Metas de ahorro ═══ */}
       {activeTab === 'goals' && (
         <>
           <div className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
@@ -334,6 +347,7 @@ export default function FinancePage() {
         </>
       )}
 
+      {/* ═══ SECCIÓN: Pestaña Reportes (PDF / Excel) ═══ */}
       {activeTab === 'export' && (() => {
         const periods = availablePeriods(transactions);
         const monthTx = transactions.filter(t => t.date?.startsWith(reportPeriod));

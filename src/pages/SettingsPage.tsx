@@ -1,9 +1,19 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * ⚙️ PANTALLA AJUSTES
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Secciones: perfil del hogar, recomendar, Tu hogar (hogar sincronizado, nombres), Tu dinero (día de pago, presupuestos), Recordatorios, Apariencia, Seguridad, Tus datos, Ayuda, Acerca de.
+ * Dónde se ve: Menú → Ajustes.
+ * Si lo cambias: Las preferencias se guardan en utils/prefs.ts.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, ShieldCheck, Database, LifeBuoy, Info, ChevronRight, Fingerprint, Lock, KeyRound, Download, Upload, Trash2, CalendarDays,
   Sparkles, X, Check, Delete, Users, Wallet, PiggyBank, AlarmClock, Palette, Moon, Sun, MonitorSmartphone, Heart, Wand2, CalendarPlus, Pencil,
+  Home,
 } from 'lucide-react';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import MoneyInput from '../components/ui/MoneyInput';
@@ -19,6 +29,8 @@ import { usePrefs, cycleFor, cycleProgress, inCycle, ownerLabel, type ThemePref 
 import { EXPENSE_CATEGORIES } from '../utils/categories';
 import { formatCOP } from '../utils/format';
 import { APP_VERSION } from '../version';
+import { openHousehold } from '../components/household/HouseholdSheet';
+import { useHousehold } from '../services/household/householdSync';
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 22, stiffness: 220 } } };
@@ -94,6 +106,7 @@ const THEMES: { id: ThemePref; label: string; icon: any }[] = [
 export default function SettingsPage() {
   const sec = useSecurity();
   const [prefs, setPrefs] = usePrefs();
+  const { household } = useHousehold();
   const [params, setParams] = useSearchParams();
   const [name, setName] = useState(localStorage.getItem('miFinanzasUserName') || '');
   const [partner, setPartner] = useState(prefs.names.pareja);
@@ -256,6 +269,7 @@ export default function SettingsPage() {
       <ModuleHeader module="ajustes" />
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
 
+        {/* ═══ SECCIÓN: Lo que se ve en Ajustes, de arriba hacia abajo ═══ */}
         {/* Perfil del hogar */}
         <motion.div variants={item} className="relative overflow-hidden rounded-[28px] p-5 bg-gradient-to-br theme-dark from-[#232C5A] via-[#141B3D] to-[#0B1026] ring-1 ring-lime-300/20">
           <div className="absolute -top-16 -right-12 w-48 h-48 rounded-full bg-lime-300/15 blur-3xl" aria-hidden="true" />
@@ -295,6 +309,7 @@ export default function SettingsPage() {
         </motion.button>
 
         <Section icon={Users} title="Tu hogar">
+          <Row icon={Home} title={household ? `Hogar sincronizado · ${household.name}` : 'Hogar sincronizado'} desc={household ? 'La lista del mercado se comparte en vivo y cifrada' : 'Comparte la lista del mercado con tu familia, en vivo y cifrada'} onClick={openHousehold} right={<ChevronRight size={16} className="text-slate-600" />} />
           <Row icon={Users} title="Nombres del hogar" desc={partnerName ? `${meName} y ${partnerName} · se usan en Pagos y reportes` : 'Cambia "Yo" y "Mi pareja" por sus nombres'} onClick={() => openSheet('names')} />
         </Section>
 
@@ -356,7 +371,7 @@ export default function SettingsPage() {
               </select>} />
           )}
           {sec.isSetup && <Row icon={Lock} title="Bloquear ahora" onClick={() => sec.lockNow()} />}
-          <Link to="/legal" className="block"><Row icon={ShieldCheck} title="Privacidad y términos" desc="Sin registro y sin servidores: tus datos viven solo en este celular." right={<ChevronRight size={16} className="text-slate-600" />} /></Link>
+          <Link to="/legal" className="block"><Row icon={ShieldCheck} title="Privacidad y términos" desc="Sin registro. Tus finanzas viven solo en este celular; el hogar se sincroniza cifrado." right={<ChevronRight size={16} className="text-slate-600" />} /></Link>
         </Section>
 
         <Section icon={Database} title="Tus datos">

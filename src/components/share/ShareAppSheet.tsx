@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 💚 RECOMENDAR LA APP
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Mensaje para WhatsApp, copiar o código QR con el enlace de la app.
+ * Dónde se ve: Menú y Ajustes → Recomendar.
+ * Si lo cambias: Solo afecta cómo se comparte la app.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import QRCode from 'qrcode';

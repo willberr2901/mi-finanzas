@@ -1,8 +1,14 @@
 /// <reference lib="webworker" />
-// Service worker propio de Mi Finanzas:
-//  · guarda la app en el celular para que funcione sin internet
-//  · revisa en segundo plano tus pagos y te avisa con una notificación del celular
-//    (todo se calcula en el celular, sin servidores)
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * ⚙️ SERVICE WORKER (funciona sin internet + avisos)
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Guarda la app para usarla sin internet, revisa pagos en segundo plano y muestra notificaciones del celular.
+ * Dónde se ve: En segundo plano.
+ * Si lo cambias: Un error aquí puede dejar a todos con una versión vieja: prueba antes de publicar.
+ * Nota: Service worker propio de Mi Finanzas: · guarda la app en el celular para que funcione sin internet · revisa en segundo plano tus pagos y te avisa con una notificación del celular (todo se calcula en el celular, sin servidores)
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { clientsClaim } from 'workbox-core';

@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 📋 REGISTRAR DESDE NOTIFICACIÓN DEL BANCO
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Pegas el mensaje del banco o subes el pantallazo del comprobante y la app llena el gasto/ingreso.
+ * Dónde se ve: Botón + → "Desde notificación del banco" y menú Compartir de Android.
+ * Si lo cambias: La lectura del texto está en services/bankTextParser.ts.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';

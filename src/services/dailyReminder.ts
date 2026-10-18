@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * ⏰ RECORDATORIO DIARIO
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: "¿Ya anotaste los gastos de hoy?" a la hora elegida, también como evento de calendario.
+ * Dónde se ve: Ajustes → Recordatorios.
+ * Si lo cambias: Solo el recordatorio diario.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { db } from '../utils/database';
 import { getPrefs } from '../utils/prefs';
 import { todayISO } from '../utils/format';

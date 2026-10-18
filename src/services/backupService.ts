@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 💾 RESPALDO CIFRADO
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Crea y restaura el archivo .mfbackup protegido con contraseña.
+ * Dónde se ve: Ajustes → Tus datos.
+ * Si lo cambias: Si cambias el formato, los respaldos viejos podrían no abrir.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { db } from '../utils/database';
 import { encryptWithPassword, decryptWithPassword } from '../utils/crypto';
 

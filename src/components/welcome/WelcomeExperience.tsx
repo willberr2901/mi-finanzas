@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 👋 BIENVENIDA
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Pantalla animada de bienvenida (una vez por sesión) y el primer recorrido.
+ * Dónde se ve: Al abrir la app.
+ * Si lo cambias: Si se traba, la app no pasa de la bienvenida.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';

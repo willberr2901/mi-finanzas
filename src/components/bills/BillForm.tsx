@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🧾 FORMULARIO DE PAGO FIJO / DEUDA / TARJETA
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Crear o editar un pago (arriendo, servicios, tarjeta, crédito) con su día de pago y de quién es.
+ * Dónde se ve: Pagos → Agregar / editar.
+ * Si lo cambias: Cambia qué se guarda de cada pago (ver utils/database.ts → Bill).
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useState } from 'react';
 import { ownerLabel } from '../../utils/prefs';
 import { motion } from 'framer-motion';

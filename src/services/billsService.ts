@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 📅 LÓGICA DE PAGOS
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Calcula el estado de cada pago del mes (pagado, vencido, hoy, pronto), registra pagos y enlaces de calendario.
+ * Dónde se ve: Pagos, Inicio, campana y PDF.
+ * Si lo cambias: Afecta los avisos y los totales de pagos.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { db, type Bill, type BillPayment } from '../utils/database';
 import { todayISO } from '../utils/format';
 

@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🌗 TEMA CLARO / OSCURO / AUTOMÁTICO
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Aplica el tema elegido en Ajustes → Apariencia.
+ * Dónde se ve: Toda la app.
+ * Si lo cambias: Los colores de cada tema están en src/index.css.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { createContext, useContext, useEffect, useState } from 'react';
 import { usePrefs } from '../utils/prefs';
 

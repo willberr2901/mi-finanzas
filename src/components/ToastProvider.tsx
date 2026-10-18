@@ -1,59 +1,36 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🔔 CONTENEDOR DE AVISOS (donde aparecen los toasts)
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: ubica los avisos arriba al centro, máximo 3 a la vez, y los
+ *           cierra al cambiar de módulo para que no queden avisos viejos.
+ * Estilos: clase .mf-toast en src/index.css · Diseño interno: ToastCard.tsx
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect } from 'react';
-import { ToastContainer, Slide } from 'react-toastify';
+import { useLocation } from 'react-router-dom';
+import { ToastContainer, Slide, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function ToastProvider() {
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      .Toastify__toast {
-        background: #0f172a !important;
-        backdrop-filter: none !important;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.9) !important;
-        border: 1px solid #334155 !important;
-        opacity: 1 !important;
-        z-index: 99999 !important;
-        border-radius: 12px !important;
-        padding: 0 !important;
-      }
-      .Toastify__toast-body {
-        color: #ffffff !important;
-        font-weight: 500 !important;
-        padding: 12px 16px !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 10px !important;
-      }
-      .Toastify__close-button {
-        color: #94a3b8 !important;
-        opacity: 1 !important;
-        margin-left: auto !important;
-        padding: 8px !important;
-      }
-      .Toastify__progress-bar {
-        height: 4px !important;
-        background: #C6F432 !important;
-        border-radius: 0 0 12px 12px !important;
-      }
-    `;
-    document.head.appendChild(style);
-    return () => { style.remove(); };
-  }, []);
+  const { pathname } = useLocation();
+  // Al entrar a otro módulo se cierran los avisos del módulo anterior.
+  useEffect(() => { toast.dismiss(); }, [pathname]);
 
   return (
     <ToastContainer
       position="top-center"
-      autoClose={4000}
-      hideProgressBar={false}
+      autoClose={3200}
       newestOnTop
       closeOnClick
-      rtl={false}
-      pauseOnFocusLoss
+      pauseOnFocusLoss={false}
       draggable
+      draggableDirection="y"
       pauseOnHover
       theme="dark"
       transition={Slide}
       limit={3}
+      closeButton={false}
     />
   );
 }

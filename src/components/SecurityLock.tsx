@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🔒 PANTALLA DE BLOQUEO (PIN / huella)
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Pide el PIN o la huella cuando la app está protegida.
+ * Dónde se ve: Al abrir la app si hay PIN.
+ * Si lo cambias: Puedes dejar a alguien por fuera de su propia app: prueba bien.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { useEffect, useState } from 'react';
 import { motion, useAnimationControls } from 'framer-motion';
 import { Delete, Fingerprint, Lock } from 'lucide-react';

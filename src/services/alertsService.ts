@@ -1,5 +1,16 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🚨 AVISOS DEL MOMENTO (campana)
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Calcula pagos vencidos o por vencer, mercado sobre el presupuesto y presupuestos al 80%/100%. Un solo estado para todas las campanas, historial y recordatorios del celular.
+ * Dónde se ve: Campana 🔔 y notificaciones del celular.
+ * Si lo cambias: Cambia qué avisos salen y cuándo.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { loadBillStatuses, periodOf } from './billsService';
-import { secureStorage } from '../utils/security';
+import { listItems, estimateList, getBudget } from './market/marketStore';
+import { getActivity, saveActivity, type ActivityEntry } from './notificationService';
+import { useEffect, useState } from 'react';
 import { formatCOP } from '../utils/format';
 import { db } from '../utils/database';
 import { getPrefs, cycleFor, inCycle } from '../utils/prefs';
@@ -27,13 +38,14 @@ export const computeAlerts = async (): Promise<AppAlert[]> => {
     }
   } catch { /* sin datos de pagos aún */ }
 
-  const items = secureStorage.getItem('marketItems');
-  const budget = secureStorage.getItem('marketBudget');
-  if (Array.isArray(items) && items.length && typeof budget === 'number' && budget > 0) {
-    const total = items.reduce((s: number, i: any) => s + (i.price || 0) * (i.quantity || 1), 0);
-    const pct = Math.round((total / budget) * 100);
-    if (total > budget) alerts.push({ id: `merc-exc-${period}-${Math.round(total)}`, level: 'urgente', title: 'Te pasaste del presupuesto del mercado', message: `La lista va en ${formatCOP(total)} y el presupuesto es ${formatCOP(budget)}.`, link: '/mercado' });
-    else if (pct >= 85) alerts.push({ id: `merc-85-${period}`, level: 'aviso', title: `Mercado al ${pct}% del presupuesto`, message: `Te quedan ${formatCOP(budget - total)}.`, link: '/mercado' });
+  // Mercado: lo que va en el carrito y lo que costaría la lista, frente al presupuesto
+  const budget = getBudget();
+  const items = listItems();
+  if (items.length && budget > 0) {
+    const cart = items.filter(i => i.checked).reduce((s, i) => s + (i.paid || 0) * i.qty, 0);
+    const est = estimateList(items).total;
+    if (cart > budget) alerts.push({ id: `merc-exc-${period}`, level: 'urgente', title: 'Te pasaste del presupuesto del mercado', message: `Llevas ${formatCOP(cart)} en el carrito y el presupuesto es ${formatCOP(budget)}.`, link: '/mercado' });
+    else if (est > budget) alerts.push({ id: `merc-est-${period}`, level: 'aviso', title: 'Tu lista supera el presupuesto', message: `Costaría aprox. ${formatCOP(est)} y el presupuesto es ${formatCOP(budget)}.`, link: '/mercado' });
   }
 
   // Presupuestos por categoría (dentro del ciclo de pago)
@@ -58,29 +70,60 @@ export const computeAlerts = async (): Promise<AppAlert[]> => {
   return alerts;
 };
 
-// ---- Leídos (se guardan solo en este celular) ----
+// ═══ SECCIÓN: Leídos (se guardan solo en este celular) ═══
 const READ_KEY = 'mf_readAlerts';
 export const getReadIds = (): Set<string> => {
   try { return new Set(JSON.parse(localStorage.getItem(READ_KEY) || '[]')); } catch { return new Set(); }
 };
 export const markRead = (ids: string[]) => {
-  const all = [...getReadIds(), ...ids].slice(-200);
+  const all = [...new Set([...getReadIds(), ...ids])].slice(-300);
   localStorage.setItem(READ_KEY, JSON.stringify(all));
+  window.dispatchEvent(new Event('mf:alerts-changed'));
 };
 
-// ---- Historial de notificaciones (solo en este celular) ----
-export interface LoggedAlert extends AppAlert { at: number }
-const LOG_KEY = 'mf_notifLog';
-export const getLog = (): LoggedAlert[] => {
-  try { return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); } catch { return []; }
-};
+// ═══ SECCIÓN: Historial (alertas + actividad del hogar) ═══
+export type LoggedAlert = ActivityEntry & { level?: AppAlert['level'] };
+export const getLog = (): LoggedAlert[] => getActivity() as LoggedAlert[];
 export const logAlerts = (alerts: AppAlert[]) => {
-  const log = getLog();
+  const log = getActivity();
   const known = new Set(log.map(l => l.id));
-  const fresh = alerts.filter(a => !known.has(a.id)).map(a => ({ ...a, at: Date.now() }));
-  if (fresh.length) localStorage.setItem(LOG_KEY, JSON.stringify([...fresh, ...log].slice(0, 100)));
+  const fresh = alerts.filter(a => !known.has(a.id)).map(a => ({ ...a, at: Date.now(), kind: 'alerta' as const }));
+  if (fresh.length) saveActivity([...fresh, ...log]);
 };
-export const clearLog = () => localStorage.removeItem(LOG_KEY);
+export const clearLog = () => saveActivity([]);
+
+// ═══ SECCIÓN: Un solo lugar con los avisos del momento ═══
+// Antes cada campana calculaba sus avisos y al entrar a otro módulo podía
+// mostrar uno viejo. Ahora todas leen de aquí y se actualizan juntas.
+let current: AppAlert[] = [];
+let timer: ReturnType<typeof setTimeout> | null = null;
+export const refreshAlerts = () => {
+  if (timer) clearTimeout(timer);
+  timer = setTimeout(async () => {
+    try { current = await computeAlerts(); logAlerts(current); } catch { /* sin datos */ }
+    window.dispatchEvent(new Event('mf:alerts-changed'));
+  }, 120);
+};
+let watching = false;
+const watch = () => {
+  if (watching) return;
+  watching = true;
+  ['mf:data-changed', 'mf:prefs-changed', 'mf:market-changed', 'focus'].forEach(e => window.addEventListener(e, refreshAlerts));
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshAlerts(); });
+  refreshAlerts();
+};
+
+export const useAlerts = () => {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    watch();
+    const on = () => tick(t => t + 1);
+    window.addEventListener('mf:alerts-changed', on);
+    return () => window.removeEventListener('mf:alerts-changed', on);
+  }, []);
+  const read = getReadIds();
+  return { alerts: current, log: getLog(), read, unread: current.filter(a => !read.has(a.id)).length, activeIds: new Set(current.map(a => a.id)) };
+};
 
 // ---- Recordatorios en el celular ----
 export const remindersSupported = () => 'Notification' in window && 'serviceWorker' in navigator;

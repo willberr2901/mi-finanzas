@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🔍 LECTURA DE FACTURAS (OCR)
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Lee el texto de la foto dentro del celular (tesseract alojado en /public/ocr) y saca productos y total.
+ * Dónde se ve: Escáner y comprobantes.
+ * Si lo cambias: No cambies las rutas /ocr/… o el escáner deja de funcionar.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import Tesseract from 'tesseract.js';
 
 // Lector de facturas: todo se procesa en el celular (Tesseract en el navegador).

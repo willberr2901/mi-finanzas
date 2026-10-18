@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * 🏦 LECTOR DE NOTIFICACIONES DEL BANCO
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Entiende mensajes de Bancolombia, Nequi, Daviplata, Bre-B, TC/TD: valor, comercio, fecha y medio de pago.
+ * Dónde se ve: Registrar desde notificación / comprobante.
+ * Si lo cambias: Prueba con mensajes reales después de cambiarlo.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { guessCategory } from '../utils/categories';
 import { parsePrice } from './ocrService';
 

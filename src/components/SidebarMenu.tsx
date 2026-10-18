@@ -1,3 +1,12 @@
+/**
+ * ════════════════════════════════════════════════════════════════════
+ * ☰ MENÚ LATERAL
+ * ────────────────────────────────────────────────────────────────────
+ * Qué hace: Lista de módulos, recomendar la app y bloquear.
+ * Dónde se ve: Botón ☰ arriba a la izquierda en cada módulo.
+ * Si lo cambias: Cambia la navegación de toda la app. Los módulos salen de utils/modules.ts.
+ * ════════════════════════════════════════════════════════════════════
+ */
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Lock, Heart, ChevronRight } from 'lucide-react';
 import { openShareApp } from './share/ShareAppSheet';
