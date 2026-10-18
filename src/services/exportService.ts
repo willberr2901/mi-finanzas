@@ -2,14 +2,15 @@
  * ════════════════════════════════════════════════════════════════════
  * 📄 REPORTES PDF Y EXCEL
  * ────────────────────────────────────────────────────────────────────
- * Qué hace: Arma el PDF con logo, métricas, pagos, deudas y mercado, y el CSV para Excel.
+ * Qué hace: Arma el PDF con logo, métricas, pagos, deudas y mercado, y el Excel (.xlsx) con varias hojas.
  * Dónde se ve: Finanzas → Reportes.
  * Si lo cambias: Solo los archivos descargados.
  * ════════════════════════════════════════════════════════════════════
  */
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { db, type Transaction, type Bill, type BillPayment } from '../utils/database';
+import { db, type Transaction, type Bill, type BillPayment, type SavingsGoal } from '../utils/database';
+import { downloadXlsx, type Sheet } from '../utils/xlsx';
 import { statusFor, type BillStatus } from './billsService';
 import { ownerLabel } from '../utils/prefs';
 import { segmentOf, SEGMENT_INFO, type Segment } from '../utils/categories';
@@ -161,7 +162,7 @@ export const generateFinancialReport = async (period: string, format: 'pdf' | 'c
   const periodPayments = payments.filter(p => p.period === period);
   const statuses: BillStatus[] = activeBills.map(b => statusFor(b, periodPayments, ref)).sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
 
-  if (format === 'csv') return exportCSV(period, txs, statuses);
+  if (format === 'csv') return exportXlsx(period, txs, statuses, goals, allTx);
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const userName = (() => { try { return localStorage.getItem('miFinanzasUserName') || ''; } catch { return ''; } })();
@@ -416,29 +417,60 @@ export const generateFinancialReport = async (period: string, format: 'pdf' | 'c
   notify({ title: 'Reporte listo', message: `PDF de ${periodLabel(period)} descargado.`, type: 'success' });
 };
 
-// 🛡️ Evita la "inyección de fórmulas" en Excel: un texto que empiece por = + - @ se trata como texto, no como fórmula.
-const csvCell = (v: string | number) => {
-  let t = String(v);
-  if (typeof v === 'string' && /^[=+\-@\t\r]/.test(t)) t = `'${t}`;
-  return `"${t.replace(/"/g, '""')}"`;
-};
+// ═══ SECCIÓN: Reporte en Excel (.xlsx de verdad, con varias hojas) ═══
+const exportXlsx = (period: string, txs: Transaction[], statuses: BillStatus[], goals: SavingsGoal[], allTx: Transaction[]) => {
+  const t = totalsOf(txs);
+  const prev = totalsOf(allTx.filter(x => x.date?.startsWith(prevPeriod(period))));
+  const byCat = new Map<string, number>();
+  txs.filter(x => x.type === 'expense').forEach(x => byCat.set(x.category, (byCat.get(x.category) ?? 0) + x.amount));
+  const cats = [...byCat].sort((a, b) => b[1] - a[1]);
+  const market = getMarketHistory().filter(m => m.date?.startsWith(period));
+  const label = periodLabel(period);
+  const paid = statuses.filter(s => s.paid);
 
-const exportCSV = (period: string, txs: Transaction[], statuses: BillStatus[]) => {
-  const lines: string[] = [];
-  lines.push(['Fecha', 'Tipo', 'Categoría', 'Valor', 'Descripción'].map(csvCell).join(';'));
-  txs.forEach(t => lines.push([t.date, t.type === 'income' ? 'Ingreso' : 'Gasto', t.category, Math.round(t.amount), t.description || ''].map(csvCell).join(';')));
-  if (statuses.length) {
-    lines.push('', ['Pago', 'Tipo', 'Día de pago', 'Responsable', 'Valor', 'Estado'].map(csvCell).join(';'));
-    statuses.forEach(s => lines.push([s.bill.name, KIND_LABEL[s.bill.kind], s.bill.dueDay, ownerLabel(s.bill.owner), Math.round(s.payment?.amount ?? s.bill.amount), s.paid ? 'Pagado' : s.state === 'vencido' ? 'Vencido' : 'Pendiente'].map(csvCell).join(';')));
-  }
-  // BOM para que Excel muestre bien las tildes
-  const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = `mi-finanzas-${period}.csv`;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  notify({ title: 'Excel (CSV) listo', message: `Movimientos y pagos de ${periodLabel(period)}.`, type: 'success' });
+  const sheets: Sheet[] = [
+    {
+      name: 'Resumen', title: `Mi Finanzas · Reporte de ${label}`,
+      columns: [{ header: 'Indicador', width: 34 }, { header: 'Este mes', type: 'money', width: 18 }, { header: 'Mes anterior', type: 'money', width: 18 }],
+      rows: [
+        ['Ingresos', Math.round(t.income), Math.round(prev.income)],
+        ['Gastos', Math.round(t.expense), Math.round(prev.expense)],
+        ['Balance (ingresos − gastos)', Math.round(t.income - t.expense), Math.round(prev.income - prev.expense)],
+        ['Pagos fijos del mes', Math.round(statuses.reduce((a, s) => a + (s.payment?.amount ?? s.bill.amount), 0)), null],
+        ['Pagos ya hechos', Math.round(paid.reduce((a, s) => a + (s.payment?.amount ?? 0), 0)), null],
+        ['Mercados del mes', Math.round(market.reduce((a, m) => a + m.total, 0)), null],
+        [],
+        ['Gasto por categoría', null, null],
+        ...cats.map(([c, v]) => [c, Math.round(v), null]),
+      ],
+    },
+    {
+      name: 'Movimientos', title: `Ingresos y gastos · ${label}`,
+      columns: [{ header: 'Fecha', type: 'date', width: 12 }, { header: 'Tipo', width: 10 }, { header: 'Categoría', width: 18 }, { header: 'Descripción', type: 'longtext', width: 40 }, { header: 'Valor', type: 'money', width: 16 }],
+      rows: txs.map(x => [x.date, x.type === 'income' ? 'Ingreso' : 'Gasto', x.category, x.description || '', Math.round(x.type === 'income' ? x.amount : -x.amount)]),
+      totals: ['Total', null, null, 'Balance', Math.round(t.income - t.expense)],
+    },
+  ];
+  if (statuses.length) sheets.push({
+    name: 'Pagos', title: `Pagos fijos, tarjetas y deudas · ${label}`,
+    columns: [{ header: 'Pago', width: 26 }, { header: 'Tipo', width: 12 }, { header: 'Día de pago', type: 'number', width: 11 }, { header: 'Responsable', width: 14 }, { header: 'Valor', type: 'money', width: 16 }, { header: 'Estado', width: 12 }],
+    rows: statuses.map(x => [x.bill.name, KIND_LABEL[x.bill.kind], x.bill.dueDay, ownerLabel(x.bill.owner), Math.round(x.payment?.amount ?? x.bill.amount), x.paid ? 'Pagado' : x.state === 'vencido' ? 'Vencido' : 'Pendiente']),
+    totals: ['Total', null, null, null, Math.round(statuses.reduce((a, x) => a + (x.payment?.amount ?? x.bill.amount), 0)), null],
+  });
+  if (market.length) sheets.push({
+    name: 'Mercado', title: `Mercados · ${label}`,
+    columns: [{ header: 'Fecha', type: 'date', width: 12 }, { header: 'Producto', width: 28 }, { header: 'Cantidad', type: 'number', width: 10 }, { header: 'Precio unidad', type: 'money', width: 15 }, { header: 'Subtotal', type: 'money', width: 15 }],
+    rows: market.flatMap(m => m.items.map(i => [m.date.slice(0, 10), i.name, i.quantity, Math.round(i.price), Math.round(i.price * i.quantity)])),
+    totals: ['Total', null, null, null, Math.round(market.reduce((a, m) => a + m.total, 0))],
+  });
+  if (goals.length) sheets.push({
+    name: 'Metas', title: 'Metas de ahorro',
+    columns: [{ header: 'Meta', width: 26 }, { header: 'Ahorrado', type: 'money', width: 16 }, { header: 'Objetivo', type: 'money', width: 16 }, { header: 'Avance', type: 'percent', width: 10 }, { header: 'Fecha límite', type: 'date', width: 13 }],
+    rows: goals.map(g => [g.name, Math.round(g.currentAmount), Math.round(g.targetAmount), g.targetAmount ? g.currentAmount / g.targetAmount : 0, g.deadline]),
+  });
+
+  downloadXlsx(`mi-finanzas-${period}`, sheets);
+  notify({ title: 'Excel listo', message: `Reporte de ${label} con ${sheets.length} hojas.`, type: 'success' });
 };
 
 export type { BillPayment };

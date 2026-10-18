@@ -99,3 +99,13 @@ alter table relay.rooms add column if not exists created_at timestamptz not null
 -- Funciones: public.stats_ping(kind, ref, platform, mode) suma +1;
 -- public.stats_report(clave) devuelve el resumen (espera 1,5 s si la clave es incorrecta).
 -- public.sync_push limita a 300 hogares nuevos por hora y cajas de máx. 60.000 caracteres.
+
+-- ════════════════════════════════════════════════════════════════════
+-- 💬 OPINIONES (v1.9) · anónimas, apodo opcional
+-- ════════════════════════════════════════════════════════════════════
+-- relay.feedback(id, created_at, rating 1-5, liked ≤1000, improve ≤1000, area, alias ≤40 opcional,
+--                platform, app_version, status nuevo|revisado|resuelto)
+-- public.feedback_send(...)        → cualquiera puede enviar (máx. 300 por hora en todo el servidor)
+-- public.feedback_list(clave)      → solo administradora
+-- public.feedback_mark(clave,id,estado) → solo administradora
+-- relay.admin_ok(clave)            → compara la huella SHA-256 de la clave

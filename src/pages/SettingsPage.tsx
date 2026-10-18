@@ -13,7 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, ShieldCheck, Database, LifeBuoy, Info, ChevronRight, Fingerprint, Lock, KeyRound, Download, Upload, Trash2, CalendarDays,
   Sparkles, X, Check, Delete, Users, Wallet, PiggyBank, AlarmClock, Palette, Moon, Sun, MonitorSmartphone, Heart, Wand2, CalendarPlus, Pencil,
-  Home, BarChart3, Instagram,
+  Home, BarChart3, Instagram, MessageSquareHeart,
 } from 'lucide-react';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import MoneyInput from '../components/ui/MoneyInput';
@@ -35,6 +35,7 @@ import { openSecurityCenter } from '../components/security/SecurityCenter';
 import { statsEnabled, setStatsEnabled } from '../services/statsService';
 import { openInstall, canOfferInstall } from '../components/pwa/InstallAppSheet';
 import { openInstagram, INSTAGRAM_USER } from '../components/social/Instagram';
+import { openFeedback } from '../services/feedbackService';
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 22, stiffness: 220 } } };
@@ -399,6 +400,7 @@ export default function SettingsPage() {
 
         <Section icon={Info} title="Acerca de">
           {canOfferInstall() && <Row icon={Download} title="Descargar la app" desc="Instálala en tu pantalla de inicio" onClick={openInstall} />}
+          <Row icon={MessageSquareHeart} title="Danos tu opinión" desc="Cuéntanos qué te gusta y qué mejorarías (anónimo)" onClick={openFeedback} />
           <Row icon={Instagram} title="Síguenos en Instagram" desc={`@${INSTAGRAM_USER} · trucos de ahorro y novedades`} onClick={openInstagram} />
           {/* Tocar 7 veces la versión abre Reportes (solo administradora) */}
           <Row title="Mi Finanzas" desc={`Versión ${APP_VERSION} · Hecho en Colombia`} onClick={() => { const n = versionTaps + 1; setVersionTaps(n); if (n >= 7) { setVersionTaps(0); navigate('/reportes'); } }} right={<span />} />

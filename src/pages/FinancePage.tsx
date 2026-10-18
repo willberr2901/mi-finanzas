@@ -374,7 +374,7 @@ export default function FinancePage() {
             {exporting === 'pdf' ? <Loader2 size={18} className="animate-spin" /> : <FileText size={18} />} Descargar reporte PDF
           </button>
           <button disabled={!!exporting} onClick={() => run('csv')} className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60">
-            {exporting === 'csv' ? <Loader2 size={18} className="animate-spin" /> : <FileSpreadsheet size={18} />} Descargar para Excel (CSV)
+            {exporting === 'csv' ? <Loader2 size={18} className="animate-spin" /> : <FileSpreadsheet size={18} />} Descargar en Excel
           </button>
         </motion.div>
         );

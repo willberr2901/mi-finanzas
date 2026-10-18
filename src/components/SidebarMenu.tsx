@@ -8,7 +8,8 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Lock, Heart, ChevronRight, Download, ShieldCheck } from 'lucide-react';
+import { X, Lock, Heart, ChevronRight, Download, ShieldCheck, MessageSquareHeart } from 'lucide-react';
+import { openFeedback } from '../services/feedbackService';
 import { openInstall, canOfferInstall } from './pwa/InstallAppSheet';
 import { openSecurityCenter } from './security/SecurityCenter';
 import { InstagramIcon, openInstagram, INSTAGRAM_USER } from './social/Instagram';
@@ -94,6 +95,11 @@ export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onCl
                   <span className="min-w-0"><span className="block text-[12px] font-bold text-white">Seguridad</span><span className="block text-[10px] text-slate-400 truncate">Cómo te protege</span></span>
                 </button>
               </div>
+              <button onClick={() => { onClose(); setTimeout(openFeedback, 180); }} className="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 text-left active:scale-[0.98]">
+                <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"><MessageSquareHeart size={18} className="text-brand-lime" /></span>
+                <span className="flex-1 min-w-0"><span className="block text-sm font-bold text-white">Danos tu opinión</span><span className="block text-[11px] text-slate-400">¿Qué te gusta y qué mejorarías?</span></span>
+                <ChevronRight size={16} className="text-slate-400" />
+              </button>
               <motion.button onClick={() => { onClose(); setTimeout(openShareApp, 180); }}
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
                 className="w-full flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-brand-lime/15 to-transparent ring-1 ring-brand-lime/25 text-left active:scale-[0.98] transition-transform">

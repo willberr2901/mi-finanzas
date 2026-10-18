@@ -2,6 +2,7 @@
  * ════════════════════════════════════════════════════════════════════
  * 📊 PANTALLA REPORTES (solo administradora)
  * ────────────────────────────────────────────────────────────────────
+ * Pestañas: Uso de la app · Opiniones (components/feedback/FeedbackReport.tsx).
  * Qué hace: muestra cuántas personas abrieron, instalaron y usan la app,
  *           desde qué tipo de celular, y cuántas llegaron por tu enlace.
  *           Son SOLO sumas anónimas: no hay nombres ni datos de nadie.
@@ -12,7 +13,8 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, Download, Smartphone, Users, Home, KeyRound, RefreshCw, Link2, LogOut, Info, Pencil } from 'lucide-react';
+import { BarChart3, Download, Smartphone, Users, Home, KeyRound, RefreshCw, Link2, LogOut, Info, Pencil, MessageSquare } from 'lucide-react';
+import FeedbackReport from '../components/feedback/FeedbackReport';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import { adminKey, fetchReport, forgetAdmin, myRefCode, LEGACY_REF, type StatsReport } from '../services/statsService';
 import { notify } from '../services/notificationService';
@@ -29,6 +31,7 @@ export default function ReportsPage() {
   const [error, setError] = useState('');
   const [names, setNames] = useState(readNames);
   const [hover, setHover] = useState<number | null>(null);
+  const [tab, setTab] = useState<'uso' | 'opiniones'>('uso');
   const mine = myRefCode();
 
   const load = async (k = key) => {
@@ -104,6 +107,18 @@ export default function ReportsPage() {
   return (
     <div className="pb-24">
       <ModuleHeader module="reportes" right={<button onClick={() => load()} aria-label="Actualizar" className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-200"><RefreshCw size={17} className={loading ? 'animate-spin' : ''} /></button>} />
+
+      {/* Pestañas: Uso de la app · Opiniones */}
+      <div className="grid grid-cols-2 gap-1 bg-white/[0.04] ring-1 ring-white/10 p-1 rounded-2xl mb-4" role="tablist">
+        {([['uso', 'Uso de la app', BarChart3], ['opiniones', 'Opiniones', MessageSquare]] as const).map(([id, label, Icon]) => (
+          <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`relative py-2.5 rounded-xl text-sm font-bold ${tab === id ? 'text-brand-ink' : 'text-slate-300'}`}>
+            {tab === id && <motion.span layoutId="rp-tab" className="absolute inset-0 rounded-xl bg-brand-lime" />}
+            <span className="relative flex items-center justify-center gap-1.5"><Icon size={15} />{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {tab === 'opiniones' ? <FeedbackReport adminKey={adminKey() || key} /> : <>
 
       <div className="grid grid-cols-2 gap-2.5">
         {kpis.map((k, i) => (
@@ -181,6 +196,7 @@ export default function ReportsPage() {
         <Info size={14} className="shrink-0 mt-0.5 text-brand-lime" />
         <span>Son sumas anónimas: no sabemos quién es quién. Una persona que borra los datos del navegador o cambia de celular se cuenta como nueva, y quien apaga las estadísticas en Ajustes no se cuenta.</span>
       </div>
+      </>}
       <button onClick={() => { forgetAdmin(); setData(null); setKey(''); notify({ title: 'Saliste de Reportes', type: 'info', log: false }); }}
         className="mt-4 mx-auto flex items-center gap-1.5 text-xs text-slate-400 font-semibold"><LogOut size={13} /> Olvidar la clave en este celular</button>
     </div>

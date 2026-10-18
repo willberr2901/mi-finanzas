@@ -8,7 +8,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 
-export const TERMS_VERSION = '2026-10-18-b';
+export const TERMS_VERSION = '2026-10-18-c';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="space-y-1.5">
@@ -55,7 +55,10 @@ export default function LegalContent() {
         <p>Para saber cuántas personas usan la app, cada celular suma +1 al servidor la primera vez que abre la app, cuando la instala y máximo una vez al día si la usa. Solo se envía: el tipo de evento, si el celular es Android, iPhone o computador, si la app está instalada o en el navegador, y el código del enlace con el que llegaste (si alguien te la compartió).</p>
         <p>No se envía tu nombre, correo, teléfono, montos, listas ni ningún identificador de tu celular: el servidor solo guarda sumas por día y no puede saber quién es quién. Puedes apagarlas en Ajustes → Tus datos → Estadísticas anónimas.</p>
       </Section>
-      <Section title="7. Notificaciones">
+      <Section title="7. Opiniones">
+        <p>Si decides darnos tu opinión, se envía solo lo que escribes: las estrellas, lo que te gusta, lo que mejorarías, la parte de la app y, si quieres, un nombre o apodo. También se guarda el tipo de celular y la versión de la app para entender el comentario. No escribas datos personales como teléfono, cédula o cuentas. Las opiniones solo las ve el equipo de Mi Finanzas.</p>
+      </Section>
+      <Section title="7.1 Notificaciones">
         <p>Los recordatorios de pagos los genera tu propio celular a partir de lo que registraste. Puedes desactivarlos en cualquier momento desde la configuración del navegador.</p>
       </Section>
       <Section title="8. Tus derechos y cómo borrar todo">

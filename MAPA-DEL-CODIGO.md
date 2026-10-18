@@ -49,6 +49,9 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | Estadísticas anónimas | `src/services/statsService.ts` |
 | Pantalla **Reportes** (solo administradora) | `src/pages/ReportsPage.tsx` |
 | Revisión de seguridad completa | `docs/SEGURIDAD.md` |
+| Ventana **"Danos tu opinión"** | `src/components/feedback/FeedbackSheet.tsx` |
+| **Opiniones** en Reportes | `src/components/feedback/FeedbackReport.tsx` |
+| Archivos de **Excel** (.xlsx) | `src/utils/xlsx.ts` (y `services/exportService.ts`) |
 | Reporte PDF / Excel | `src/services/exportService.ts` |
 
 ---
