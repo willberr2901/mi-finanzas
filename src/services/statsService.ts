@@ -28,6 +28,9 @@ const K = {
 const get = (k: string) => { try { return localStorage.getItem(k); } catch { return null; } };
 const set = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } };
 
+/** Código especial para quienes ya tenían la app antes de los enlaces con código. */
+export const LEGACY_REF = 'original';
+
 export const statsEnabled = () => get(K.optOut) !== '1';
 export const setStatsEnabled = (on: boolean) => { if (on) localStorage.removeItem(K.optOut); else set(K.optOut, '1'); };
 
@@ -74,6 +77,10 @@ export const startStats = () => {
   const r = url.searchParams.get('r');
   if (r && /^[a-z0-9]{8}$/.test(r) && !get(K.cameFrom) && r !== get(K.myRef)) set(K.cameFrom, r);
   if (r) { url.searchParams.delete('r'); history.replaceState(history.state, '', url.pathname + url.search + url.hash); }
+
+  // Quien ya usaba la app ANTES de que existieran los códigos (llegó por un enlace compartido
+  // sin código, v1.7 o anterior) queda marcado como "original" para poder contarlo en Reportes.
+  if (!get(K.firstOpen) && !get(K.cameFrom) && get('miFinanzasWelcomeDone')) set(K.cameFrom, LEGACY_REF);
 
   const run = async () => {
     if (!statsEnabled()) return;

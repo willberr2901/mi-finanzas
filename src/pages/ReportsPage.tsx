@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, Download, Smartphone, Users, Home, KeyRound, RefreshCw, Link2, LogOut, Info, Pencil } from 'lucide-react';
 import ModuleHeader from '../components/ui/ModuleHeader';
-import { adminKey, fetchReport, forgetAdmin, myRefCode, type StatsReport } from '../services/statsService';
+import { adminKey, fetchReport, forgetAdmin, myRefCode, LEGACY_REF, type StatsReport } from '../services/statsService';
 import { notify } from '../services/notificationService';
 
 const NAMES_KEY = 'mf_ref_names';
@@ -58,7 +58,12 @@ export default function ReportsPage() {
     const plat = (kind: string) => Object.entries(PLATFORM).map(([k, label]) => ({ label, n: data.byPlatform.filter(p => p.kind === kind && p.platform === k).reduce((s, p) => s + p.n, 0) })).filter(p => p.n > 0);
     const refs = new Map<string, { opens: number; installs: number }>();
     for (const r of data.byRef) { const cur = refs.get(r.ref) ?? { opens: 0, installs: 0 }; if (r.kind === 'first_open') cur.opens += r.n; else cur.installs += r.n; refs.set(r.ref, cur); }
-    const refList = [...refs].map(([ref, v]) => ({ ref, ...v })).sort((a, b) => (b.ref === mine ? 1 : 0) - (a.ref === mine ? 1 : 0) || b.opens - a.opens);
+    // Quienes abrieron sin ningún código: llegaron por el enlace general (el que se compartía antes, sin ?r=).
+    const withRef = (kind: string) => data.byRef.filter(r => r.kind === kind).reduce((s, r) => s + r.n, 0);
+    const general = { ref: '', opens: Math.max(0, (data.totals.first_open ?? 0) - withRef('first_open')), installs: Math.max(0, (data.totals.install ?? 0) - withRef('install')) };
+    const order = (r: string) => r === mine ? 0 : r === LEGACY_REF ? 1 : r === '' ? 2 : 3;
+    const refList = [...[...refs].map(([ref, v]) => ({ ref, ...v })), ...(general.opens || general.installs ? [general] : [])]
+      .sort((a, b) => order(a.ref) - order(b.ref) || b.opens - a.opens);
     return { days, today, last7, max, total, platOpens: plat('first_open'), refList };
   }, [data, mine]);
 
@@ -138,15 +143,15 @@ export default function ReportsPage() {
 
       {/* Enlaces compartidos */}
       <div className="mt-4 rounded-[22px] bg-surface border border-white/5 p-4">
-        <p className="text-white font-bold text-sm flex items-center gap-1.5"><Link2 size={15} className="text-brand-lime" /> Llegaron por un enlace compartido</p>
-        <p className="text-[11px] text-slate-400 mt-0.5">Cada persona que comparte la app tiene su propio código. El tuyo es <strong className="text-white">{mine}</strong>.</p>
+        <p className="text-white font-bold text-sm flex items-center gap-1.5"><Link2 size={15} className="text-brand-lime" /> ¿Por qué enlace llegaron?</p>
+        <p className="text-[11px] text-slate-400 mt-0.5">Cada persona que comparte la app tiene su propio código. El tuyo es <strong className="text-white">{mine}</strong>. "Ya la usaban" son quienes tenían la app antes de los códigos (por los enlaces que ya compartiste).</p>
         {v.refList.length === 0 ? <p className="text-sm text-slate-400 mt-3">Aún nadie ha llegado por un enlace compartido.</p> : (
           <ul className="mt-3 divide-y divide-white/5">
             {v.refList.map(r => (
               <li key={r.ref} className="flex items-center gap-3 py-2.5">
                 <span className="flex-1 min-w-0">
-                  <span className="text-white text-sm font-semibold flex items-center gap-1.5">{r.ref === mine ? 'Tu enlace' : names[r.ref] || `Enlace ${r.ref}`}
-                    {r.ref !== mine && <button onClick={() => rename(r.ref)} aria-label="Ponerle nombre" className="text-slate-500"><Pencil size={12} /></button>}</span>
+                  <span className="text-white text-sm font-semibold flex items-center gap-1.5">{r.ref === mine ? 'Tu enlace' : r.ref === LEGACY_REF ? 'Ya la usaban (enlaces anteriores)' : r.ref === '' ? 'Enlace general (sin código)' : names[r.ref] || `Enlace ${r.ref}`}
+                    {r.ref !== mine && r.ref !== LEGACY_REF && r.ref !== '' && <button onClick={() => rename(r.ref)} aria-label="Ponerle nombre" className="text-slate-500"><Pencil size={12} /></button>}</span>
                   <span className="block text-[11px] text-slate-400">{r.opens} {r.opens === 1 ? 'la abrió' : 'la abrieron'} · {r.installs} {r.installs === 1 ? 'la instaló' : 'la instalaron'}</span>
                 </span>
                 <span className="text-brand-lime font-extrabold">{r.opens}</span>

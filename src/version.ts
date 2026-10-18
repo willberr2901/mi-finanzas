@@ -6,15 +6,13 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.8.0';
+export const APP_VERSION = '1.8.1';
 
 export const RELEASE_NOTES: string[] = [
-  'Descarga la app: botón en el menú ☰ para instalarla con un toque (Android) o con guía paso a paso (iPhone)',
-  'Nueva pantalla "Tu privacidad y tu seguridad": qué cuidamos y revisión en vivo de tu celular',
-  'Centro de seguridad en el menú y en Ajustes',
-  'Refuerzos de seguridad: bloqueo de código inyectado, aviso si abres una página falsa, protección contra marcos invisibles y archivos maliciosos',
-  'Piezas de la app actualizadas y sin fallas conocidas',
-  'Síguenos en Instagram @mifinanzas_app desde el menú',
-  'Estadísticas anónimas (solo sumas, sin datos tuyos) que puedes apagar en Ajustes',
-  'Tu enlace para recomendar la app ahora cuenta cuántas personas llegaron por él',
+  'Reportes: ahora también cuenta a quienes llegaron por los enlaces que ya habías compartido antes',
+  'Descarga la app desde el menú ☰ (un toque en Android, guía paso a paso en iPhone)',
+  'Pantalla "Tu privacidad y tu seguridad" y Centro de seguridad',
+  'Refuerzos de seguridad contra código inyectado, páginas falsas, marcos invisibles y archivos maliciosos',
+  'Síguenos en Instagram @mifinanzas_app',
+  'Estadísticas anónimas (solo sumas) que puedes apagar en Ajustes',
 ];
