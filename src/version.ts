@@ -1,8 +1,9 @@
 // Versión visible de la app y novedades que se muestran en el aviso de actualización.
 // Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
-export const APP_VERSION = '1.4.4';
+export const APP_VERSION = '1.4.5';
 
 export const RELEASE_NOTES: string[] = [
+  'Arreglado: Ajustes y los demás módulos ya no quedan en blanco al abrirlos desde el menú',
   'Escáner nuevo: ahora sí lee tus facturas (tienda, fecha, productos y total) y las registras como gasto',
   'El escáner funciona dentro de tu celular: la foto no se guarda ni sale a ningún servidor',
   'Escáner con menú y botón para volver, como el resto de la app',

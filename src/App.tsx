@@ -111,8 +111,9 @@ function AppContent() {
         {isSetup && isLocked && <SecurityLock />}
 
         <main className="pb-28 pt-5 px-4 max-w-md mx-auto">
-          <AnimatePresence mode="wait">
-            <motion.div key={location.pathname} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}>
+          {/* Solo animación de entrada: la de salida (AnimatePresence mode="wait") podía quedarse
+              trabada y dejar la pantalla en blanco al abrir Ajustes desde el menú. */}
+          <motion.div key={location.pathname} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
               <Suspense fallback={<div className="h-40 flex items-center justify-center text-slate-500">Cargando…</div>}>
                 <Routes>
                   <Route path="/" element={<HomePage />} />
@@ -126,8 +127,7 @@ function AppContent() {
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>
-            </motion.div>
-          </AnimatePresence>
+          </motion.div>
         </main>
 
         <QuickAdd hidden={['/mercado', '/legal', '/escaner'].includes(location.pathname)} />
