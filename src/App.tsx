@@ -84,6 +84,8 @@ function AppContent() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isLocked, isSetup } = useSecurity();
   const location = useLocation();
+  const [maskTick, setMaskTick] = useState(0);
+  useEffect(() => { const on = () => setMaskTick(t => t + 1); window.addEventListener('mf:mask-changed', on); return () => window.removeEventListener('mf:mask-changed', on); }, []);
 
   useEffect(() => {
     migrateData().then(() => db.settings.update('global', { onboardingCompleted: true })).catch(() => {});
@@ -119,7 +121,7 @@ function AppContent() {
         <main className="pb-28 pt-5 px-4 max-w-md mx-auto">
           {/* Solo animación de entrada: la de salida (AnimatePresence mode="wait") podía quedarse
               trabada y dejar la pantalla en blanco al abrir Ajustes desde el menú. */}
-          <motion.div key={location.pathname} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
+          <motion.div key={`${location.pathname}-${maskTick}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
               <Suspense fallback={<div className="h-40 flex items-center justify-center text-slate-500">Cargando…</div>}>
                 <Routes>
                   <Route path="/" element={<HomePage />} />

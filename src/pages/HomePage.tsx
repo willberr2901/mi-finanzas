@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowDownRight, ArrowUpRight, ChevronRight, CalendarClock, ShoppingCart, Target, Landmark, Gauge, CalendarDays, TrendingUp, Wallet, Flame } from 'lucide-react';
+import { Eye, EyeOff, ArrowDownRight, ArrowUpRight, ChevronRight, CalendarClock, ShoppingCart, Target, Landmark, Gauge, CalendarDays, TrendingUp, Wallet, Flame } from 'lucide-react';
 import { db, type Transaction, type SavingsGoal, type Bill } from '../utils/database';
 import { calculateHealthScore } from '../services/financialIntelligence';
 import { loadBillStatuses, type BillStatus } from '../services/billsService';
@@ -14,6 +14,7 @@ import CountUp from '../components/ui/CountUp';
 import { usePageTour } from '../components/tour/Tour';
 import { usePrefs, cycleFor, inCycle, cycleProgress } from '../utils/prefs';
 import BudgetsCard from '../components/home/BudgetsCard';
+import { amountsHidden, setAmountsHidden } from '../utils/privacyMask';
 
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -144,13 +145,13 @@ export default function HomePage() {
             <div className="flex-1 min-w-0">
               {s.income > 0 ? (
                 <>
-                  <p className="text-white/80 text-sm">{balance >= 0 ? (cycle.isCalendar ? `Te queda en ${cycle.label}` : 'Te queda en este ciclo') : `Gastaste más de lo que entró`}</p>
+                  <div className="flex items-center gap-2"><p className="text-white/80 text-sm">{balance >= 0 ? (cycle.isCalendar ? `Te queda en ${cycle.label}` : 'Te queda en este ciclo') : `Gastaste más de lo que entró`}</p><button onClick={() => setAmountsHidden(!amountsHidden())} aria-label={amountsHidden() ? 'Mostrar saldos' : 'Ocultar saldos'} aria-pressed={amountsHidden()} className="w-7 h-7 shrink-0 rounded-lg bg-white/[0.08] ring-1 ring-white/10 flex items-center justify-center text-white/90 active:scale-90 transition-transform">{amountsHidden() ? <EyeOff size={14} /> : <Eye size={14} />}</button></div>
                   <CountUp value={Math.abs(balance)} className={`block text-[34px] leading-tight font-extrabold tracking-tight ${balance >= 0 ? 'text-brand-lime' : 'text-rose-300'}`} />
                   <p className="text-white/75 text-xs">{balance >= 0 ? `de ${formatCOP(s.income)} que entraron` : `por encima de tus ingresos de ${formatCOP(s.income)}`}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-white/80 text-sm">{cycle.isCalendar ? `Gastos de ${cycle.label}` : 'Gastos de este ciclo'}</p>
+                  <div className="flex items-center gap-2"><p className="text-white/80 text-sm">{cycle.isCalendar ? `Gastos de ${cycle.label}` : 'Gastos de este ciclo'}</p><button onClick={() => setAmountsHidden(!amountsHidden())} aria-label={amountsHidden() ? 'Mostrar saldos' : 'Ocultar saldos'} aria-pressed={amountsHidden()} className="w-7 h-7 shrink-0 rounded-lg bg-white/[0.08] ring-1 ring-white/10 flex items-center justify-center text-white/90 active:scale-90 transition-transform">{amountsHidden() ? <EyeOff size={14} /> : <Eye size={14} />}</button></div>
                   <CountUp value={s.expense} className="block text-[34px] leading-tight font-extrabold text-white tracking-tight" />
                   <Link to="/finanzas" className="inline-block mt-1 text-[11px] text-white bg-white/20 rounded-full px-2.5 py-1">+ Registra tus ingresos para ver cuánto te queda</Link>
                 </>

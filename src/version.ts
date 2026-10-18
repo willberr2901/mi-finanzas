@@ -1,8 +1,9 @@
 // Versión visible de la app y novedades que se muestran en el aviso de actualización.
 // Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
-export const APP_VERSION = '1.5.0';
+export const APP_VERSION = '1.5.1';
 
 export const RELEASE_NOTES: string[] = [
+  'Nuevo botón 👁 en Inicio para ocultar tus saldos cuando estés en público',
   'Día de pago: tus cuentas van de quincena a quincena o del día que te pagan, no solo del 1 al 30',
   'Presupuestos por categoría con barras en Inicio y avisos al 80% y al 100%',
   'Botón "Sugerir": te propone límites según lo que gastaste en tus últimos ciclos',

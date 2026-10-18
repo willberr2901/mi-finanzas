@@ -1,9 +1,11 @@
 // Formato de dinero en pesos colombianos, igual en toda la app.
+import { amountsHidden } from './privacyMask';
 const cop0 = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
 const cop2 = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** $1.284.500 — sin decimales. Usa `decimals` solo para valores pequeños (ej. interés diario). */
 export const formatCOP = (value: number, decimals = false): string => {
+  if (amountsHidden()) return '$ •••••';
   const n = Number.isFinite(value) ? value : 0;
   const sign = n < 0 ? '-' : '';
   const abs = Math.abs(n);
