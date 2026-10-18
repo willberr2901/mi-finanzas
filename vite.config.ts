@@ -26,6 +26,8 @@ export default defineConfig({
         theme_color: '#0B1026',
         background_color: '#0B1026',
         display: 'standalone',
+        // Permite saber si la app ya está instalada cuando la abren desde el navegador (para no ofrecerla otra vez)
+        related_applications: [{ platform: 'webapp', url: 'https://mi-finanzas.onrender.com/manifest.webmanifest' }] as any,
         orientation: 'portrait',
         // Mi Finanzas aparece en el menú Compartir de Android para registrar gastos desde notificaciones
         share_target: { action: '/compartir', method: 'GET', params: { title: 'title', text: 'text', url: 'url' } } as any,

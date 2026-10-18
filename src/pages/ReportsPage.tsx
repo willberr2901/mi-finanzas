@@ -6,7 +6,7 @@
  *           desde qué tipo de celular, y cuántas llegaron por tu enlace.
  *           Son SOLO sumas anónimas: no hay nombres ni datos de nadie.
  * Cómo se entra: Ajustes → Acerca de → toca 7 veces la versión, o /reportes.
- *           Pide la clave de administradora una vez; luego queda en el menú.
+ *           Pide la clave de administradora una vez. NO aparece en el menú (es secreto).
  * Datos: services/statsService.ts → función stats_report del servidor.
  * ════════════════════════════════════════════════════════════════════
  */

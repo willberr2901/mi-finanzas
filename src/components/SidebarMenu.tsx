@@ -12,7 +12,6 @@ import { X, Lock, Heart, ChevronRight, Download, ShieldCheck } from 'lucide-reac
 import { openInstall, canOfferInstall } from './pwa/InstallAppSheet';
 import { openSecurityCenter } from './security/SecurityCenter';
 import { InstagramIcon, openInstagram, INSTAGRAM_USER } from './social/Instagram';
-import { adminKey } from '../services/statsService';
 import { openShareApp } from './share/ShareAppSheet';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MODULES } from '../utils/modules';
@@ -24,8 +23,8 @@ const GROUPS: { title: string; items: (keyof typeof MODULES)[] }[] = [
   { title: 'Herramientas', items: ['escaner', 'facturas'] },
   { title: 'Cuenta', items: ['ajustes', 'legal'] },
 ];
-// Reportes solo aparece en el celular de la administradora (cuando ya puso su clave).
-const groups = () => adminKey() ? [...GROUPS.slice(0, 2), { title: 'Administración', items: ['reportes'] as (keyof typeof MODULES)[] }, GROUPS[2]] : GROUPS;
+// Reportes NO aparece en el menú: es secreto. Se entra tocando 7 veces la versión en Ajustes → Acerca de.
+const groups = () => GROUPS;
 
 /** Menú hamburguesa: se desliza desde la izquierda con todos los módulos. */
 export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {

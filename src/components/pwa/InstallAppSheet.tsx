@@ -6,8 +6,10 @@
  *  · Android/computador (Chrome, Edge): botón "Instalar ahora" → el celular
  *    pide permiso y la app queda en la pantalla de inicio. Un solo toque.
  *  · iPhone (Safari): guía paso a paso con dibujos (Compartir → Agregar a inicio).
- *  · Muestra una tarjetita "Instala la app" de vez en cuando (máx. cada 3 días).
- * Dónde se ve: Menú ☰ → "Descargar la app", Ajustes y la tarjetita de abajo.
+ *  · Aviso emergente cada vez que abren la app en el navegador (celular: instalar;
+ *    computador: QR para llevarla al celular), hasta que la instalen. Si la
+ *    desinstalan, vuelve a aparecer. Dentro de la app instalada nunca sale.
+ * Dónde se ve: Menú ☰ → "Descargar la app", Ajustes y el aviso emergente.
  * Se abre desde cualquier parte con openInstall(). Montado en App.tsx.
  * ════════════════════════════════════════════════════════════════════
  */
@@ -18,6 +20,7 @@ import BottomSheet from '../ui/BottomSheet';
 import AppLogo from '../ui/AppLogo';
 import { notify } from '../../services/notificationService';
 import { isStandalone } from '../../services/statsService';
+import QRCode from 'qrcode';
 
 // ═══ SECCIÓN: Captura del permiso de instalación del navegador ═══
 type BIPEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> };
@@ -27,11 +30,23 @@ if (typeof window !== 'undefined') {
   window.addEventListener('appinstalled', () => { deferred = null; window.dispatchEvent(new Event('mf:install-ready')); });
 }
 export const openInstall = () => window.dispatchEvent(new Event('mf:open-install'));
-export const canOfferInstall = () => !isStandalone();
+
+// ¿La app ya está instalada en este celular aunque estemos en el navegador?
+// Se revisa en vivo (no se guarda): si la desinstalan, vuelve a ofrecerse sola.
+let installedHere = false;
+if (typeof window !== 'undefined') {
+  window.addEventListener('appinstalled', () => { installedHere = true; });
+  (navigator as any).getInstalledRelatedApps?.().then((apps: unknown[]) => {
+    installedHere = !!apps?.length; window.dispatchEvent(new Event('mf:install-ready'));
+  }).catch(() => { /* el navegador no lo permite */ });
+}
+/** Mostrar la opción de descargar: solo si NO estamos dentro de la app instalada y no está instalada. */
+export const canOfferInstall = () => !isStandalone() && !installedHere;
 
 const ua = () => navigator.userAgent;
 const isIOS = () => /iphone|ipad|ipod/i.test(ua()) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isIOSSafari = () => isIOS() && !/crios|fxios|edgios|opios|instagram|fban|fbav|tiktok/i.test(ua());
+const isMobile = () => isIOS() || /android|mobile/i.test(ua());
 const isInApp = () => /instagram|fban|fbav|tiktok|line\/|wv\)/i.test(ua());
 
 /** Pide al navegador instalar la app. Devuelve true si la persona aceptó. */
@@ -79,14 +94,17 @@ const IOS_STEPS = [
     </Phone>) },
 ];
 
-// ═══ SECCIÓN: Hoja principal + tarjetita automática ═══
-const NUDGE_KEY = 'mf_install_nudge';
+// ═══ SECCIÓN: Hoja principal + aviso automático ═══
+// El aviso sale cada vez que abren la app desde el navegador (celular o computador),
+// hasta que la instalen. "Ahora no" lo calla solo por esta visita.
+const SNOOZE_KEY = 'mf_install_snooze';
 
 export default function InstallAppSheet({ ready }: { ready: boolean }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [, tick] = useState(0);
   const [nudge, setNudge] = useState(false);
+  const [qr, setQr] = useState('');
 
   useEffect(() => {
     const onOpen = () => { setOpen(true); setStep(0); setNudge(false); };
@@ -96,15 +114,19 @@ export default function InstallAppSheet({ ready }: { ready: boolean }) {
     return () => { window.removeEventListener('mf:open-install', onOpen); window.removeEventListener('mf:install-ready', onReady); };
   }, []);
 
-  // Tarjetita: solo en el navegador, después de la bienvenida, máximo cada 3 días.
   useEffect(() => {
-    if (!ready || isStandalone()) return;
-    const last = Number(localStorage.getItem(NUDGE_KEY) || 0);
-    if (Date.now() - last < 3 * 86400000) return;
-    const t = setTimeout(() => setNudge(true), 6000);
+    if (!ready || !canOfferInstall()) return;
+    try { if (sessionStorage.getItem(SNOOZE_KEY)) return; } catch { /* sin almacenamiento */ }
+    const t = setTimeout(() => { if (canOfferInstall()) setNudge(true); }, 2500);
     return () => clearTimeout(t);
   }, [ready]);
-  const closeNudge = () => { setNudge(false); try { localStorage.setItem(NUDGE_KEY, String(Date.now())); } catch { /* sin almacenamiento */ } };
+  const closeNudge = () => { setNudge(false); try { sessionStorage.setItem(SNOOZE_KEY, '1'); } catch { /* sin almacenamiento */ } };
+
+  // En computador: QR para abrir la app en el celular.
+  useEffect(() => {
+    if ((nudge || open) && !isMobile() && !qr) QRCode.toDataURL(location.origin, { margin: 1, width: 400, color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
+  }, [nudge, open]);
+  const nudgeInstall = async () => { if (deferred) { await install(); } else { setNudge(false); openInstall(); } };
 
   const install = async () => {
     const ok = await promptInstall();
@@ -119,17 +141,34 @@ export default function InstallAppSheet({ ready }: { ready: boolean }) {
 
   return (
     <>
+      {/* ═══ SECCIÓN: Aviso emergente "Descarga la app" ═══ */}
       <AnimatePresence>
         {nudge && !open && (
-          <motion.div initial={{ y: 140, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 140, opacity: 0 }} transition={{ type: 'spring', damping: 24 }}
-            className="theme-dark fixed bottom-24 inset-x-4 max-w-md mx-auto z-[60] rounded-3xl p-3.5 bg-gradient-to-br from-[#232C5A] via-[#141B3D] to-[#0B1026] ring-1 ring-brand-lime/30 shadow-2xl flex items-center gap-3">
-            <AppLogo size={44} animated={false} />
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-extrabold">Instala Mi Finanzas</p>
-              <p className="text-[11px] text-slate-300 leading-snug">Ábrela como una app, a pantalla completa y sin internet.</p>
-            </div>
-            <button onClick={openInstall} className="px-3.5 h-10 rounded-xl bg-brand-lime text-brand-ink text-xs font-extrabold">Instalar</button>
-            <button onClick={closeNudge} aria-label="Ahora no" className="p-1 text-slate-400"><X size={16} /></button>
+          <motion.div className="fixed inset-0 z-[150] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeNudge}>
+            <motion.div role="dialog" aria-modal="true" aria-labelledby="nudge-title" onClick={e => e.stopPropagation()}
+              initial={{ y: 80, scale: 0.94, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} exit={{ y: 60, opacity: 0 }} transition={{ type: 'spring', damping: 22 }}
+              className="theme-dark relative w-full max-w-sm rounded-[30px] p-6 bg-gradient-to-b from-[#1D2550] via-[#121938] to-[#0B1026] border border-white/10 shadow-2xl text-center">
+              <button onClick={closeNudge} aria-label="Cerrar" className="absolute right-4 top-4 p-1.5 text-slate-400"><X size={18} /></button>
+              <motion.div initial={{ scale: 0.5, rotate: -10 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', damping: 11 }} className="flex justify-center"><AppLogo size={72} /></motion.div>
+              {isMobile() ? (
+                <>
+                  <h2 id="nudge-title" className="text-white text-xl font-extrabold mt-4">Descarga la app en tu celular</h2>
+                  <p className="text-slate-300 text-sm mt-1.5">Tendrás más funciones: se abre a pantalla completa, funciona sin internet y te avisa de tus pagos.</p>
+                  <ul className="mt-4 grid grid-cols-3 gap-2 text-[11px] text-slate-200">
+                    {['Pantalla completa', 'Sin internet', 'Avisos de pagos'].map(t => <li key={t} className="rounded-xl bg-white/[0.06] ring-1 ring-white/10 py-2 px-1 flex flex-col items-center gap-1"><Check size={14} className="text-brand-lime" />{t}</li>)}
+                  </ul>
+                  <button onClick={nudgeInstall} className="mt-5 w-full h-14 rounded-2xl bg-brand-lime text-brand-ink font-extrabold flex items-center justify-center gap-2 active:scale-[0.98]"><Download size={20} /> {deferred ? 'Instalar ahora' : 'Ver cómo instalarla'}</button>
+                </>
+              ) : (
+                <>
+                  <h2 id="nudge-title" className="text-white text-xl font-extrabold mt-4">Lleva Mi Finanzas en tu celular</h2>
+                  <p className="text-slate-300 text-sm mt-1.5">Escanea este código con la cámara de tu celular y descárgala allá: tendrás tus cuentas siempre a la mano.</p>
+                  <div className="mt-4 mx-auto w-44 h-44 p-2.5 rounded-3xl bg-[#fff] shadow-[0_20px_60px_-20px_rgba(198,244,50,.45)]">{qr && <img src={qr} alt="Código QR para abrir Mi Finanzas en el celular" className="w-full h-full" />}</div>
+                  {deferred && <button onClick={install} className="mt-4 w-full h-12 rounded-2xl bg-brand-lime text-brand-ink font-extrabold flex items-center justify-center gap-2"><Download size={18} /> O instálala en este computador</button>}
+                </>
+              )}
+              <button onClick={closeNudge} className="mt-3 text-sm text-slate-400 font-semibold">Ahora no</button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -150,6 +189,13 @@ export default function InstallAppSheet({ ready }: { ready: boolean }) {
             <ul className="mt-4 grid grid-cols-3 gap-2 text-[11px] text-slate-300">
               {['Pantalla completa', 'Funciona sin internet', 'Ocupa muy poco'].map(t => <li key={t} className="rounded-xl bg-white/[0.05] ring-1 ring-white/10 py-2 px-1">{t}</li>)}
             </ul>
+          </div>
+        ) : !isMobile() ? (
+          <div className="text-center">
+            <p className="text-white text-lg font-extrabold">Ábrela en tu celular</p>
+            <p className="text-slate-300 text-sm mt-1">Escanea el código con la cámara de tu celular y sigue los pasos para descargarla.</p>
+            <div className="mt-4 mx-auto w-48 h-48 p-2.5 rounded-3xl bg-[#fff]">{qr && <img src={qr} alt="Código QR para abrir Mi Finanzas en el celular" className="w-full h-full" />}</div>
+            <p className="text-[11px] text-slate-400 mt-3">En el computador también puedes instalarla desde Chrome o Edge: busca el ícono de instalar en la barra de direcciones.</p>
           </div>
         ) : isIOS() ? (
           isIOSSafari() ? (
