@@ -13,6 +13,7 @@ import SidebarMenu from './components/SidebarMenu';
 import { AppMenuContext } from './components/ui/ModuleHeader';
 import QuickAdd from './components/QuickAdd';
 import ShareAppSheet from './components/share/ShareAppSheet';
+import PasteMovementSheet, { openPasteMovement } from './components/quick/PasteMovementSheet';
 import { checkDailyReminderInApp } from './services/dailyReminder';
 import { TourProvider } from './components/tour/Tour';
 import { db, migrateData } from './utils/database';
@@ -84,12 +85,20 @@ function AppContent() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isLocked, isSetup } = useSecurity();
   const location = useLocation();
+  // Texto compartido desde otra app (menú Compartir de Android → Mi Finanzas): se lee antes de cualquier redirección.
+  const [sharedText] = useState<string | null>(() => {
+    if (window.location.pathname !== '/compartir') return null;
+    const sp = new URLSearchParams(window.location.search);
+    window.history.replaceState(null, '', '/');
+    return [sp.get('title'), sp.get('text'), sp.get('url')].filter(Boolean).join(' ');
+  });
   const [maskTick, setMaskTick] = useState(0);
   useEffect(() => { const on = () => setMaskTick(t => t + 1); window.addEventListener('mf:mask-changed', on); return () => window.removeEventListener('mf:mask-changed', on); }, []);
 
   useEffect(() => {
     migrateData().then(() => db.settings.update('global', { onboardingCompleted: true })).catch(() => {});
     reclassifyOnce();
+    if (sharedText !== null) setTimeout(() => openPasteMovement(sharedText), 600);
     const onVisible = () => { if (document.visibilityState === 'visible') checkDailyReminderInApp(); };
     document.addEventListener('visibilitychange', onVisible);
     preloadPages();
@@ -141,6 +150,7 @@ function AppContent() {
         <QuickAdd hidden={['/mercado', '/legal', '/escaner'].includes(location.pathname)} />
         <SidebarMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
         <ShareAppSheet />
+        <PasteMovementSheet />
         <UpdateManager />
         <ToastProvider />
         <AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence>

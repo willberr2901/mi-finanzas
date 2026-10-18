@@ -1,8 +1,12 @@
 // Versión visible de la app y novedades que se muestran en el aviso de actualización.
 // Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
-export const APP_VERSION = '1.5.1';
+export const APP_VERSION = '1.5.2';
 
 export const RELEASE_NOTES: string[] = [
+  'Registra gastos desde la notificación del banco: pega el mensaje de TD, TC, Nequi, Daviplata o Bre-B y la app lo llena sola',
+  'Sube el pantallazo de un comprobante y la app lee el valor y a quién le pagaste',
+  'En Android: comparte el mensaje del banco con Mi Finanzas desde el menú Compartir',
+  'Aviso si un movimiento parece repetido',
   'Nuevo botón 👁 en Inicio para ocultar tus saldos cuando estés en público',
   'Día de pago: tus cuentas van de quincena a quincena o del día que te pagan, no solo del 1 al 30',
   'Presupuestos por categoría con barras en Inicio y avisos al 80% y al 100%',

@@ -27,6 +27,8 @@ export default defineConfig({
         background_color: '#0B1026',
         display: 'standalone',
         orientation: 'portrait',
+        // Mi Finanzas aparece en el menú Compartir de Android para registrar gastos desde notificaciones
+        share_target: { action: '/compartir', method: 'GET', params: { title: 'title', text: 'text', url: 'url' } } as any,
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, ArrowDownCircle, ArrowUpCircle, ShoppingCart, CalendarPlus, Check } from 'lucide-react';
+import { Plus, X, ArrowDownCircle, ArrowUpCircle, ShoppingCart, CalendarPlus, Check, MessageSquareText, ChevronRight } from 'lucide-react';
+import { openPasteMovement } from './quick/PasteMovementSheet';
 import MoneyInput from './ui/MoneyInput';
 import { db } from '../utils/database';
 import { guessCategory, segmentOf, SEGMENT_INFO } from '../utils/categories';
@@ -86,6 +87,15 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
                           <span className="block text-[11px] text-slate-400">{a.desc}</span>
                         </motion.button>
                       ))}
+                      <motion.button onClick={() => { close(); setTimeout(() => openPasteMovement(), 200); }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} whileTap={{ scale: 0.97 }}
+                        className="col-span-2 flex items-center gap-3 text-left p-4 rounded-3xl bg-gradient-to-r from-brand-lime/15 to-transparent ring-1 ring-brand-lime/30">
+                        <span className="w-11 h-11 rounded-2xl bg-brand-lime flex items-center justify-center shrink-0"><MessageSquareText size={22} className="text-brand-ink" /></span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-white font-bold">Desde notificación del banco</span>
+                          <span className="block text-[11px] text-slate-400">Pega el mensaje de TD, TC, Nequi o Bre-B, o sube el comprobante</span>
+                        </span>
+                        <ChevronRight size={18} className="text-slate-400" />
+                      </motion.button>
                     </motion.div>
                   ) : (
                     <motion.div key="form" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
