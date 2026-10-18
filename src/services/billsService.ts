@@ -38,10 +38,10 @@ export const loadBillStatuses = async (ref = new Date()): Promise<BillStatus[]> 
 };
 
 /** Marca el pago del mes: lo guarda, lo registra como gasto en Finanzas y avanza la cuota si es deuda. */
-export const payBill = async (bill: Bill, amount: number, ref = new Date()) => {
+export const payBill = async (bill: Bill, amount: number, ref = new Date(), paidBy?: 'yo' | 'pareja') => {
   const installment = bill.kind === 'deuda' ? (bill.paidInstallments ?? 0) + 1 : undefined;
   await db.transaction('rw', db.billPayments, db.transactions, db.bills, async () => {
-    await db.billPayments.add({ id: crypto.randomUUID(), billId: bill.id, period: periodOf(ref), amount, paidAt: Date.now() });
+    await db.billPayments.add({ id: crypto.randomUUID(), billId: bill.id, period: periodOf(ref), amount, paidAt: Date.now(), ...(paidBy ? { paidBy } : {}) });
     await db.transactions.add({
       id: crypto.randomUUID(),
       date: todayISO(),

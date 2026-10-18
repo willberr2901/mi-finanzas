@@ -50,6 +50,8 @@ export interface BillPayment {
   period: string;
   amount: number;
   paidAt: number;
+  /** Quién pagó (para dividir los pagos compartidos del hogar). */
+  paidBy?: 'yo' | 'pareja';
 }
 
 export const db = new Dexie('MiFinanzasDB') as Dexie & {

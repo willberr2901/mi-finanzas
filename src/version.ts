@@ -1,8 +1,11 @@
 // Versión visible de la app y novedades que se muestran en el aviso de actualización.
 // Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
-export const APP_VERSION = '1.5.2';
+export const APP_VERSION = '1.6.0';
 
 export const RELEASE_NOTES: string[] = [
+  'Cuentas claras: en Pagos ves cuánto pagó cada uno de los gastos compartidos y quién le debe a quién',
+  'Elige cómo dividen los compartidos: 50/50, 60/40, 70/30 o el porcentaje que quieran',
+  'Al pagar un gasto compartido indicas quién lo pagó; envía el resumen por WhatsApp y márcalo como saldado',
   'Registra gastos desde la notificación del banco: pega el mensaje de TD, TC, Nequi, Daviplata o Bre-B y la app lo llena sola',
   'Sube el pantallazo de un comprobante y la app lee el valor y a quién le pagaste',
   'En Android: comparte el mensaje del banco con Mi Finanzas desde el menú Compartir',

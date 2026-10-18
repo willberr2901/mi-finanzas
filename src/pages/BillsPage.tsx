@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ownerLabel } from '../utils/prefs';
+import SharedSettlementCard from '../components/bills/SharedSettlementCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ChevronLeft, ChevronRight, CalendarDays, Pencil, Trash2, Undo2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { db, type Bill, type Owner } from '../utils/database';
@@ -38,6 +39,7 @@ export default function BillsPage() {
   const [editing, setEditing] = useState<Bill | null>(null);
   const [paying, setPaying] = useState<BillStatus | null>(null);
   const [payAmount, setPayAmount] = useState(0);
+  const [paidBy, setPaidBy] = useState<'yo' | 'pareja'>('yo');
   const [askedLater, setAskedLater] = useState<Set<string>>(new Set());
 
   const isCurrentMonth = periodOf(ref) === periodOf(today);
@@ -101,7 +103,7 @@ export default function BillsPage() {
 
   const confirmPay = async () => {
     if (!paying || !payAmount) return;
-    await payBill(paying.bill, payAmount, refDate);
+    await payBill(paying.bill, payAmount, refDate, paying.bill.owner === 'compartido' ? paidBy : paying.bill.owner === 'pareja' ? 'pareja' : 'yo');
     notify({ title: 'Pago registrado', message: `${paying.bill.name}: ${formatCOP(payAmount)} quedó como gasto en Finanzas`, type: 'success' });
     setPaying(null); reload();
   };
@@ -135,7 +137,7 @@ export default function BillsPage() {
         <div className="flex justify-end gap-1 mt-1">
           {s.paid
             ? <button onClick={() => undo(s)} aria-label={`Desmarcar ${s.bill.name}`} className="p-1 text-slate-500 hover:text-white"><Undo2 size={14} /></button>
-            : <button onClick={() => { setPaying(s); setPayAmount(s.bill.amount); }} className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">Pagar</button>}
+            : <button onClick={() => { setPaying(s); setPayAmount(s.bill.amount); setPaidBy('yo'); }} className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">Pagar</button>}
           <a href={googleCalendarLink(s.bill)} target="_blank" rel="noopener noreferrer" aria-label={`Agregar ${s.bill.name} a Google Calendar`} title="Recordatorio en Google Calendar" className="p-1 text-slate-500 hover:text-amber-300"><CalendarDays size={14} /></a>
           <button onClick={() => { setEditing(s.bill); setFormOpen(true); }} aria-label={`Editar ${s.bill.name}`} className="p-1 text-slate-500 hover:text-blue-400"><Pencil size={14} /></button>
           <button onClick={() => removeBill(s.bill)} aria-label={`Eliminar ${s.bill.name}`} className="p-1 text-slate-500 hover:text-red-400"><Trash2 size={14} /></button>
@@ -160,6 +162,8 @@ export default function BillsPage() {
           </button>
         ))}
       </div>
+
+      {(owner === 'todos' || owner === 'compartido') && <SharedSettlementCard statuses={statuses} period={periodOf(refDate)} />}
 
       {/* Resumen del mes */}
       <div className="bg-gradient-to-br from-violet-600/30 to-cyan-600/20 border border-violet-500/20 rounded-3xl p-5 flex items-center gap-5">
@@ -241,7 +245,7 @@ export default function BillsPage() {
           <p className="text-sm text-white flex items-start gap-2"><AlertCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
             <span><strong>{s.bill.name}</strong> vencía el día {s.dueDate.getDate()}. ¿Ya lo pagaste?</span></p>
           <div className="flex gap-2 mt-3">
-            <button onClick={() => { setPaying(s); setPayAmount(s.bill.amount); }} className="flex-1 bg-emerald-500 text-black font-bold py-2 rounded-xl text-sm">Sí, ya pagué</button>
+            <button onClick={() => { setPaying(s); setPayAmount(s.bill.amount); setPaidBy('yo'); }} className="flex-1 bg-emerald-500 text-black font-bold py-2 rounded-xl text-sm">Sí, ya pagué</button>
             <button onClick={() => setAskedLater(prev => new Set(prev).add(s.bill.id))} className="flex-1 border border-white/20 text-white py-2 rounded-xl text-sm">Todavía no</button>
           </div>
         </motion.div>
@@ -295,6 +299,17 @@ export default function BillsPage() {
               <p className="text-slate-400 text-sm mb-4">{paying.bill.name} · ¿cuánto pagaste este mes?</p>
               <MoneyInput value={payAmount} onChange={setPayAmount} prefix className="input-modern w-full text-lg" ariaLabel="Valor pagado" />
               <p className="text-[11px] text-slate-500 mt-2">Si el valor cambió (ej. la tarjeta), escríbelo. La fecha de pago sigue siendo el día {paying.bill.dueDay}.</p>
+              {paying.bill.owner === 'compartido' && (
+                <div className="mt-4">
+                  <p className="text-xs text-slate-400 mb-1.5">¿Quién lo pagó?</p>
+                  <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Quién pagó">
+                    {(['yo', 'pareja'] as const).map(w => (
+                      <button key={w} role="radio" aria-checked={paidBy === w} onClick={() => setPaidBy(w)}
+                        className={`py-2.5 rounded-xl text-sm font-bold ring-1 ${paidBy === w ? 'bg-brand-lime text-brand-ink ring-brand-lime' : 'bg-white/[0.05] text-white ring-white/10'}`}>{ownerLabel(w)}</button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2 mt-4">
                 <button onClick={() => setPaying(null)} className="flex-1 py-3 rounded-xl border border-white/15 text-white">Cancelar</button>
                 <button onClick={confirmPay} className="flex-1 btn-primary">Confirmar pago</button>

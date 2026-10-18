@@ -13,6 +13,10 @@ export interface Prefs {
   /** Recordatorio diario para anotar los gastos. */
   reminder: { enabled: boolean; time: string };
   theme: ThemePref;
+  /** Porcentaje de los gastos compartidos que le toca a "yo" (el resto a la pareja). */
+  split: number;
+  /** Lo que ya se saldaron por mes (AAAA-MM): positivo = la pareja le pagó a "yo". */
+  settled: Record<string, number>;
 }
 
 const KEY = 'mf_prefs';
@@ -22,6 +26,8 @@ const DEFAULTS: Prefs = {
   budgets: {},
   reminder: { enabled: false, time: '20:00' },
   theme: 'dark',
+  split: 50,
+  settled: {},
 };
 
 export const getPrefs = (): Prefs => {
@@ -32,6 +38,7 @@ export const getPrefs = (): Prefs => {
       names: { ...DEFAULTS.names, ...(raw.names || {}) },
       reminder: { ...DEFAULTS.reminder, ...(raw.reminder || {}) },
       budgets: { ...(raw.budgets || {}) },
+      settled: { ...(raw.settled || {}) },
     };
   } catch { return { ...DEFAULTS }; }
 };
