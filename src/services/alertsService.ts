@@ -1,6 +1,8 @@
 import { loadBillStatuses, periodOf } from './billsService';
 import { secureStorage } from '../utils/security';
 import { formatCOP } from '../utils/format';
+import { db } from '../utils/database';
+import { getPrefs, cycleFor, inCycle } from '../utils/prefs';
 
 export interface AppAlert {
   id: string;
@@ -33,6 +35,25 @@ export const computeAlerts = async (): Promise<AppAlert[]> => {
     if (total > budget) alerts.push({ id: `merc-exc-${period}-${Math.round(total)}`, level: 'urgente', title: 'Te pasaste del presupuesto del mercado', message: `La lista va en ${formatCOP(total)} y el presupuesto es ${formatCOP(budget)}.`, link: '/mercado' });
     else if (pct >= 85) alerts.push({ id: `merc-85-${period}`, level: 'aviso', title: `Mercado al ${pct}% del presupuesto`, message: `Te quedan ${formatCOP(budget - total)}.`, link: '/mercado' });
   }
+
+  // Presupuestos por categoría (dentro del ciclo de pago)
+  try {
+    const { budgets, payDay } = getPrefs();
+    const limits = Object.entries(budgets).filter(([, v]) => v > 0);
+    if (limits.length) {
+      const c = cycleFor(new Date(), payDay);
+      const spent = new Map<string, number>();
+      for (const t of await db.transactions.toArray()) {
+        if (t.type === 'expense' && inCycle(t.date, c)) spent.set(t.category, (spent.get(t.category) ?? 0) + t.amount);
+      }
+      for (const [cat, limit] of limits) {
+        const v = spent.get(cat) ?? 0;
+        const pct = Math.round((v / limit) * 100);
+        if (pct >= 100) alerts.push({ id: `pres-100-${cat}-${c.startISO}`, level: 'urgente', title: `Te pasaste en ${cat}`, message: `Llevas ${formatCOP(v)} de ${formatCOP(limit)} (${pct}%).`, link: '/' });
+        else if (pct >= 80) alerts.push({ id: `pres-80-${cat}-${c.startISO}`, level: 'aviso', title: `${cat} al ${pct}% del presupuesto`, message: `Te quedan ${formatCOP(limit - v)} hasta tu próximo pago.`, link: '/' });
+      }
+    }
+  } catch { /* sin datos */ }
 
   return alerts;
 };

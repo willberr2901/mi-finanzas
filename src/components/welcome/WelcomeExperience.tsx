@@ -57,7 +57,7 @@ export default function WelcomeExperience({ firstTime, onDone }: { firstTime: bo
     const hour = new Date().getHours();
     const greet = hour < 5 ? 'Buenas noches' : hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
     return (
-      <motion.div className="fixed inset-0 z-[160] bg-[#070B14] flex flex-col items-center justify-center text-center px-8" onClick={onDone}
+      <motion.div className="theme-dark fixed inset-0 z-[160] bg-appbg flex flex-col items-center justify-center text-center px-8" onClick={onDone}
         initial={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.04 }} transition={{ duration: 0.4 }}>
         <Backdrop />
         <motion.div initial={{ scale: 0.4, rotate: -20, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }} transition={{ type: 'spring', damping: 11, stiffness: 160 }}>
@@ -73,7 +73,7 @@ export default function WelcomeExperience({ firstTime, onDone }: { firstTime: bo
   }
 
   return (
-    <motion.div className="fixed inset-0 z-[160] bg-[#070B14] flex flex-col items-center justify-center px-7" exit={{ opacity: 0 }}>
+    <motion.div className="theme-dark fixed inset-0 z-[160] bg-appbg flex flex-col items-center justify-center px-7" exit={{ opacity: 0 }}>
       <Backdrop />
       <AnimatePresence mode="wait">
         {step === 'intro' && (

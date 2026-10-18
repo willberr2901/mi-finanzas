@@ -35,7 +35,7 @@ export const notify = ({
 }) => {
   // Quita emojis/símbolos del inicio del título: el aviso ya pone su propio ícono
   // (antes salía "✅ ✅ Agregado" repetido).
-  const safeTitle = sanitizeInput(title).replace(/^[^\p{L}\p{N}]+/u, '').trim() || sanitizeInput(title);
+  const safeTitle = sanitizeInput(title).replace(/^[^\p{L}\p{N}¿¡]+/u, '').trim() || sanitizeInput(title);
   const safeMessage = message ? sanitizeInput(message) : '';
   const safeModule = sanitizeInput(module);
   

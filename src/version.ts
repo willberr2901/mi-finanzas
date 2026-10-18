@@ -1,12 +1,14 @@
 // Versión visible de la app y novedades que se muestran en el aviso de actualización.
 // Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
-export const APP_VERSION = '1.4.5';
+export const APP_VERSION = '1.5.0';
 
 export const RELEASE_NOTES: string[] = [
-  'Arreglado: Ajustes y los demás módulos ya no quedan en blanco al abrirlos desde el menú',
-  'Escáner nuevo: ahora sí lee tus facturas (tienda, fecha, productos y total) y las registras como gasto',
-  'El escáner funciona dentro de tu celular: la foto no se guarda ni sale a ningún servidor',
-  'Escáner con menú y botón para volver, como el resto de la app',
-  'Ajustes y los demás módulos abren al instante, sin recargar la app',
-  'La bienvenida ya no se repite cada vez que la app se recarga',
+  'Día de pago: tus cuentas van de quincena a quincena o del día que te pagan, no solo del 1 al 30',
+  'Presupuestos por categoría con barras en Inicio y avisos al 80% y al 100%',
+  'Botón "Sugerir": te propone límites según lo que gastaste en tus últimos ciclos',
+  'Nombres del hogar: "Yo" y "Mi pareja" ahora muestran sus nombres reales',
+  'Recordatorio diario para anotar tus gastos, también en el calendario del celular',
+  'Tema claro, oscuro o automático en Ajustes → Apariencia',
+  'Recomienda la app por WhatsApp o con un código QR desde el menú',
+  'Ajustes renovado y proyección del mes más precisa (los pagos fijos ya no inflan el cálculo)',
 ];

@@ -75,7 +75,7 @@ export default function NotificationBell() {
           <Bell size={19} />
         </motion.span>
         {unread > 0 && (
-          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-[#070B14]">
+          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-appbg">
             {unread > 9 ? '9+' : unread}
           </motion.span>
         )}
@@ -86,7 +86,7 @@ export default function NotificationBell() {
           {open && (
             <motion.div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
               <motion.div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="notif-title"
-                className="absolute top-0 inset-x-0 mx-auto max-w-md bg-gradient-to-b from-[#151b30] to-[#0b1120] border-b border-white/10 rounded-b-[32px] shadow-2xl max-h-[88vh] flex flex-col"
+                className="absolute top-0 inset-x-0 mx-auto max-w-md bg-gradient-to-b from-surface2 to-surface2 border-b border-white/10 rounded-b-[32px] shadow-2xl max-h-[88vh] flex flex-col"
                 initial={{ y: '-100%' }} animate={{ y: 0 }} exit={{ y: '-100%' }} transition={{ type: 'spring', damping: 28, stiffness: 260 }}>
                 <div className="p-5 pb-3">
                   <div className="flex items-center justify-between">

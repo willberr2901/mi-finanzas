@@ -40,7 +40,7 @@ export default function SecurityLock() {
   };
 
   return (
-    <div className="fixed inset-0 z-[300] bg-[#070B14] flex flex-col items-center justify-center px-8">
+    <div className="theme-dark fixed inset-0 z-[300] bg-appbg flex flex-col items-center justify-center px-8">
       <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-violet-600/25 blur-3xl" aria-hidden="true" />
       <div className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-cyan-500/20 blur-3xl" aria-hidden="true" />
       <div className="relative flex flex-col items-center w-full max-w-xs">

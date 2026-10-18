@@ -82,7 +82,7 @@ export default function UpdateManager() {
           role="dialog" aria-modal="true" aria-labelledby="update-title"
         >
           <motion.div
-            className="w-full max-w-sm bg-[#111827] border border-white/10 rounded-3xl p-6 shadow-2xl shadow-violet-900/40 relative overflow-hidden"
+            className="w-full max-w-sm bg-surface border border-white/10 rounded-3xl p-6 shadow-2xl shadow-violet-900/40 relative overflow-hidden"
             initial={{ y: 60, opacity: 0, scale: 0.96 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 40, opacity: 0 }}
             transition={{ type: 'spring', damping: 22, stiffness: 260 }}
           >

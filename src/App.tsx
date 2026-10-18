@@ -12,6 +12,8 @@ import WelcomeExperience from './components/welcome/WelcomeExperience';
 import SidebarMenu from './components/SidebarMenu';
 import { AppMenuContext } from './components/ui/ModuleHeader';
 import QuickAdd from './components/QuickAdd';
+import ShareAppSheet from './components/share/ShareAppSheet';
+import { checkDailyReminderInApp } from './services/dailyReminder';
 import { TourProvider } from './components/tour/Tour';
 import { db, migrateData } from './utils/database';
 import { guessCategory } from './utils/categories';
@@ -86,9 +88,12 @@ function AppContent() {
   useEffect(() => {
     migrateData().then(() => db.settings.update('global', { onboardingCompleted: true })).catch(() => {});
     reclassifyOnce();
+    const onVisible = () => { if (document.visibilityState === 'visible') checkDailyReminderInApp(); };
+    document.addEventListener('visibilitychange', onVisible);
     preloadPages();
     // Quien instala por primera vez no necesita ver "novedades".
     if (firstTime) markWhatsNewSeen();
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [firstTime]);
 
   const afterWelcome = useCallback(() => {
@@ -97,6 +102,7 @@ function AppContent() {
     if (!termsAccepted()) setShowTerms(true);
     else if (shouldShowWhatsNew()) setShowWhatsNew(true);
     dailySystemReminder();
+    checkDailyReminderInApp();
   }, []);
 
   const afterTerms = () => {
@@ -107,7 +113,7 @@ function AppContent() {
   return (
     <AppMenuContext.Provider value={{ openMenu: () => setMenuOpen(true) }}>
      <TourProvider ready={!showWelcome && !showTerms && !showWhatsNew && !(isSetup && isLocked)}>
-      <div className="min-h-screen bg-[#070B14] text-white font-sans selection:bg-violet-500/30">
+      <div className="min-h-screen bg-appbg text-white font-sans selection:bg-violet-500/30">
         {isSetup && isLocked && <SecurityLock />}
 
         <main className="pb-28 pt-5 px-4 max-w-md mx-auto">
@@ -132,6 +138,7 @@ function AppContent() {
 
         <QuickAdd hidden={['/mercado', '/legal', '/escaner'].includes(location.pathname)} />
         <SidebarMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
+        <ShareAppSheet />
         <UpdateManager />
         <ToastProvider />
         <AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence>

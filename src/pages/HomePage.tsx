@@ -12,9 +12,10 @@ import { secureStorage } from '../utils/security';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import CountUp from '../components/ui/CountUp';
 import { usePageTour } from '../components/tour/Tour';
+import { usePrefs, cycleFor, inCycle, cycleProgress } from '../utils/prefs';
+import BudgetsCard from '../components/home/BudgetsCard';
 
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-const MON = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const SEGS = ['obligatorio', 'necesario', 'gusto', 'ahorro'] as const;
 const SEG_HEX: Record<typeof SEGS[number], string> = { obligatorio: '#C6F432', necesario: '#8792C4', gusto: '#F59E0B', ahorro: '#5EEAD4' };
@@ -23,12 +24,12 @@ const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } 
 const item = { hidden: { opacity: 0, y: 22 }, show: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 22, stiffness: 200 } } };
 
 const Card = ({ children, className = '', ...rest }: any) => (
-  <motion.div variants={item} className={`bg-[#111827] border border-white/5 rounded-[26px] p-4 ${className}`} {...rest}>{children}</motion.div>
+  <motion.div variants={item} className={`bg-surface border border-white/5 rounded-[26px] p-4 ${className}`} {...rest}>{children}</motion.div>
 );
 const Title = ({ icon: Icon, color, children, to, link }: { icon: any; color: string; children: any; to?: string; link?: string }) => (
   <div className="flex items-center justify-between mb-3">
     <div className="flex items-center gap-2">
-      <span className={`w-8 h-8 rounded-xl bg-gradient-to-br from-[#232C5A] to-[#0E1430] ring-1 ring-white/10 flex items-center justify-center ${color ? "" : ""}`}><Icon size={16} className="text-brand-lime" /></span>
+      <span className={`w-8 h-8 rounded-xl bg-gradient-to-br theme-dark from-[#232C5A] to-[#0E1430] ring-1 ring-white/10 flex items-center justify-center ${color ? "" : ""}`}><Icon size={16} className="text-brand-lime" /></span>
       <h2 className="text-white font-bold text-[15px]">{children}</h2>
     </div>
     {to && <Link to={to} className="text-xs text-slate-300 font-semibold flex items-center">{link}<ChevronRight size={14} /></Link>}
@@ -47,6 +48,7 @@ export default function HomePage() {
   const [bills, setBills] = useState<BillStatus[]>([]);
   const [debts, setDebts] = useState<Bill[]>([]);
   const name = localStorage.getItem('miFinanzasUserName');
+  const [prefs] = usePrefs();
 
   usePageTour('inicio', [
     { target: 'menu', title: 'Tu menú', text: 'Aquí están todos los módulos: Mercado, Finanzas, Pagos, el escáner de facturas y Ajustes.' },
@@ -66,20 +68,21 @@ export default function HomePage() {
   }, []);
 
   const now = new Date();
-  const monthKey = todayISO().slice(0, 7);
-  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  const dayOfMonth = now.getDate();
+  const todayKey = todayISO();
+  // Ciclo financiero: del día de pago al día anterior del siguiente pago (o el mes calendario).
+  const cycle = useMemo(() => cycleFor(new Date(todayKey + 'T12:00'), prefs.payDay), [todayKey, prefs.payDay]);
+  const prevCycle = useMemo(() => cycleFor(new Date(todayKey + 'T12:00'), prefs.payDay, -1), [todayKey, prefs.payDay]);
+  const { day: dayOfCycle, left: daysLeft } = cycleProgress(cycle);
 
   const s = useMemo(() => {
-    const inMonth = (k: string) => tx.filter(t => (t.date || '').startsWith(k));
+    const inC = (c: typeof cycle) => tx.filter(t => inCycle(t.date, c));
     const sum = (list: Transaction[], type: 'income' | 'expense') => list.filter(t => t.type === type).reduce((a, t) => a + t.amount, 0);
-    const cur = inMonth(monthKey), prev = inMonth(prevKey);
+    const cur = inC(cycle), prev = inC(prevCycle);
     const income = sum(cur, 'income'), expense = sum(cur, 'expense');
     const prevExpense = sum(prev, 'expense'), prevIncome = sum(prev, 'income');
-    // Gastos al mismo día del mes pasado, para comparar justo
-    const prevSameDay = prev.filter(t => t.type === 'expense' && parseLocalDate(t.date).getDate() <= dayOfMonth).reduce((a, t) => a + t.amount, 0);
+    // Gastos al mismo día del ciclo anterior, para comparar justo
+    const cutoff = new Date(prevCycle.start.getFullYear(), prevCycle.start.getMonth(), prevCycle.start.getDate() + dayOfCycle - 1);
+    const prevSameDay = prev.filter(t => t.type === 'expense' && parseLocalDate(t.date) <= cutoff).reduce((a, t) => a + t.amount, 0);
     const split = { obligatorio: 0, necesario: 0, gusto: 0, ahorro: 0 } as Record<typeof SEGS[number], number>;
     const byCat = new Map<string, number>();
     for (const t of cur) if (t.type === 'expense') {
@@ -87,19 +90,21 @@ export default function HomePage() {
       byCat.set(t.category, (byCat.get(t.category) ?? 0) + t.amount);
     }
     const months = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
-      const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      return { label: MON[d.getMonth()], value: sum(inMonth(k), 'expense'), current: k === monthKey };
+      const c = cycleFor(new Date(todayKey + 'T12:00'), prefs.payDay, i - 5);
+      return { label: c.short, value: sum(inC(c), 'expense'), current: i === 5 };
     });
-    const perDay = expense / Math.max(1, dayOfMonth);
+    // Lo obligatorio (arriendo, servicios, deudas, mercado grande) se paga una vez; solo el gasto del día a día se proyecta.
+    const variable = cur.filter(t => t.type === 'expense' && segmentOf('expense', t.category) !== 'obligatorio').reduce((a, t) => a + t.amount, 0);
+    const perDay = variable / Math.max(1, dayOfCycle);
     return {
       income, expense, prevExpense, prevIncome, split, months, perDay,
-      projection: perDay * daysInMonth,
+      projection: expense + perDay * daysLeft,
+      cur,
       top: [...byCat.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4),
       expenseDelta: prevSameDay > 0 ? ((expense - prevSameDay) / prevSameDay) * 100 : null,
       incomeDelta: prevIncome > 0 ? ((income - prevIncome) / prevIncome) * 100 : null,
     };
-  }, [tx, monthKey, prevKey, dayOfMonth, daysInMonth]);
+  }, [tx, cycle, prevCycle, dayOfCycle, daysLeft, todayKey, prefs.payDay]);
 
   const balance = s.income - s.expense;
   const spentPct = s.income > 0 ? Math.round((s.expense / s.income) * 100) : 0;
@@ -133,19 +138,19 @@ export default function HomePage() {
 
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
         {/* 1. Resumen del mes */}
-        <motion.div data-tour="home-hero" variants={item} className="relative overflow-hidden rounded-[30px] p-5 bg-gradient-to-br from-[#232C5A] via-[#141B3D] to-[#0B1026] ring-1 ring-lime-300/20 shadow-2xl shadow-black/50">
+        <motion.div data-tour="home-hero" variants={item} className="relative overflow-hidden rounded-[30px] p-5 bg-gradient-to-br theme-dark from-[#232C5A] via-[#141B3D] to-[#0B1026] ring-1 ring-lime-300/20 shadow-2xl shadow-black/50">
           <motion.div className="absolute -top-16 -right-10 w-52 h-52 bg-lime-300/20 rounded-full blur-3xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 6, repeat: Infinity }} aria-hidden="true" />
           <div className="relative flex gap-4 items-center">
             <div className="flex-1 min-w-0">
               {s.income > 0 ? (
                 <>
-                  <p className="text-white/80 text-sm">{balance >= 0 ? `Te queda en ${MONTHS[now.getMonth()]}` : `Gastaste más de lo que entró`}</p>
+                  <p className="text-white/80 text-sm">{balance >= 0 ? (cycle.isCalendar ? `Te queda en ${cycle.label}` : 'Te queda en este ciclo') : `Gastaste más de lo que entró`}</p>
                   <CountUp value={Math.abs(balance)} className={`block text-[34px] leading-tight font-extrabold tracking-tight ${balance >= 0 ? 'text-brand-lime' : 'text-rose-300'}`} />
                   <p className="text-white/75 text-xs">{balance >= 0 ? `de ${formatCOP(s.income)} que entraron` : `por encima de tus ingresos de ${formatCOP(s.income)}`}</p>
                 </>
               ) : (
                 <>
-                  <p className="text-white/80 text-sm">Gastos de {MONTHS[now.getMonth()]}</p>
+                  <p className="text-white/80 text-sm">{cycle.isCalendar ? `Gastos de ${cycle.label}` : 'Gastos de este ciclo'}</p>
                   <CountUp value={s.expense} className="block text-[34px] leading-tight font-extrabold text-white tracking-tight" />
                   <Link to="/finanzas" className="inline-block mt-1 text-[11px] text-white bg-white/20 rounded-full px-2.5 py-1">+ Registra tus ingresos para ver cuánto te queda</Link>
                 </>
@@ -163,7 +168,11 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          <div className="relative grid grid-cols-2 gap-2 mt-4">
+          <div className="relative flex items-center gap-2 mt-3 text-[11px] text-white/70">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.07] ring-1 ring-white/10 px-2.5 py-1"><CalendarDays size={12} className="text-brand-lime" />{cycle.isCalendar ? `${cycle.label[0].toUpperCase()}${cycle.label.slice(1)}` : cycle.label}</span>
+            <span>{daysLeft === 0 ? (cycle.isCalendar ? 'Último día del mes' : 'Mañana te pagan') : cycle.isCalendar ? `Faltan ${daysLeft} días para fin de mes` : `Faltan ${daysLeft} días para tu pago`}</span>
+          </div>
+          <div className="relative grid grid-cols-2 gap-2 mt-3">
             <Link to="/finanzas" className="bg-white/[0.06] ring-1 ring-white/10 rounded-2xl px-3 py-2.5">
               <p className="text-[11px] text-white/80">Entró</p>
               <p className="text-white font-bold">{formatCOP(s.income)}</p>
@@ -172,7 +181,7 @@ export default function HomePage() {
             <Link to="/finanzas" className="bg-white/[0.06] ring-1 ring-white/10 rounded-2xl px-3 py-2.5">
               <p className="text-[11px] text-white/80">Salió</p>
               <p className="text-white font-bold">{formatCOP(s.expense)}</p>
-              <span className="flex items-center gap-1"><Delta pct={s.expenseDelta} /><span className="text-[10px] text-white/60">vs. {MON[prevDate.getMonth()]}</span></span>
+              <span className="flex items-center gap-1"><Delta pct={s.expenseDelta} /><span className="text-[10px] text-white/60">vs. {prevCycle.isCalendar ? prevCycle.short : 'ciclo ant.'}</span></span>
             </Link>
           </div>
         </motion.div>
@@ -180,17 +189,20 @@ export default function HomePage() {
         {/* 2. Indicadores */}
         <motion.div variants={item} className="grid grid-cols-3 gap-2">
           {[
-            { icon: Flame, label: 'Gastas al día', value: formatCOP(s.perDay), color: 'text-orange-300' },
-            { icon: TrendingUp, label: 'Así cierras el mes', value: formatCOP(s.projection), color: s.income && s.projection > s.income ? 'text-rose-300' : 'text-cyan-300' },
-            { icon: CalendarDays, label: 'Días para fin de mes', value: String(daysInMonth - dayOfMonth), color: 'text-violet-300' },
+            { icon: Flame, label: 'Gasto diario (sin fijos)', value: formatCOP(s.perDay), color: 'text-orange-300' },
+            { icon: TrendingUp, label: cycle.isCalendar ? 'Así cierras el mes' : 'Así cierras el ciclo', value: formatCOP(s.projection), color: s.income && s.projection > s.income ? 'text-rose-300' : 'text-cyan-300' },
+            { icon: CalendarDays, label: cycle.isCalendar ? 'Días para fin de mes' : 'Días para tu pago', value: String(daysLeft), color: 'text-violet-300' },
           ].map(k => (
-            <div key={k.label} className="bg-[#111827] border border-white/5 rounded-2xl p-3">
+            <div key={k.label} className="bg-surface border border-white/5 rounded-2xl p-3">
               <k.icon size={16} className={k.color} />
               <p className={`font-extrabold text-[15px] mt-1.5 ${k.color}`}>{k.value}</p>
               <p className="text-[10px] text-slate-400 leading-tight mt-0.5">{k.label}</p>
             </div>
           ))}
         </motion.div>
+
+        {/* Presupuestos por categoría */}
+        <BudgetsCard expenses={s.cur.filter(t => t.type === 'expense')} budgets={prefs.budgets} daysLeft={daysLeft} />
 
         {/* 3. Pagos del mes */}
         <Card data-tour="home-pagos">
@@ -252,7 +264,7 @@ export default function HomePage() {
 
         {/* 4. Tendencia */}
         <Card>
-          <Title icon={TrendingUp} color="from-cyan-500 to-blue-600">Tus gastos mes a mes</Title>
+          <Title icon={TrendingUp} color="from-cyan-500 to-blue-600">{cycle.isCalendar ? 'Tus gastos mes a mes' : 'Tus gastos por ciclo'}</Title>
           <div className="flex items-end gap-2 h-32" role="img" aria-label="Gastos de los últimos 6 meses">
             {s.months.map((m, i) => (
               <div key={m.label + i} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
@@ -264,7 +276,7 @@ export default function HomePage() {
             ))}
           </div>
           <p className="text-[11px] text-slate-400 mt-3">
-            {s.prevExpense > 0 ? <>El mes pasado gastaste <strong className="text-white">{formatCOP(s.prevExpense)}</strong>. A este ritmo cerrarías {MONTHS[now.getMonth()]} en <strong className="text-white">{formatCOP(s.projection)}</strong>.</> : 'Cuando tengas más de un mes de datos verás aquí cómo cambian tus gastos.'}
+            {s.prevExpense > 0 ? <>{cycle.isCalendar ? 'El mes pasado' : 'El ciclo pasado'} gastaste <strong className="text-white">{formatCOP(s.prevExpense)}</strong>. A este ritmo cerrarías {cycle.isCalendar ? cycle.label : 'este ciclo'} en <strong className="text-white">{formatCOP(s.projection)}</strong>.</> : 'Cuando tengas más de un mes de datos verás aquí cómo cambian tus gastos.'}
           </p>
         </Card>
 
@@ -312,7 +324,7 @@ export default function HomePage() {
 
         {/* 6. Mercado + Metas */}
         <motion.div variants={item} className="grid grid-cols-2 gap-3">
-          <Link to="/mercado" className="bg-[#111827] border border-white/5 rounded-[26px] p-4 block">
+          <Link to="/mercado" className="bg-surface border border-white/5 rounded-[26px] p-4 block">
             <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-lime-400 flex items-center justify-center"><ShoppingCart size={16} className="text-white" /></span>
             <p className="text-white font-bold text-sm mt-2">Mercado</p>
             {listTotal > 0 ? (
@@ -327,7 +339,7 @@ export default function HomePage() {
               </>
             ) : <p className="text-[11px] text-slate-400 mt-1">Arma tu primera lista</p>}
           </Link>
-          <Link to="/finanzas" className="bg-[#111827] border border-white/5 rounded-[26px] p-4 block">
+          <Link to="/finanzas" className="bg-surface border border-white/5 rounded-[26px] p-4 block">
             <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-500 flex items-center justify-center"><Target size={16} className="text-white" /></span>
             <p className="text-white font-bold text-sm mt-2">Metas</p>
             {goals.length ? goals.slice(0, 2).map(g => {
@@ -344,7 +356,7 @@ export default function HomePage() {
 
         {/* 7. Deudas + Salud */}
         <motion.div variants={item} className="grid grid-cols-2 gap-3">
-          <Link to="/pagos" className="bg-[#111827] border border-white/5 rounded-[26px] p-4 block">
+          <Link to="/pagos" className="bg-surface border border-white/5 rounded-[26px] p-4 block">
             <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center"><Landmark size={16} className="text-white" /></span>
             <p className="text-white font-bold text-sm mt-2">Créditos</p>
             {debts.length ? (
@@ -354,7 +366,7 @@ export default function HomePage() {
               </>
             ) : <p className="text-[11px] text-slate-400 mt-1">Sin créditos en cuotas</p>}
           </Link>
-          <div className="bg-[#111827] border border-white/5 rounded-[26px] p-4">
+          <div className="bg-surface border border-white/5 rounded-[26px] p-4">
             <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-400 flex items-center justify-center"><Gauge size={16} className="text-white" /></span>
             <p className="text-white font-bold text-sm mt-2">Salud financiera</p>
             <div className="flex items-baseline gap-1 mt-1"><span className="text-2xl font-extrabold" style={{ color: hColor }}>{health?.total ?? '—'}</span><span className="text-[10px] text-slate-500">/100</span></div>

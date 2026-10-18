@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ownerLabel } from '../../utils/prefs';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import MoneyInput from '../ui/MoneyInput';
@@ -11,9 +12,7 @@ interface Props {
   onClose: () => void;
 }
 
-const OWNERS: { id: Owner; label: string }[] = [
-  { id: 'yo', label: 'Yo' }, { id: 'pareja', label: 'Mi pareja' }, { id: 'compartido', label: 'Compartido' },
-];
+const owners = (): { id: Owner; label: string }[] => (['yo', 'pareja', 'compartido'] as const).map(id => ({ id, label: ownerLabel(id) }));
 
 export default function BillForm({ initial, onSave, onClose }: Props) {
   const [name, setName] = useState(initial?.name ?? '');
@@ -55,7 +54,7 @@ export default function BillForm({ initial, onSave, onClose }: Props) {
     <motion.div className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center"
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="bill-form-title"
-        className="w-full max-w-md bg-[#111827] border border-white/10 rounded-t-3xl sm:rounded-3xl p-5 pb-8 max-h-[92vh] overflow-y-auto"
+        className="w-full max-w-md bg-surface border border-white/10 rounded-t-3xl sm:rounded-3xl p-5 pb-8 max-h-[92vh] overflow-y-auto"
         initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }} transition={{ type: 'spring', damping: 24, stiffness: 260 }}>
         <div className="flex items-center justify-between mb-4">
           <h2 id="bill-form-title" className="text-white text-lg font-bold">{initial ? 'Editar pago' : 'Nuevo pago o deuda'}</h2>
@@ -105,7 +104,7 @@ export default function BillForm({ initial, onSave, onClose }: Props) {
 
           <div><span className={label}>¿De quién es?</span>
             <div className="grid grid-cols-3 gap-2">
-              {OWNERS.map(o => (
+              {owners().map(o => (
                 <button key={o.id} onClick={() => setOwner(o.id)}
                   className={`py-2 rounded-xl text-sm border transition-all ${owner === o.id ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300 font-semibold' : 'border-white/10 text-slate-300'}`}>{o.label}</button>
               ))}

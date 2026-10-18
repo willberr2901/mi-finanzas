@@ -18,7 +18,7 @@ export default function TermsModal({ onAccept }: { onAccept: () => void }) {
   return (
     <motion.div className="fixed inset-0 z-[150] bg-black/80 backdrop-blur-md flex items-end sm:items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <motion.div role="dialog" aria-modal="true" aria-labelledby="terms-title"
-        className="w-full max-w-md bg-[#0d1322] border border-white/10 rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[92vh]"
+        className="w-full max-w-md bg-surface2 border border-white/10 rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[92vh]"
         initial={{ y: 60 }} animate={{ y: 0 }} transition={{ type: 'spring', damping: 24, stiffness: 240 }}>
         <div className="p-5 pb-3 flex items-center gap-3 border-b border-white/5">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30"><ShieldCheck className="text-white" size={22} /></div>

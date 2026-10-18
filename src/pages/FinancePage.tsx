@@ -10,6 +10,7 @@ import { generateFinancialReport, availablePeriods, periodLabel } from '../servi
 import { triggerLocalRules, type RuleAlert } from '../services/financialIntelligence';
 
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, guessCategory, segmentOf, SEGMENT_INFO } from '../utils/categories';
+import { getPrefs, cycleFor, inCycle } from '../utils/prefs';
 import { usePageTour } from '../components/tour/Tour';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -189,10 +190,10 @@ export default function FinancePage() {
     return { progress: g.targetAmount > 0 ? (g.currentAmount / g.targetAmount) * 100 : 0, dailyNeed: remaining / daysLeft, daysLeft };
   };
 
-  const monthKey = todayISO().slice(0, 7);
+  const cycle = cycleFor(new Date(), getPrefs().payDay);
   const SEGS = ['obligatorio', 'necesario', 'gusto', 'ahorro'] as const;
   const monthSplit = transactions
-    .filter(t => t.type === 'expense' && (t.date || '').startsWith(monthKey))
+    .filter(t => t.type === 'expense' && inCycle(t.date, cycle))
     .reduce((acc, t) => { const seg = segmentOf('expense', t.category) as typeof SEGS[number]; acc[seg] = (acc[seg] || 0) + t.amount; return acc; }, { obligatorio: 0, necesario: 0, gusto: 0, ahorro: 0 } as Record<typeof SEGS[number], number>);
   const monthTotal = SEGS.reduce((s, k) => s + monthSplit[k], 0);
 
@@ -240,7 +241,7 @@ export default function FinancePage() {
           {monthTotal > 0 && (
             <div data-tour="fin-segments" className="bg-slate-900/50 p-4 rounded-2xl border border-white/5">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-slate-400">Gastos de este mes por segmento</p>
+                <p className="text-xs text-slate-400">{cycle.isCalendar ? 'Gastos de este mes por segmento' : `Gastos del ciclo (${cycle.label}) por segmento`}</p>
               </div>
               <div className="flex h-2.5 rounded-full overflow-hidden bg-slate-800">
                 {SEGS.map(k => <div key={k} className={`${SEGMENT_INFO[k].bar} transition-all duration-700`} style={{ width: `${(monthSplit[k] / monthTotal) * 100}%` }} />)}
@@ -368,7 +369,7 @@ export default function FinancePage() {
         {recurringAsk && (
           <motion.div className="fixed inset-0 z-[95] bg-black/70 backdrop-blur-sm flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setRecurringAsk(null)}>
             <motion.div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="rec-title"
-              className="w-full max-w-md bg-[#111827] border border-white/10 rounded-t-3xl p-6 pb-10" initial={{ y: 120 }} animate={{ y: 0 }} exit={{ y: 120 }} transition={{ type: 'spring', damping: 24, stiffness: 260 }}>
+              className="w-full max-w-md bg-surface border border-white/10 rounded-t-3xl p-6 pb-10" initial={{ y: 120 }} animate={{ y: 0 }} exit={{ y: 120 }} transition={{ type: 'spring', damping: 24, stiffness: 260 }}>
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-3 shadow-lg shadow-amber-500/30">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4M12 14v3"/></svg>
               </div>

@@ -11,7 +11,7 @@ export default function WhatsNew({ onClose }: { onClose: () => void }) {
   return (
     <motion.div className="fixed inset-0 z-[140] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.div role="dialog" aria-modal="true" aria-labelledby="whatsnew-title"
-        className="w-full max-w-sm bg-[#111827] border border-white/10 rounded-3xl p-6 relative overflow-hidden shadow-2xl"
+        className="w-full max-w-sm bg-surface border border-white/10 rounded-3xl p-6 relative overflow-hidden shadow-2xl"
         initial={{ y: 60, scale: 0.95 }} animate={{ y: 0, scale: 1 }} exit={{ y: 40, opacity: 0 }} transition={{ type: 'spring', damping: 20, stiffness: 240 }}>
         <div className="absolute -top-20 -right-16 w-52 h-52 bg-violet-600/25 rounded-full blur-3xl" aria-hidden="true" />
         <div className="relative text-center">

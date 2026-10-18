@@ -76,9 +76,36 @@ async function checkBills(force = false) {
   } as NotificationOptions);
 }
 
+// ---------- Recordatorio diario para anotar gastos ----------
+async function checkDaily() {
+  const cache = await caches.open('mf-meta');
+  const prefsRes = await cache.match(new Request('/__mf_prefs'));
+  if (!prefsRes) return;
+  let prefs: { reminder?: { enabled: boolean; time: string } } = {};
+  try { prefs = await prefsRes.json(); } catch { return; }
+  if (!prefs.reminder?.enabled) return;
+  const now = new Date();
+  const [h, m] = (prefs.reminder.time || '20:00').split(':').map(Number);
+  if (now.getHours() * 60 + now.getMinutes() < h * 60 + m) return;
+  const todayISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const key = new Request('/__mf_last_daily');
+  const prev = await cache.match(key);
+  if (prev && (await prev.text()) === todayISO) return;
+  const db = await openDB();
+  if (!db) return;
+  const txs = await readAll<{ date: string }>(db, 'transactions');
+  db.close();
+  await cache.put(key, new Response(todayISO));
+  if (txs.some(t => t.date === todayISO)) return;
+  await self.registration.showNotification('¿Ya anotaste los gastos de hoy?', {
+    body: 'Tómate un minuto y registra lo que gastaste. Así tu mes queda claro.',
+    icon: '/icon-192.png', badge: '/icon-192.png', tag: 'mf-diario', data: { url: '/' },
+  } as NotificationOptions);
+}
+
 // Revisión periódica (Chrome Android con la app instalada; el sistema decide la hora exacta).
 self.addEventListener('periodicsync', (event: any) => {
-  if (event.tag === 'mf-pagos') event.waitUntil(checkBills());
+  if (event.tag === 'mf-pagos') event.waitUntil(Promise.all([checkBills(), checkDaily()]));
 });
 
 // La app también puede pedir una revisión (por ejemplo, al abrirla o para probar).

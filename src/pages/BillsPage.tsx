@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ownerLabel } from '../utils/prefs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, ChevronLeft, ChevronRight, CalendarDays, Pencil, Trash2, Undo2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { db, type Bill, type Owner } from '../utils/database';
-import { loadBillStatuses, payBill, unpayBill, describeDue, OWNER_LABEL, periodOf, googleCalendarLink, buildICS, type BillStatus } from '../services/billsService';
+import { loadBillStatuses, payBill, unpayBill, describeDue, periodOf, googleCalendarLink, buildICS, type BillStatus } from '../services/billsService';
 import { formatCOP, todayISO } from '../utils/format';
 import { notify } from '../services/notificationService';
 import BillForm from '../components/bills/BillForm';
@@ -117,7 +118,7 @@ export default function BillsPage() {
   const row = (s: BillStatus, i: number) => (
     <motion.div key={s.bill.id} layout initial={s.bill.id === justAdded ? { opacity: 0, scale: 0.8, y: -20 } : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={s.bill.id === justAdded ? { type: 'spring', damping: 12, stiffness: 200 } : { delay: i * 0.04 }}
-      className={`bg-[#111827] border rounded-2xl p-3 flex items-center gap-3 ${s.bill.id === justAdded ? 'border-amber-400/70 shadow-lg shadow-amber-500/20' : 'border-white/5'}`}>
+      className={`bg-surface border rounded-2xl p-3 flex items-center gap-3 ${s.bill.id === justAdded ? 'border-amber-400/70 shadow-lg shadow-amber-500/20' : 'border-white/5'}`}>
       <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0 ${s.paid ? 'bg-emerald-500/15' : s.state === 'vencido' ? 'bg-red-500/15' : 'bg-white/5'}`}>
         <span className="text-[9px] text-slate-400 leading-none">{MONTHS[s.dueDate.getMonth()].slice(0, 3).toUpperCase()}</span>
         <span className="text-white font-bold text-base leading-none mt-0.5">{s.dueDate.getDate()}</span>
@@ -125,7 +126,7 @@ export default function BillsPage() {
       <div className="flex-1 min-w-0">
         <p className={`text-white font-medium text-sm truncate ${s.paid ? 'line-through opacity-60' : ''}`}>{s.bill.name}</p>
         <p className="text-[11px] text-slate-400 truncate">
-          <span className={STATE_STYLE[s.state].text}>{describeDue(s)}</span> · {OWNER_LABEL[s.bill.owner]}
+          <span className={STATE_STYLE[s.state].text}>{describeDue(s)}</span> · {ownerLabel(s.bill.owner)}
           {s.bill.kind === 'tarjeta' ? ' · Tarjeta' : ''}{s.bill.kind === 'deuda' && s.bill.totalInstallments ? ` · cuota ${(s.bill.paidInstallments ?? 0) + (s.paid ? 0 : 1)}/${s.bill.totalInstallments}` : ''}
         </p>
       </div>
@@ -145,7 +146,7 @@ export default function BillsPage() {
 
   return (
     <div className="space-y-5 pb-28">
-      <ModuleHeader module="pagos" title="Pagos y deudas" />
+      <ModuleHeader module="pagos" />
       <button data-tour="bills-add" onClick={() => { setEditing(null); setFormOpen(true); }}
         className="w-full -mt-2 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-black font-bold flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 active:scale-[0.98]">
         <Plus size={20} /> Agregar pago fijo o deuda
@@ -154,8 +155,8 @@ export default function BillsPage() {
       <div className="flex gap-2 overflow-x-auto no-scrollbar">
         {(['todos', 'yo', 'pareja', 'compartido'] as const).map(o => (
           <button key={o} onClick={() => setOwner(o)}
-            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${owner === o ? 'bg-white text-black font-bold' : 'bg-[#111827] text-slate-300 border border-white/10'}`}>
-            {o === 'todos' ? 'Todos' : OWNER_LABEL[o]}
+            className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all ${owner === o ? 'bg-brand-lime text-brand-ink font-bold' : 'bg-surface text-slate-300 border border-white/10'}`}>
+            {o === 'todos' ? 'Todos' : ownerLabel(o)}
           </button>
         ))}
       </div>
@@ -178,7 +179,7 @@ export default function BillsPage() {
       </div>
 
       {/* Calendario */}
-      <div data-tour="bills-calendar" className="bg-[#111827] border border-white/5 rounded-3xl p-4">
+      <div data-tour="bills-calendar" className="bg-surface border border-white/5 rounded-3xl p-4">
         <div className="flex items-center justify-between mb-3">
           <button onClick={() => changeMonth(-1)} aria-label="Mes anterior" className="p-2 text-slate-400 hover:text-white"><ChevronLeft size={18} /></button>
           <p className="text-white font-semibold flex items-center gap-2"><CalendarDays size={16} className="text-violet-400" />{MONTHS[month]} {year}</p>
@@ -247,7 +248,7 @@ export default function BillsPage() {
       ))}
 
       {statuses.length === 0 ? (
-        <div className="text-center py-10 bg-[#111827] border border-dashed border-white/10 rounded-3xl">
+        <div className="text-center py-10 bg-surface border border-dashed border-white/10 rounded-3xl">
           <CalendarDays className="mx-auto text-violet-400 mb-3" size={32} />
           <p className="text-white font-semibold">Agrega tu primer pago</p>
           <p className="text-slate-400 text-sm mt-1 px-6">Arriendo, servicios, tarjetas o créditos. Te avisamos antes de cada vencimiento.</p>
@@ -271,7 +272,7 @@ export default function BillsPage() {
             const tot = d.totalInstallments || 1, done = d.paidInstallments ?? 0;
             const p = Math.min(100, Math.round((done / tot) * 100));
             return (
-              <div key={d.id} className="bg-[#111827] border border-white/5 rounded-2xl p-4">
+              <div key={d.id} className="bg-surface border border-white/5 rounded-2xl p-4">
                 <div className="flex justify-between text-sm"><span className="text-white font-medium">{d.name}</span><span className="text-slate-300">{done} de {tot} cuotas</span></div>
                 <div className="h-2 bg-slate-800 rounded-full mt-2 overflow-hidden">
                   <motion.div className={`h-full rounded-full ${p >= 100 ? 'bg-emerald-400' : 'bg-gradient-to-r from-violet-500 to-cyan-400'}`} initial={{ width: 0 }} animate={{ width: `${p}%` }} transition={{ duration: 1 }} />
@@ -289,7 +290,7 @@ export default function BillsPage() {
         {paying && (
           <motion.div className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setPaying(null)}>
             <motion.div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="pay-title"
-              className="w-full max-w-md bg-[#111827] border border-white/10 rounded-t-3xl sm:rounded-3xl p-5 pb-8" initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }}>
+              className="w-full max-w-md bg-surface border border-white/10 rounded-t-3xl sm:rounded-3xl p-5 pb-8" initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }}>
               <h2 id="pay-title" className="text-white text-lg font-bold">Registrar pago</h2>
               <p className="text-slate-400 text-sm mb-4">{paying.bill.name} · ¿cuánto pagaste este mes?</p>
               <MoneyInput value={payAmount} onChange={setPayAmount} prefix className="input-modern w-full text-lg" ariaLabel="Valor pagado" />

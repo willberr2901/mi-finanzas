@@ -1,7 +1,8 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { db, type Transaction, type Bill, type BillPayment } from '../utils/database';
-import { statusFor, OWNER_LABEL, type BillStatus } from './billsService';
+import { statusFor, type BillStatus } from './billsService';
+import { ownerLabel } from '../utils/prefs';
 import { segmentOf, SEGMENT_INFO, type Segment } from '../utils/categories';
 import { getMarketHistory } from '../utils/marketHistory';
 import { parseLocalDate } from '../utils/format';
@@ -268,7 +269,7 @@ export const generateFinancialReport = async (period: string, format: 'pdf' | 'c
       startY: y,
       head: [['Pago', 'Tipo', 'Fecha de pago', 'Responsable', 'Valor', 'Estado']],
       body: statuses.map(s => [
-        s.bill.name, KIND_LABEL[s.bill.kind], `Día ${s.bill.dueDay} · ${shortDate(s.dueDate)}`, OWNER_LABEL[s.bill.owner] || '—',
+        s.bill.name, KIND_LABEL[s.bill.kind], `Día ${s.bill.dueDay} · ${shortDate(s.dueDate)}`, ownerLabel(s.bill.owner),
         money(s.payment?.amount ?? s.bill.amount) + (s.bill.kind === 'tarjeta' && !s.paid ? '*' : ''), stateLabel(s),
       ]),
       columnStyles: { 0: { fontStyle: 'bold' }, 4: { halign: 'right', fontStyle: 'bold' }, 5: { fontStyle: 'bold' } },
@@ -414,7 +415,7 @@ const exportCSV = (period: string, txs: Transaction[], statuses: BillStatus[]) =
   txs.forEach(t => lines.push([t.date, t.type === 'income' ? 'Ingreso' : 'Gasto', t.category, Math.round(t.amount), t.description || ''].map(csvCell).join(';')));
   if (statuses.length) {
     lines.push('', ['Pago', 'Tipo', 'Día de pago', 'Responsable', 'Valor', 'Estado'].map(csvCell).join(';'));
-    statuses.forEach(s => lines.push([s.bill.name, KIND_LABEL[s.bill.kind], s.bill.dueDay, OWNER_LABEL[s.bill.owner] || '', Math.round(s.payment?.amount ?? s.bill.amount), s.paid ? 'Pagado' : s.state === 'vencido' ? 'Vencido' : 'Pendiente'].map(csvCell).join(';')));
+    statuses.forEach(s => lines.push([s.bill.name, KIND_LABEL[s.bill.kind], s.bill.dueDay, ownerLabel(s.bill.owner), Math.round(s.payment?.amount ?? s.bill.amount), s.paid ? 'Pagado' : s.state === 'vencido' ? 'Vencido' : 'Pendiente'].map(csvCell).join(';')));
   }
   // BOM para que Excel muestre bien las tildes
   const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });

@@ -61,7 +61,7 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
           {open && (
             <motion.div className="fixed inset-0 z-[115] bg-black/70 backdrop-blur-sm flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
               <motion.div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Registro rápido"
-                className="w-full max-w-md bg-[#0d1322] border border-white/10 rounded-t-[32px] p-5 pb-10"
+                className="w-full max-w-md bg-surface2 border border-white/10 rounded-t-[32px] p-5 pb-10"
                 initial={{ y: 300 }} animate={{ y: 0 }} exit={{ y: 300 }} transition={{ type: 'spring', damping: 26, stiffness: 260 }}>
                 <div className="w-10 h-1.5 rounded-full bg-white/20 mx-auto mb-4" />
                 <div className="flex items-center justify-between mb-4">

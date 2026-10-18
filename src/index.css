@@ -2,17 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root, html.light .theme-dark {
+  --navy-50: 244 246 251;
+  --navy-100: 231 234 244;
+  --navy-200: 205 210 230;
+  --navy-300: 195 200 218;
+  --navy-400: 154 162 192;
+  --navy-500: 106 115 150;
+  --navy-600: 69 79 120;
+  --navy-700: 44 53 96;
+  --navy-800: 26 33 64;
+  --navy-900: 15 21 48;
+  --navy-950: 7 11 24;
+  --lime-50: 248 254 230;
+  --lime-100: 239 252 198;
+  --lime-200: 226 250 148;
+  --lime-300: 212 247 95;
+  --lime-400: 198 244 50;
+  --lime-500: 198 244 50;
+  --lime-600: 180 224 31;
+  --lime-700: 136 173 18;
+  --lime-800: 95 122 16;
+  --lime-900: 67 86 14;
+  --lime-950: 35 46 5;
+  --lgreen-50: 243 253 232;
+  --lgreen-100: 228 251 203;
+  --lgreen-200: 204 245 158;
+  --lgreen-300: 182 238 116;
+  --lgreen-400: 163 230 79;
+  --lgreen-500: 143 214 58;
+  --lgreen-600: 115 181 42;
+  --lgreen-700: 87 140 34;
+  --lgreen-800: 69 110 31;
+  --lgreen-900: 58 92 30;
+  --lgreen-950: 29 51 11;
+  --c-white: 255 255 255;
+  --c-surface: 17 24 39;
+  --c-surface2: 15 21 48;
+  --c-appbg: 7 11 20;
+  --accent-text: #C6F432;
+  --accent-text-2: #A3E64F;
   --bg-primary: #070B18;
   --bg-secondary: #0B1026;
   --bg-tertiary: #1A2140;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --accent-primary: #C6F432;
-  --accent-secondary: #A3E64F;
+  --text-primary: #F3F5FA;
+  --text-secondary: #9AA2C0;
   --border-subtle: rgba(255, 255, 255, 0.08);
   --glass-bg: rgba(15, 21, 48, 0.6);
   --glass-border: rgba(255, 255, 255, 0.1);
+  --accent-primary: #C6F432;
+  --accent-secondary: #A3E64F;
+  color-scheme: dark;
+}
+
+/* Tema claro: mismas clases, otros valores. Las tarjetas de marca (.theme-dark) siguen oscuras. */
+html.light {
+  --navy-50: 11 16 38;
+  --navy-100: 21 27 58;
+  --navy-200: 44 53 96;
+  --navy-300: 61 71 112;
+  --navy-400: 86 96 138;
+  --navy-500: 122 131 166;
+  --navy-600: 163 170 198;
+  --navy-700: 199 204 224;
+  --navy-800: 228 231 241;
+  --navy-900: 238 240 247;
+  --navy-950: 246 247 251;
+  --lime-50: 26 38 6;
+  --lime-100: 42 61 10;
+  --lime-200: 54 83 20;
+  --lime-300: 63 98 18;
+  --lime-400: 101 163 13;
+  --lime-500: 198 244 50;
+  --lime-600: 180 224 31;
+  --lime-700: 198 244 50;
+  --lime-800: 236 252 203;
+  --lime-900: 247 254 231;
+  --lime-950: 251 255 240;
+  --lgreen-50: 20 41 10;
+  --lgreen-100: 29 58 15;
+  --lgreen-200: 45 80 22;
+  --lgreen-300: 63 110 28;
+  --lgreen-400: 77 138 34;
+  --lgreen-500: 143 214 58;
+  --lgreen-600: 115 181 42;
+  --lgreen-700: 163 230 79;
+  --lgreen-800: 228 251 203;
+  --lgreen-900: 243 253 232;
+  --lgreen-950: 248 254 242;
+  --c-white: 15 21 48;
+  --c-surface: 255 255 255;
+  --c-surface2: 255 255 255;
+  --c-appbg: 242 244 250;
+  --accent-text: #4D7C0F;
+  --accent-text-2: #65A30D;
+  --bg-primary: #F2F4FA;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #EEF1F8;
+  --text-primary: #0F1530;
+  --text-secondary: #56608A;
+  --border-subtle: rgba(15, 21, 48, 0.10);
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(15, 21, 48, 0.08);
+  --accent-primary: #C6F432;
+  --accent-secondary: #65A30D;
+  color-scheme: light;
 }
 
 @layer base {
@@ -42,3 +136,26 @@
 
 img, svg { max-width: 100%; height: auto; }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+/* ───── Tema claro: ajustes de contraste ───── */
+html.light .text-brand-lime { color: #4D7C0F; }
+html.light .stroke-brand-lime { stroke: #65A30D; }
+html.light .text-rose-300, html.light .text-red-300, html.light .text-red-400 { color: #BE123C; }
+html.light .text-amber-300, html.light .text-orange-300, html.light .text-yellow-300 { color: #B45309; }
+html.light .text-pink-300 { color: #BE185D; }
+html.light .text-blue-300, html.light .text-sky-300 { color: #1D4ED8; }
+html.light .text-teal-200, html.light .text-teal-300 { color: #0F766E; }
+html.light .text-\[\#A9B2DA\] { color: #4C5A9C; }
+html.light .bg-surface, html.light .bg-surface2 { box-shadow: 0 1px 2px rgba(15, 21, 48, 0.05), 0 8px 24px -16px rgba(15, 21, 48, 0.18); }
+/* Dentro de las tarjetas de marca vuelven los colores originales */
+html.light .theme-dark .text-brand-lime { color: #C6F432; }
+html.light .theme-dark .stroke-brand-lime { stroke: #C6F432; }
+html.light .theme-dark .text-rose-300 { color: #fda4af; }
+html.light .theme-dark .text-amber-300 { color: #fcd34d; }
+
+/* Muestras del selector de tema */
+.theme-swatch-dark { background: #0B1026; }
+.theme-swatch-dark .swatch-line { background: rgba(255,255,255,.25); }
+.theme-swatch-light { background: #F2F4FA; border: 1px solid rgba(15,21,48,.08); }
+.theme-swatch-light .swatch-line { background: rgba(15,21,48,.18); }
+.theme-swatch-auto { background: linear-gradient(135deg, #0B1026 50%, #F2F4FA 50%); }
+.theme-swatch-auto .swatch-line { background: rgba(128,136,170,.45); }

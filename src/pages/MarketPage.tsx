@@ -124,7 +124,7 @@ export default function MarketPage() {
         initial={fresh ? { opacity: 0, y: -40, scale: 0.85 } : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, x: -120, transition: { duration: 0.2 } }}
         transition={{ type: 'spring', damping: 20, stiffness: 260 }}
         drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={{ left: 0.6, right: 0 }} onDragEnd={(_, info) => { if (info.offset.x < -110) remove(i.id); }}
-        className={`relative flex items-center gap-3 p-3 rounded-2xl border ${i.purchased ? 'bg-emerald-500/[0.06] border-emerald-500/20' : 'bg-[#111827] border-white/5'} ${fresh ? 'ring-2 ring-emerald-400/50' : ''}`}>
+        className={`relative flex items-center gap-3 p-3 rounded-2xl border ${i.purchased ? 'bg-emerald-500/[0.06] border-emerald-500/20' : 'bg-surface border-white/5'} ${fresh ? 'ring-2 ring-emerald-400/50' : ''}`}>
         <motion.button whileTap={{ scale: 0.8 }} onClick={() => toggle(i.id)} aria-label={i.purchased ? `Sacar ${i.name} del carrito` : `Echar ${i.name} al carrito`}
           className={`w-9 h-9 shrink-0 rounded-xl border-2 flex items-center justify-center transition-colors ${i.purchased ? 'bg-emerald-500 border-emerald-500' : 'border-slate-600'}`}>
           <AnimatePresence>{i.purchased && <motion.span initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0 }}><Check size={18} className="text-black" strokeWidth={3} /></motion.span>}</AnimatePresence>
@@ -196,7 +196,7 @@ export default function MarketPage() {
 
       {/* Agregar producto */}
       <motion.div data-tour="mk-composer" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}
-        className="mt-4 bg-[#111827] border border-white/10 rounded-[28px] p-4 shadow-xl shadow-black/30">
+        className="mt-4 bg-surface border border-white/10 rounded-[28px] p-4 shadow-xl shadow-black/30">
         <div className="flex items-center justify-between mb-2">
           <p className="text-white font-bold">{editingId ? 'Editar producto' : '¿Qué vas a comprar?'}</p>
           {editingId && <button onClick={resetComposer} className="text-xs text-slate-400 flex items-center gap-1"><X size={12} /> Cancelar</button>}
@@ -278,7 +278,7 @@ export default function MarketPage() {
       <AnimatePresence>
         {items.length > 0 && (
           <motion.div data-tour="mk-finish" initial={{ y: 120 }} animate={{ y: 0 }} exit={{ y: 120 }} transition={{ type: 'spring', damping: 24 }}
-            className="fixed bottom-4 inset-x-4 max-w-md mx-auto z-40 bg-[#0d1322]/95 backdrop-blur-xl border border-emerald-400/30 rounded-3xl p-3 flex items-center gap-3 shadow-2xl shadow-black/60">
+            className="fixed bottom-4 inset-x-4 max-w-md mx-auto z-40 bg-surface2/95 backdrop-blur-xl border border-emerald-400/30 rounded-3xl p-3 flex items-center gap-3 shadow-2xl shadow-black/60">
             <div className="flex-1 pl-2">
               <p className="text-[11px] text-slate-400">{inCart.length ? `En el carrito (${inCart.length})` : 'Total de la lista'}</p>
               <motion.p key={inCart.length ? cartTotal : total} initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-white font-extrabold text-xl">{formatCOP(inCart.length ? cartTotal : total)}</motion.p>
@@ -294,7 +294,7 @@ export default function MarketPage() {
       <AnimatePresence>
         {celebrate !== null && (
           <motion.div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/60 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setCelebrate(null)}>
-            <motion.div initial={{ scale: 0.6, rotate: -6 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', damping: 12 }} className="bg-[#111827] border border-emerald-400/40 rounded-[32px] p-8 text-center mx-6">
+            <motion.div initial={{ scale: 0.6, rotate: -6 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', damping: 12 }} className="bg-surface border border-emerald-400/40 rounded-[32px] p-8 text-center mx-6">
               <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1.3, 1] }} transition={{ delay: 0.15 }} className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-emerald-400 to-lime-400 flex items-center justify-center">
                 <Check size={42} className="text-black" strokeWidth={3} />
               </motion.div>
