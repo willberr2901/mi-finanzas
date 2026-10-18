@@ -47,6 +47,8 @@ export function InstagramMoment() {
     window.addEventListener('mf:ig-moment', on);
     return () => window.removeEventListener('mf:ig-moment', on);
   }, []);
+  // Se cierra sola a los 12 segundos para no tapar la pantalla.
+  useEffect(() => { if (!title) return; const t = setTimeout(() => setTitle(null), 12000); return () => clearTimeout(t); }, [title]);
   const follow = () => { openInstagram(); try { localStorage.setItem('mf_ig_followed', '1'); } catch { /* sin almacenamiento */ } setTitle(null); };
 
   return (
