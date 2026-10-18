@@ -24,14 +24,32 @@ const lazyWithRetry = (factory: () => Promise<{ default: React.ComponentType<any
     if (!sessionStorage.getItem('chunkReload')) { sessionStorage.setItem('chunkReload', '1'); window.location.reload(); }
     throw err;
   }));
-const HomePage = lazyWithRetry(() => import('./pages/HomePage'));
-const MarketPage = lazyWithRetry(() => import('./pages/MarketPage'));
-const ReceiptScannerPage = lazyWithRetry(() => import('./pages/ReceiptScannerPage'));
-const SettingsPage = lazyWithRetry(() => import('./pages/SettingsPage'));
-const ReceiptHistoryPage = lazyWithRetry(() => import('./pages/ReceiptHistoryPage'));
-const FinancePage = lazyWithRetry(() => import('./pages/FinancePage'));
-const BillsPage = lazyWithRetry(() => import('./pages/BillsPage'));
-const LegalPage = lazyWithRetry(() => import('./pages/LegalPage'));
+const loaders = {
+  home: () => import('./pages/HomePage'),
+  market: () => import('./pages/MarketPage'),
+  scanner: () => import('./pages/ReceiptScannerPage'),
+  settings: () => import('./pages/SettingsPage'),
+  history: () => import('./pages/ReceiptHistoryPage'),
+  finance: () => import('./pages/FinancePage'),
+  bills: () => import('./pages/BillsPage'),
+  legal: () => import('./pages/LegalPage'),
+};
+const HomePage = lazyWithRetry(loaders.home);
+const MarketPage = lazyWithRetry(loaders.market);
+const ReceiptScannerPage = lazyWithRetry(loaders.scanner);
+const SettingsPage = lazyWithRetry(loaders.settings);
+const ReceiptHistoryPage = lazyWithRetry(loaders.history);
+const FinancePage = lazyWithRetry(loaders.finance);
+const BillsPage = lazyWithRetry(loaders.bills);
+const LegalPage = lazyWithRetry(loaders.legal);
+
+/** Deja todas las pantallas cargadas en segundo plano: así abrir Ajustes u otro módulo
+ *  es instantáneo y no depende de archivos que una actualización pudo reemplazar. */
+const preloadPages = () => {
+  const run = () => Object.values(loaders).forEach(load => load().catch(() => {}));
+  const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
+  if (w.requestIdleCallback) w.requestIdleCallback(run); else setTimeout(run, 1500);
+};
 
 /** Reclasifica una sola vez los gastos viejos con la nueva clasificación automática. */
 const reclassifyOnce = async () => {
@@ -55,7 +73,10 @@ const reclassifyOnce = async () => {
 
 function AppContent() {
   const [firstTime] = useState(() => !localStorage.getItem('miFinanzasWelcomeDone'));
-  const [showWelcome, setShowWelcome] = useState(true);
+  // La bienvenida sale una vez por sesión (no cada vez que la app se recarga sola).
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try { return firstTime || !sessionStorage.getItem('mf_welcomed'); } catch { return true; }
+  });
   const [showTerms, setShowTerms] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -65,11 +86,13 @@ function AppContent() {
   useEffect(() => {
     migrateData().then(() => db.settings.update('global', { onboardingCompleted: true })).catch(() => {});
     reclassifyOnce();
+    preloadPages();
     // Quien instala por primera vez no necesita ver "novedades".
     if (firstTime) markWhatsNewSeen();
   }, [firstTime]);
 
   const afterWelcome = useCallback(() => {
+    try { sessionStorage.setItem('mf_welcomed', '1'); } catch { /* sin almacenamiento de sesión */ }
     setShowWelcome(false);
     if (!termsAccepted()) setShowTerms(true);
     else if (shouldShowWhatsNew()) setShowWhatsNew(true);
@@ -107,7 +130,7 @@ function AppContent() {
           </AnimatePresence>
         </main>
 
-        <QuickAdd hidden={location.pathname === '/mercado' || location.pathname === '/legal'} />
+        <QuickAdd hidden={['/mercado', '/legal', '/escaner'].includes(location.pathname)} />
         <SidebarMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
         <UpdateManager />
         <ToastProvider />

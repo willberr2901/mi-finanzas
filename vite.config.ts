@@ -39,7 +39,7 @@ export default defineConfig({
       filename: 'sw.ts',
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
-        globIgnores: ['**/version.json'],
+        globIgnores: ['**/version.json', '**/ocr/**'],
       }
     })
   ],

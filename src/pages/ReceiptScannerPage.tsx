@@ -1,357 +1,249 @@
-import { useState, useRef } from 'react';
-import { Camera, Upload, Scan, FileText, Check, X } from 'lucide-react';
-import { useTheme } from '../contexts/ThemeContext';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Camera, ImagePlus, ScanLine, Check, X, Trash2, Plus, Store, CalendarDays, ShieldCheck, FileText, ChevronRight, RotateCcw } from 'lucide-react';
+import ModuleHeader from '../components/ui/ModuleHeader';
+import MoneyInput from '../components/ui/MoneyInput';
+import { usePageTour } from '../components/tour/Tour';
+import { scanReceipt, type ScannedItem } from '../services/ocrService';
+import { secureStorage } from '../utils/security';
+import { db } from '../utils/database';
+import { formatCOP, todayISO } from '../utils/format';
+import { EXPENSE_CATEGORIES, guessCategory } from '../utils/categories';
 import { notify } from '../services/notificationService';
 
-interface Receipt {
+interface Invoice {
   id: string;
+  store: string;
   date: string;
   total: number;
-  store: string;
-  itemCount: number;
-  imageUrl?: string;
+  products: { name: string; price: number; quantity: number }[];
+  isValid?: boolean;
 }
 
+type Step = 'idle' | 'reading' | 'review' | 'done';
+
+const loadInvoices = (): Invoice[] => {
+  const saved = secureStorage.getItem('miFinanzasInvoices');
+  return Array.isArray(saved) ? saved : [];
+};
+
 export default function ReceiptScannerPage() {
-  const { theme } = useTheme();
-  const [scanning, setScanning] = useState(false);
-  const [scannedData, setScannedData] = useState<Receipt | null>(null);
-  const [receipts, setReceipts] = useState<Receipt[]>(() => {
-    // Cargar desde localStorage al iniciar
-    const saved = localStorage.getItem('scannedReceipts');
-    return saved ? JSON.parse(saved) : [];
-  });
-  
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const uploadInputRef = useRef<HTMLInputElement>(null);
+  const [step, setStep] = useState<Step>('idle');
+  const [progress, setProgress] = useState(0);
+  const [stage, setStage] = useState('');
+  const [preview, setPreview] = useState<string | null>(null);
+  const [store, setStore] = useState('');
+  const [date, setDate] = useState(todayISO());
+  const [total, setTotal] = useState(0);
+  const [items, setItems] = useState<ScannedItem[]>([]);
+  const [category, setCategory] = useState('Mercado');
+  const [recent, setRecent] = useState<Invoice[]>(loadInvoices);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
 
-  const isDark = theme === 'dark';
-  const bgCard = isDark ? 'bg-white/5' : 'bg-white';
-  const textPrimary = isDark ? 'text-white' : 'text-gray-900';
-  const textSecondary = isDark ? 'text-gray-400' : 'text-gray-600';
-  const borderColor = isDark ? 'border-white/10' : 'border-gray-200';
+  usePageTour('escaner', [
+    { target: 'scan-actions', title: 'Escanea una factura', text: 'Toma una foto o sube una imagen de la factura. La app lee la tienda, la fecha, los productos y el total.' },
+    { target: 'scan-privacy', title: 'Todo en tu celular', text: 'La foto se lee dentro de tu celular y no se guarda. Solo guardas los datos que tú confirmes.' },
+  ]);
 
-  // Guardar en localStorage cuando cambie receipts
-  const saveReceipts = (newReceipts: Receipt[]) => {
-    setReceipts(newReceipts);
-    localStorage.setItem('scannedReceipts', JSON.stringify(newReceipts));
+  // La vista previa de la foto se libera al salir para no dejar nada en memoria.
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+
+  const reset = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null); setStep('idle'); setProgress(0); setItems([]); setTotal(0); setStore(''); setDate(todayISO());
   };
 
-  // Solicitar permisos y abrir cámara
-  const requestCameraPermission = async () => {
-    try {
-      // Verificar si el navegador soporta permisos de cámara
-      if ('permissions' in navigator) {
-        const permissionStatus = await navigator.permissions.query({ 
-          name: 'camera' as PermissionName 
-        });
-        
-        if (permissionStatus.state === 'denied') {
-          alert('❌ Permiso de cámara denegado. Por favor, habilita los permisos en la configuración de tu navegador.');
-          return false;
-        }
-      }
-      
-      // Abrir input de cámara
-      cameraInputRef.current?.click();
-      return true;
-    } catch (error) {
-      console.error('Error solicitando permiso:', error);
-      cameraInputRef.current?.click();
-      return true;
-    }
-  };
-
-  // Solicitar permisos y abrir galería
-  const requestGalleryPermission = async () => {
-    try {
-      if ('permissions' in navigator) {
-        const permissionStatus = await navigator.permissions.query({ 
-          name: 'storage' as PermissionName 
-        });
-        
-        if (permissionStatus.state === 'denied') {
-          alert('❌ Permiso de almacenamiento denegado. Por favor, habilita los permisos en la configuración.');
-          return false;
-        }
-      }
-      
-      uploadInputRef.current?.click();
-      return true;
-    } catch (error) {
-      console.error('Error solicitando permiso:', error);
-      uploadInputRef.current?.click();
-      return true;
-    }
-  };
-
-  // Procesar archivo seleccionado
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>, type: 'camera' | 'upload') => {
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Verificar que sea una imagen
-    if (!file.type.startsWith('image/')) {
-      notify({ 
-        title: '❌ Error', 
-        message: 'Por favor selecciona un archivo de imagen válido', 
-        type: 'error' 
-      });
-      return;
-    }
-
-    setScanning(true);
-    
-    try {
-      // Crear URL temporal para la imagen
-      const imageUrl = URL.createObjectURL(file);
-      
-      // Simular procesamiento OCR (2-3 segundos)
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      
-      // Generar datos simulados basados en el nombre del archivo
-      const randomTotal = Math.floor(Math.random() * 150000) + 30000;
-      const randomItems = Math.floor(Math.random() * 15) + 3;
-      
-      const newReceipt: Receipt = {
-        id: Date.now().toString(),
-        date: new Date().toISOString(),
-        total: randomTotal,
-        store: type === 'camera' ? 'Foto Reciente' : file.name.replace(/\.[^/.]+$/, ""),
-        itemCount: randomItems,
-        imageUrl: imageUrl
-      };
-
-      setScannedData(newReceipt);
-      setScanning(false);
-      
-      notify({ 
-        title: '✅ Factura escaneada', 
-        message: `Se detectaron ${randomItems} productos. Total: $${randomTotal.toLocaleString('es-CO')}`, 
-        type: 'success',
-        duration: 3000
-      });
-
-    } catch (error) {
-      console.error('Error procesando imagen:', error);
-      setScanning(false);
-      notify({ 
-        title: '❌ Error', 
-        message: 'No se pudo procesar la imagen. Intenta de nuevo.', 
-        type: 'error' 
-      });
-    }
-
-    // Limpiar input
     e.target.value = '';
-  };
-
-  // Registrar en historial
-  const registerToHistory = () => {
-    if (scannedData) {
-      saveReceipts([scannedData, ...receipts]);
-      notify({ 
-        title: '📋 Registrada', 
-        message: 'Factura guardada en el historial', 
-        type: 'success' 
-      });
-      setScannedData(null);
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { notify({ title: 'Ese archivo no es una imagen', message: 'Elige una foto de la factura.', type: 'warning' }); return; }
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(URL.createObjectURL(file));
+    setStep('reading'); setProgress(2); setStage('Preparando la foto');
+    try {
+      const r = await scanReceipt(file, (p, s) => { setProgress(p); setStage(s); });
+      setStore(r.store === 'Factura' ? '' : r.store);
+      setDate(r.date || todayISO());
+      setItems(r.items);
+      setTotal(r.total);
+      setCategory(guessCategory(r.store) || 'Mercado');
+      setStep('review');
+      if (!r.total && !r.items.length) notify({ title: 'No se pudo leer bien', message: 'Escribe el total a mano o intenta con una foto más nítida y derecha.', type: 'warning' });
+    } catch {
+      setStep('idle');
+      notify({ title: 'No se pudo leer la factura', message: 'Revisa tu conexión la primera vez (se descarga el lector) e intenta con buena luz.', type: 'error' });
     }
   };
 
-  // Escanear otra
-  const scanAnother = () => {
-    setScannedData(null);
-  };
+  const updateItem = (i: number, patch: Partial<ScannedItem>) => setItems(list => list.map((it, j) => (j === i ? { ...it, ...patch } : it)));
+  const removeItem = (i: number) => setItems(list => list.filter((_, j) => j !== i));
+  const addItem = () => setItems(list => [...list, { name: '', price: 0, quantity: 1 }]);
+  const itemsSum = items.reduce((a, it) => a + it.price, 0);
 
-  // Eliminar del historial
-  const deleteReceipt = (id: string) => {
-    const receipt = receipts.find(r => r.id === id);
-    if (receipt?.imageUrl) {
-      URL.revokeObjectURL(receipt.imageUrl);
+  const save = async (asExpense: boolean) => {
+    if (total <= 0) { notify({ title: 'Falta el total', message: 'Escribe el valor total de la factura.', type: 'warning' }); return; }
+    const name = store.trim() || 'Factura';
+    const invoice: Invoice = {
+      id: crypto.randomUUID(), store: name, date, total,
+      products: items.filter(i => i.name.trim() && i.price > 0).map(i => ({ name: i.name.trim(), price: i.price, quantity: i.quantity || 1 })),
+      isValid: true,
+    };
+    const list = [invoice, ...loadInvoices()].slice(0, 100);
+    secureStorage.setItem('miFinanzasInvoices', list);
+    setRecent(list);
+    if (asExpense) {
+      await db.transactions.add({ id: crypto.randomUUID(), date, type: 'expense', amount: total, category, description: `Factura ${name}`, createdAt: Date.now() });
+      window.dispatchEvent(new Event('mf:data-changed'));
     }
-    saveReceipts(receipts.filter(r => r.id !== id));
-    notify({ 
-      title: '🗑️ Eliminada', 
-      message: 'Factura eliminada del historial', 
-      type: 'info' 
-    });
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-CO', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
-    });
-  };
-
-  const formatMoney = (amount: number) => {
-    return amount.toLocaleString('es-CO', { 
-      style: 'currency', 
-      currency: 'COP',
-      minimumFractionDigits: 0 
-    });
+    notify({ title: asExpense ? 'Gasto registrado' : 'Factura guardada', message: `${name}: ${formatCOP(total)}`, type: 'success' });
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(null);
+    setStep('done');
   };
 
   return (
-    <div className={`min-h-screen pb-24 ${isDark ? '' : 'bg-gray-50'}`}>
-      {/* Inputs ocultos con permisos */}
-      <input
-        type="file"
-        accept="image/*"
-        capture="environment"
-        ref={cameraInputRef}
-        className="hidden"
-        onChange={(e) => handleFileSelect(e, 'camera')}
-      />
-      <input
-        type="file"
-        accept="image/*"
-        ref={uploadInputRef}
-        className="hidden"
-        onChange={(e) => handleFileSelect(e, 'upload')}
-      />
+    <div className="p-4 pb-28 space-y-4">
+      <ModuleHeader module="escaner" />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
+      <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
 
-      {/* Header */}
-      <div className={`${bgCard} backdrop-blur-md border-b ${borderColor} px-4 py-3`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🧾</span>
-            <div>
-              <h1 className={`text-base font-bold ${textPrimary}`}>Escáner de Facturas</h1>
-              <p className={`text-[10px] ${textSecondary}`}>OCR Inteligente</p>
+      <AnimatePresence mode="wait">
+        {step === 'idle' && (
+          <motion.div key="idle" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="space-y-4">
+            <div className="relative overflow-hidden rounded-[28px] p-5 bg-gradient-to-br from-[#232C5A] via-[#141B3D] to-[#0B1026] ring-1 ring-lime-300/20">
+              <motion.div className="absolute -top-16 -right-12 w-48 h-48 rounded-full bg-lime-300/15 blur-3xl" animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 5, repeat: Infinity }} aria-hidden="true" />
+              <div className="relative flex items-center gap-4">
+                <div className="relative w-16 h-16 shrink-0 rounded-2xl bg-white/5 ring-1 ring-white/10 flex items-center justify-center overflow-hidden">
+                  <ScanLine className="text-brand-lime" size={30} />
+                  <motion.span className="absolute left-2 right-2 h-0.5 bg-brand-lime/80 rounded-full shadow-[0_0_12px_#C6F432]" animate={{ top: ['18%', '82%', '18%'] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }} />
+                </div>
+                <div>
+                  <p className="text-white font-bold">Escanea tu factura</p>
+                  <p className="text-xs text-slate-300 mt-0.5">La app lee la tienda, la fecha, los productos y el total. Tú revisas y guardas.</p>
+                </div>
+              </div>
+              <div data-tour="scan-actions" className="relative grid grid-cols-2 gap-3 mt-5">
+                <button onClick={() => cameraRef.current?.click()} className="btn-primary !px-3 flex items-center justify-center gap-2"><Camera size={18} /> Tomar foto</button>
+                <button onClick={() => galleryRef.current?.click()} className="py-3 rounded-xl bg-white/[0.07] ring-1 ring-white/10 text-white font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"><ImagePlus size={18} /> Subir imagen</button>
+              </div>
             </div>
-          </div>
-          <Link to="/historial-facturas" className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
-            <FileText className={`w-5 h-5 ${isDark ? 'text-white' : 'text-gray-700'}`} />
-          </Link>
-        </div>
-      </div>
 
-      <div className="p-3 space-y-4">
-        {/* Zona de Escaneo */}
-        <div className={`${bgCard} backdrop-blur-md rounded-xl border ${borderColor} p-6`}>
-          {scanning ? (
-            <div className="text-center space-y-4 py-8">
-              <div className="relative w-24 h-24 mx-auto">
-                <div className="absolute inset-0 border-4 border-purple-500 rounded-xl animate-pulse"></div>
-                <div className="absolute inset-2 border-4 border-t-cyan-400 border-r-transparent border-b-transparent border-l-transparent rounded-lg animate-spin"></div>
-                <Scan className="w-12 h-12 text-purple-400 absolute inset-0 m-auto" />
+            <div data-tour="scan-privacy" className="flex items-start gap-3 rounded-2xl bg-white/[0.04] ring-1 ring-white/10 p-3.5">
+              <ShieldCheck className="text-brand-lime shrink-0 mt-0.5" size={18} />
+              <p className="text-xs text-slate-300">La foto se lee dentro de tu celular y no se guarda. Para mejores resultados: buena luz, factura derecha y completa.</p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Últimas facturas</p>
+                <Link to="/historial-facturas" className="text-xs text-slate-300 font-semibold flex items-center">Ver todas <ChevronRight size={14} /></Link>
+              </div>
+              {recent.length === 0 ? (
+                <div className="rounded-2xl bg-white/[0.04] ring-1 ring-white/10 p-6 text-center">
+                  <FileText className="mx-auto text-slate-500" size={30} />
+                  <p className="text-sm text-slate-400 mt-2">Aún no has escaneado facturas.</p>
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-white/[0.04] ring-1 ring-white/10 divide-y divide-white/5">
+                  {recent.slice(0, 4).map(inv => (
+                    <div key={inv.id} className="flex items-center gap-3 px-4 py-3">
+                      <span className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center"><FileText size={16} className="text-brand-lime" /></span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-white font-semibold truncate">{inv.store}</p>
+                        <p className="text-[11px] text-slate-400">{inv.date} · {inv.products.length} productos</p>
+                      </div>
+                      <p className="text-sm font-bold text-white">{formatCOP(inv.total)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {step === 'reading' && (
+          <motion.div key="reading" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="rounded-[28px] p-5 bg-white/[0.04] ring-1 ring-white/10 text-center">
+            <div className="relative mx-auto w-44 h-56 rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black/30">
+              {preview && <img src={preview} alt="Factura" className="w-full h-full object-cover opacity-70" />}
+              <motion.span className="absolute left-0 right-0 h-1 bg-brand-lime shadow-[0_0_18px_#C6F432]" animate={{ top: ['4%', '94%', '4%'] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }} />
+            </div>
+            <p className="text-white font-bold mt-5">{stage}…</p>
+            <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">
+              <motion.div className="h-full bg-brand-lime rounded-full" animate={{ width: `${progress}%` }} transition={{ ease: 'easeOut' }} />
+            </div>
+            <p className="text-xs text-slate-400 mt-2">{progress}% · se procesa en tu celular</p>
+            <button onClick={reset} className="mt-4 text-xs text-slate-300 underline">Cancelar</button>
+          </motion.div>
+        )}
+
+        {step === 'review' && (
+          <motion.div key="review" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+            <div className="rounded-[24px] p-4 bg-white/[0.04] ring-1 ring-white/10 space-y-3">
+              <p className="text-white font-bold">Revisa lo que leímos</p>
+              <label className="flex items-center gap-2 input-modern !py-2.5">
+                <Store size={16} className="text-slate-400 shrink-0" />
+                <input value={store} onChange={e => setStore(e.target.value)} placeholder="Tienda (ej: D1, Éxito)" className="bg-transparent outline-none flex-1 text-white" maxLength={40} />
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="flex items-center gap-2 input-modern !py-2.5">
+                  <CalendarDays size={16} className="text-slate-400 shrink-0" />
+                  <input type="date" value={date} onChange={e => setDate(e.target.value)} className="bg-transparent outline-none flex-1 text-white min-w-0" />
+                </label>
+                <select value={category} onChange={e => setCategory(e.target.value)} className="input-modern !py-2.5">
+                  {EXPENSE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
               </div>
               <div>
-                <p className={`text-sm font-medium ${textPrimary} mb-1`}>Escaneando factura...</p>
-                <p className={`text-xs ${textSecondary}`}>Detectando productos y precios</p>
+                <p className="text-xs text-slate-400 mb-1">Total de la factura</p>
+                <MoneyInput value={total} onChange={setTotal} prefix ariaLabel="Total de la factura" className="input-modern !text-2xl !font-extrabold !text-brand-lime" />
+                {items.length > 0 && Math.abs(itemsSum - total) > 1 && (
+                  <button onClick={() => setTotal(itemsSum)} className="mt-1.5 text-[11px] text-slate-300 underline">Usar la suma de productos: {formatCOP(itemsSum)}</button>
+                )}
               </div>
             </div>
-          ) : scannedData ? (
-            <div className="space-y-4">
-              <div className={`${isDark ? 'bg-green-500/10 border-green-500/20' : 'bg-green-50 border-green-200'} border rounded-xl p-6 text-center`}>
-                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Check className="w-8 h-8 text-white" />
-                </div>
-                <h3 className={`text-lg font-bold ${textPrimary} mb-2`}>¡Factura escaneada con éxito!</h3>
-                <p className={`text-sm ${textSecondary} mb-1`}>{scannedData.itemCount} productos detectados</p>
-                <p className={`text-2xl font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                  {formatMoney(scannedData.total)}
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <button 
-                  onClick={registerToHistory}
-                  className="bg-gradient-to-r from-green-400 to-cyan-400 text-black font-bold py-3 rounded-xl text-sm hover:scale-105 transition-transform"
-                >
-                  Registrar en Historial
-                </button>
-                <button 
-                  onClick={scanAnother}
-                  className={`${isDark ? 'bg-white/10 text-white' : 'bg-gray-200 text-gray-900'} font-bold py-3 rounded-xl text-sm hover:scale-105 transition-transform`}
-                >
-                  Escanear otra
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center">
-              <div className="w-20 h-20 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                <Scan className="w-10 h-10 text-purple-400" />
-              </div>
-              <h3 className={`text-sm font-bold ${textPrimary} mb-1`}>Toma una foto a tu factura</h3>
-              <p className={`text-xs ${textSecondary} mb-6 max-w-xs mx-auto`}>
-                Usa la cámara de tu celular o sube una imagen de la galería para detectar productos y precios
-              </p>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <button 
-                  onClick={requestCameraPermission}
-                  className={`${bgCard} border ${borderColor} rounded-xl p-4 flex flex-col items-center gap-2 hover:border-purple-400/50 transition-colors`}
-                >
-                  <Camera className="w-8 h-8 text-gray-400" />
-                  <span className={`text-xs font-medium ${textPrimary}`}>Cámara</span>
-                </button>
-                <button 
-                  onClick={requestGalleryPermission}
-                  className={`${bgCard} border ${borderColor} rounded-xl p-4 flex flex-col items-center gap-2 hover:border-purple-400/50 transition-colors`}
-                >
-                  <Upload className="w-8 h-8 text-gray-400" />
-                  <span className={`text-xs font-medium ${textPrimary}`}>Subir imagen</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
 
-        {/* Historial de Escaneos */}
-        <div>
-          <h3 className={`text-xs font-bold ${textSecondary} uppercase mb-2 flex items-center justify-between`}>
-            <span>Últimos escaneos</span>
-            <span className={`text-[10px] px-2 py-0.5 rounded-full ${isDark ? 'bg-white/10' : 'bg-gray-200'}`}>
-              {receipts.length}
-            </span>
-          </h3>
-          
-          {receipts.length === 0 ? (
-            <div className={`${bgCard} backdrop-blur-md rounded-xl border ${borderColor} p-8 text-center`}>
-              <FileText className={`w-12 h-12 ${textSecondary} opacity-30 mx-auto mb-2`} />
-              <p className={`text-sm ${textSecondary}`}>No has escaneado facturas aún</p>
-              <p className={`text-xs ${textSecondary} mt-1`}>Toca cámara o subir para comenzar</p>
+            <div className="rounded-[24px] p-4 bg-white/[0.04] ring-1 ring-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-white font-bold">Productos <span className="text-slate-400 font-normal text-sm">({items.length})</span></p>
+                <button onClick={addItem} className="text-xs text-brand-lime font-bold flex items-center gap-1"><Plus size={14} /> Agregar</button>
+              </div>
+              {items.length === 0 && <p className="text-xs text-slate-400 py-2">No se detectaron productos. Puedes agregarlos o guardar solo el total.</p>}
+              <AnimatePresence initial={false}>
+                {items.map((it, i) => (
+                  <motion.div key={i} layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30, height: 0 }} className="flex items-center gap-2 py-1.5">
+                    <input value={it.name} onChange={e => updateItem(i, { name: e.target.value })} placeholder="Producto" className="input-modern !py-2 !px-3 flex-1 min-w-0 text-sm" />
+                    <div className="w-28 shrink-0"><MoneyInput value={it.price} onChange={v => updateItem(i, { price: v })} ariaLabel={`Precio de ${it.name || 'producto'}`} className="input-modern !py-2 !px-3 text-sm" /></div>
+                    <button onClick={() => removeItem(i)} aria-label="Quitar producto" className="p-2 text-slate-400 hover:text-rose-300"><Trash2 size={16} /></button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
-          ) : (
-            <div className={`${bgCard} backdrop-blur-md rounded-xl border ${borderColor} overflow-hidden`}>
-              {receipts.map((receipt, index) => (
-                <div 
-                  key={receipt.id} 
-                  className={`flex items-center justify-between px-4 py-3 ${index > 0 ? `border-t ${borderColor}` : ''}`}
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={`w-10 h-10 rounded-lg ${isDark ? 'bg-purple-500/20' : 'bg-purple-50'} flex items-center justify-center flex-shrink-0`}>
-                      <FileText className="w-5 h-5 text-purple-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-medium ${textPrimary} truncate`}>{receipt.store}</p>
-                      <p className={`text-[10px] ${textSecondary}`}>
-                        {formatDate(receipt.date)} • {receipt.itemCount} productos
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className={`text-xs font-bold ${textPrimary}`}>{formatMoney(receipt.total)}</span>
-                    <button 
-                      onClick={() => deleteReceipt(receipt.id)}
-                      className="p-1.5 text-gray-500 hover:text-red-400 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+
+            <div className="space-y-2">
+              <button onClick={() => save(true)} className="btn-primary w-full flex items-center justify-center gap-2"><Check size={18} /> Registrar como gasto</button>
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={() => save(false)} className="py-3 rounded-xl bg-white/[0.07] ring-1 ring-white/10 text-white text-sm font-bold">Solo guardar factura</button>
+                <button onClick={reset} className="py-3 rounded-xl bg-white/[0.04] ring-1 ring-white/10 text-slate-300 text-sm font-bold flex items-center justify-center gap-1.5"><X size={16} /> Descartar</button>
+              </div>
             </div>
-          )}
-        </div>
-      </div>
+          </motion.div>
+        )}
+
+        {step === 'done' && (
+          <motion.div key="done" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="rounded-[28px] p-6 bg-white/[0.04] ring-1 ring-white/10 text-center">
+            <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1.25, 1] }} className="w-16 h-16 mx-auto rounded-full bg-brand-lime flex items-center justify-center"><Check size={32} className="text-brand-ink" strokeWidth={3} /></motion.div>
+            <p className="text-white font-bold text-lg mt-4">¡Factura guardada!</p>
+            <p className="text-sm text-slate-300 mt-1">{store || 'Factura'} · {formatCOP(total)}</p>
+            <div className="grid grid-cols-2 gap-2 mt-5">
+              <button onClick={reset} className="btn-primary !px-3 flex items-center justify-center gap-2"><RotateCcw size={16} /> Escanear otra</button>
+              <Link to="/historial-facturas" className="py-3 rounded-xl bg-white/[0.07] ring-1 ring-white/10 text-white text-sm font-bold flex items-center justify-center">Ver facturas</Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
