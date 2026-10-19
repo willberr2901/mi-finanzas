@@ -30,6 +30,7 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | Pantalla **Inicio** | `src/pages/HomePage.tsx` |
 | Pantalla **Mercado** | `src/pages/MarketPage.tsx` + `src/components/market/` |
 | Lógica del mercado (tachar, extras, precios, historial, tiendas) | `src/services/market/marketStore.ts` |
+| 🧾 Entender facturas escaneadas (comercio, fecha, productos, total, pago) | `src/services/receipt/receiptParser.ts` (la foto se lee en `src/services/ocrService.ts`) |
 | 🎤 Dictar por voz (mercado y gastos) | `src/components/voice/VoiceSheet.tsx` + `src/services/voice/` (`speech.ts` micrófono, `parseVoice.ts` entiende la frase) |
 | 🏪 Tiendas (elegir, distintivo, comparar precios) | `src/components/market/StorePicker.tsx`, `StoreBadge.tsx`, `MarketHistory.tsx` (Precios → Por tienda) |
 | **Hogar sincronizado** (QR, unirse, salir) | `src/components/household/HouseholdSheet.tsx` |

@@ -6,13 +6,12 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.11.0';
+export const APP_VERSION = '1.12.0';
 
 export const RELEASE_NOTES: string[] = [
-  'Nuevo: dicta tu mercado 🎤 — toca "Dictar" y di "dos libras de arroz, leche y huevos"',
-  'Comprando: di "leche a 4.500" y se tacha de la lista con su precio; lo que no estaba te lo pregunta como antojo',
-  'Dicta tus gastos desde el botón +: "gasté 25 mil en almuerzo" y solo revisas y guardas',
-  'El dictado en Android ya no repite palabras',
-  'Nuevo: elige dónde estás comprando y compara precios entre tiendas en Precios → "Por tienda"',
-  'Nuevo: te avisamos en el celular cuando salga una versión nueva (Ajustes → Recordatorios)',
+  'Nuevo: el escáner de facturas ahora entiende la factura: comercio, fecha, medio de pago, productos y total',
+  'Cada producto con su cantidad × valor de cada uno = valor de la línea (ej: 4 leches × $3.090 = $12.360)',
+  'Ya no toma impuestos, CUFE, cajero ni resolución como si fueran productos',
+  'Te dice si "todo cuadra" (la suma de productos = el total) y puedes ver la foto en grande para comparar',
+  'Los precios de la factura pasan a Mercado para comparar entre tiendas',
 ]

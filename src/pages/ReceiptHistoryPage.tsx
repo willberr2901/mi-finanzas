@@ -18,7 +18,8 @@ interface Invoice {
   store: string;
   date: string;
   total: number;
-  products: Array<{ name: string; price: number; quantity: number }>;
+  payment?: string;
+  products: Array<{ name: string; price: number; quantity: number; unitPrice?: number }>;
   isValid?: boolean; // Para marcar facturas inválidas
 }
 
@@ -67,6 +68,7 @@ export default function ReceiptHistoryPage() {
                   <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
                     <Calendar size={12} />
                     <span>{invoice.date}</span>
+                    {invoice.payment && <span>· {invoice.payment}</span>}
                   </div>
                 </div>
                 <div className="text-right">
@@ -80,7 +82,7 @@ export default function ReceiptHistoryPage() {
                 <div className="space-y-1">
                   {invoice.products.slice(0, 3).map((product, idx) => (
                     <div key={idx} className="flex justify-between text-sm">
-                      <span className="text-gray-300">{product.name}</span>
+                      <span className="text-gray-300">{product.quantity > 1 ? `${String(product.quantity).replace('.', ',')} × ` : ''}{product.name}</span>
                       <span className="text-gray-400">${formatCurrency(product.price)}</span>
                     </div>
                   ))}

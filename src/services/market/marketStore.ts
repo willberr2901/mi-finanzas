@@ -369,6 +369,25 @@ export const finishTrip = (store?: string): Trip | null => {
   return trip;
 };
 
+/**
+ * Guarda una factura escaneada como un mercado del historial (para comparar precios por tienda).
+ * No toca la lista actual. items.price = valor UNITARIO.
+ */
+export const addTripFromReceipt = (data: { store: string; date: string; total: number; items: { name: string; qty: number; unit?: string; price: number }[] }): Trip | null => {
+  const items: TripItem[] = data.items.filter(i => i.name.trim() && i.price > 0).map(i => ({
+    name: i.name.trim().slice(0, 80), qty: i.qty || 1, price: Math.round(i.price),
+    unit: (i.unit === 'kg' || i.unit === 'lb' || i.unit === 'l' ? i.unit : 'und') as Unit,
+  }));
+  if (!items.length) return null;
+  const now = Date.now();
+  // A mediodía del día de la factura (así no cambia de día por la zona horaria)
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(data.date) ? new Date(`${data.date}T12:00:00`).toISOString() : new Date(now).toISOString();
+  const trip: Trip = { id: crypto.randomUUID(), date, total: Math.round(data.total), items, missing: [], estimate: 0, by: myName(), store: cleanStore(data.store) || undefined, rev: now };
+  state.trips[trip.id] = trip;
+  commit([tripKey(trip.id)]);
+  return trip;
+};
+
 /** Cambia la tienda de un mercado ya cerrado (desde el historial). */
 export const setTripStore = (id: string, store: string) => {
   const t = state.trips[id];
