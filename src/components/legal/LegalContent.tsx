@@ -45,7 +45,7 @@ export default function LegalContent() {
         <p>Mi Finanzas no graba, no guarda y no recibe tu audio: solo recibe el texto, lo interpreta dentro de tu celular y lo guarda junto con el resto de tu información local. El micrófono solo se activa cuando tú lo tocas y se apaga solo al dejar de hablar. Si prefieres no usarlo, puedes escribir como siempre.</p>
       </Section>
       <Section title="3.2 Tiendas donde compras">
-        <p>Si eliges dónde hiciste el mercado (D1, la plaza, etc.), ese dato se guarda con tu historial de compras para comparar precios. Los distintivos de las tiendas son diseños propios de la app (iniciales y colores) y no son los logos oficiales de esas marcas, que pertenecen a sus dueños.</p>
+        <p>Si eliges dónde hiciste el mercado (D1, la plaza, etc.), ese dato se guarda con tu historial de compras para comparar precios. La imagen de tienda que ves es un dibujo propio de la app, igual para todas; no usamos los logos oficiales de esas marcas, que pertenecen a sus dueños.</p>
       </Section>
       <Section title="4. Lo que sí se conecta a internet">
         <p>La descarga de la app y de sus actualizaciones desde el servidor donde está publicada. Ese servidor, como cualquier página web, puede registrar datos técnicos básicos de la visita (como la dirección IP), pero no tus datos financieros.</p>
@@ -67,6 +67,7 @@ export default function LegalContent() {
       </Section>
       <Section title="7.1 Notificaciones">
         <p>Los recordatorios de pagos los genera tu propio celular a partir de lo que registraste. Puedes desactivarlos en cualquier momento desde la configuración del navegador.</p>
+        <p>Si tienes los avisos activados, tu celular también revisa de vez en cuando si hay una versión nueva de la app (solo descarga el número de versión, igual que al abrirla) y te muestra un aviso. No se envía ningún dato tuyo. Puedes apagarlo en Ajustes → Recordatorios → Avisos de nuevas versiones.</p>
       </Section>
       <Section title="8. Tus derechos y cómo borrar todo">
         <p>Como tus datos solo están en tu celular, tú tienes el control total. En Ajustes → «Borrar todos mis datos» se elimina todo de forma permanente. Si desinstalas la app o borras los datos del navegador, la información también se elimina.</p>

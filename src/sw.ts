@@ -3,7 +3,8 @@
  * ════════════════════════════════════════════════════════════════════
  * ⚙️ SERVICE WORKER (funciona sin internet + avisos)
  * ────────────────────────────────────────────────────────────────────
- * Qué hace: Guarda la app para usarla sin internet, revisa pagos en segundo plano y muestra notificaciones del celular.
+ * Qué hace: Guarda la app para usarla sin internet, revisa pagos en segundo plano, avisa cuando hay
+ *           una versión nueva de la app y muestra notificaciones del celular.
  * Dónde se ve: En segundo plano.
  * Si lo cambias: Un error aquí puede dejar a todos con una versión vieja: prueba antes de publicar.
  * Nota: Service worker propio de Mi Finanzas: · guarda la app en el celular para que funcione sin internet · revisa en segundo plano tus pagos y te avisa con una notificación del celular (todo se calcula en el celular, sin servidores)
@@ -12,6 +13,7 @@
 import { precacheAndRoute, cleanupOutdatedCaches, createHandlerBoundToURL } from 'workbox-precaching';
 import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { clientsClaim } from 'workbox-core';
+import { APP_VERSION } from './version';
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any };
 
@@ -109,14 +111,51 @@ async function checkDaily() {
   } as NotificationOptions);
 }
 
+// ---------- 🎉 Aviso de versión nueva ----------
+/** ¿La versión a es más nueva que b? ("1.10.2" > "1.9.1") */
+const isNewer = (a: string, b: string) => {
+  const x = a.split('.').map(Number), y = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; }
+  return false;
+};
+
+/**
+ * Revisa /version.json. Si hay una versión más nueva que la instalada, muestra UNA notificación
+ * por versión ("🎉 Nueva versión…"); al tocarla se abre la app y se actualiza sola.
+ * No envía nada a ningún servidor: solo descarga el número de versión (igual que al abrir la app).
+ * Se puede apagar en Ajustes → Recordatorios → "Avisos de nuevas versiones".
+ */
+async function checkUpdate(force = false) {
+  if ((self as any).Notification?.permission !== 'granted') return;
+  const cache = await caches.open('mf-meta');
+  const off = await cache.match(new Request('/__mf_update_notif'));
+  if (!force && off && (await off.text()) === 'off') return;
+  let remote: { version?: string; notes?: string[] } = {};
+  try { remote = await (await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })).json(); } catch { return; }
+  if (!remote.version || (!force && !isNewer(remote.version, APP_VERSION))) return;
+  const key = new Request('/__mf_notified_version');
+  const prev = await cache.match(key);
+  if (!force && prev && (await prev.text()) === remote.version) return;
+  await cache.put(key, new Response(remote.version));
+  const raw = (remote.notes ?? [])[0]?.replace(/^(Nuevo|Arreglo|Mejora):\s*/i, '') || 'Trae mejoras para ti.';
+  const first = raw.charAt(0).toUpperCase() + raw.slice(1);
+  await self.registration.showNotification(`🎉 Nueva versión de Mi Finanzas (${remote.version})`, {
+    body: `${first}\nToca para actualizar y ver las novedades.`,
+    icon: '/icon-192.png', badge: '/icon-192.png', tag: 'mf-update', data: { url: '/' },
+  } as NotificationOptions);
+  // Deja la versión nueva descargando de una vez, para que abra rápido.
+  self.registration.update().catch(() => {});
+}
+
 // Revisión periódica (Chrome Android con la app instalada; el sistema decide la hora exacta).
 self.addEventListener('periodicsync', (event: any) => {
-  if (event.tag === 'mf-pagos') event.waitUntil(Promise.all([checkBills(), checkDaily()]));
+  if (event.tag === 'mf-pagos') event.waitUntil(Promise.all([checkBills(), checkDaily(), checkUpdate()]));
 });
 
 // La app también puede pedir una revisión (por ejemplo, al abrirla o para probar).
 self.addEventListener('message', (e) => {
   if (e.data?.type === 'CHECK_BILLS') e.waitUntil(checkBills(!!e.data.force));
+  if (e.data?.type === 'TEST_UPDATE_NOTICE') e.waitUntil(checkUpdate(true));
 });
 
 self.addEventListener('notificationclick', (event) => {

@@ -154,6 +154,21 @@ export const requestBillCheck = async (force = false) => {
   try { (await navigator.serviceWorker.ready).active?.postMessage({ type: 'CHECK_BILLS', force }); } catch { /* sin service worker */ }
 };
 
+// ---- 🎉 Avisos de nuevas versiones (los muestra el service worker, ver src/sw.ts → checkUpdate) ----
+const UPDATE_KEY = 'mf_update_notices';
+/** ¿Avisar en el celular cuando salga una versión nueva? (encendido por defecto) */
+export const updateNoticesOn = () => localStorage.getItem(UPDATE_KEY) !== 'off';
+export const setUpdateNotices = async (on: boolean) => {
+  localStorage.setItem(UPDATE_KEY, on ? 'on' : 'off');
+  // El service worker no puede leer localStorage: se lo dejamos en su caché.
+  try { await (await caches.open('mf-meta')).put(new Request('/__mf_update_notif'), new Response(on ? 'on' : 'off')); } catch { /* sin caché */ }
+};
+/** Muestra ya un ejemplo del aviso de versión nueva (para probar). */
+export const testUpdateNotice = async () => {
+  if (!remindersSupported() || Notification.permission !== 'granted') return false;
+  try { (await navigator.serviceWorker.ready).active?.postMessage({ type: 'TEST_UPDATE_NOTICE' }); return true; } catch { return false; }
+};
+
 export const sendTestNotification = async () => {
   if (Notification.permission !== 'granted') return false;
   const reg = await navigator.serviceWorker?.ready;
