@@ -6,9 +6,10 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.10.1';
+export const APP_VERSION = '1.10.2';
 
 export const RELEASE_NOTES: string[] = [
+  'Nuevo diseño de los íconos de las tiendas: más limpios, con dibujo según el tipo (plaza 🥕, tienda de barrio, fruver, panadería…)',
   'Arreglo: el dictado por voz en Android ya no repite palabras ("gasté gasté gasté…")',
   'Nuevo: dicta tu mercado 🎤 — toca "Dictar" y di "dos libras de arroz, leche y huevos": la app los agrega solita',
   'Comprando: di "leche a 4.500" y se tacha de la lista con su precio; lo que no estaba te lo pregunta como antojo',

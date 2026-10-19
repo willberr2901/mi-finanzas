@@ -1,50 +1,71 @@
 /**
  * ════════════════════════════════════════════════════════════════════
- * 🏪 DISTINTIVO DE LA TIENDA (iniciales con color propio)
+ * 🏪 DISTINTIVO DE LA TIENDA (diseño propio de la app)
  * ────────────────────────────────────────────────────────────────────
- * Qué hace: dibuja un "logo" propio de la app para cada tienda: sus
- *           iniciales sobre un color que siempre es el mismo para esa tienda
- *           (D1 siempre se ve igual, la plaza siempre igual…).
+ * Qué hace: dibuja un ícono elegante para cada tienda:
+ *   • Según el tipo de negocio, un dibujo: plaza 🥕, tienda de barrio 🏪,
+ *     fruver 🍎, panadería 🥐, carnicería 🥩, droguería 💊, licorera 🍷…
+ *   • Supermercados: su inicial (o "D1") en un monograma.
+ *   Cada tienda tiene siempre el mismo color (D1 siempre igual, Ara siempre igual…).
  * Por qué no los logos reales: son marcas registradas de cada empresa;
- *           usar los nuestros evita problemas legales y funciona sin internet.
+ *           usar diseños propios evita problemas legales y funciona sin internet.
  * Dónde se ve: Mercado → "¿Dónde estás comprando?", Terminar mercado,
  *              Historial y Precios por tienda.
  * ════════════════════════════════════════════════════════════════════
  */
-import { Store } from 'lucide-react';
+import { Store, Carrot, Apple, Croissant, Beef, Pill, Wine, Fish, Milk, Warehouse, type LucideIcon } from 'lucide-react';
 
-/** Paleta de la app para las tiendas (combinaciones de color propias). */
-const PALETTE = [
-  ['#C6F432', '#0B1026'], ['#7C3AED', '#FFFFFF'], ['#06B6D4', '#04202A'], ['#F97316', '#FFFFFF'],
-  ['#E11D48', '#FFFFFF'], ['#10B981', '#03231A'], ['#F59E0B', '#2A1A02'], ['#3B82F6', '#FFFFFF'],
-  ['#EC4899', '#FFFFFF'], ['#14B8A6', '#04211E'], ['#A3E635', '#14200A'], ['#6366F1', '#FFFFFF'],
-] as const;
+/** Colores de la app para las tiendas (suaves, se ven bien sobre el fondo oscuro). */
+const COLORS = ['#C6F432', '#A78BFA', '#38BDF8', '#FB923C', '#FB7185', '#34D399', '#FBBF24', '#60A5FA', '#F472B6', '#2DD4BF', '#818CF8', '#F87171'];
 
-const hash = (s: string) => { let h = 7; for (const c of s.toLowerCase().normalize('NFD').replace(/[̀-ͯ\s]/g, '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
+const plain = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const hash = (s: string) => { let h = 7; for (const c of plain(s).replace(/\s/g, '')) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 
-/** "Tienda del barrio" → "TB", "D1" → "D1", "Éxito" → "ÉX", "Plaza de mercado" → "PM". */
+/** Tipo de negocio por palabras del nombre → dibujo. */
+const KINDS: [RegExp, LucideIcon][] = [
+  [/\b(plaza|galeria|mercado campesino|corabastos|paloquemao)\b/, Carrot],
+  [/\b(fruver|frutas?|verduras?|fruteria)\b/, Apple],
+  [/\b(panaderia|pan|pasteleria|reposteria)\b/, Croissant],
+  [/\b(carniceria|carnes?|famas?|pollos?|avicola)\b/, Beef],
+  [/\b(pescaderia|pescados?|mariscos?)\b/, Fish],
+  [/\b(drogueria|farmacia|drogas)\b/, Pill],
+  [/\b(licorera|licores|vinos?|cava)\b/, Wine],
+  [/\b(lacteos|quesera|lecheria)\b/, Milk],
+  [/\b(makro|pricesmart|mayorista|bodega|cash)\b/, Warehouse],
+  [/\b(tienda|minimercado|miscelanea|autoservicio|supermercado de barrio|granero|abarrotes)\b/, Store],
+];
+const kindIcon = (name: string) => KINDS.find(([re]) => re.test(plain(name)))?.[1] ?? null;
+
+/** Monograma: "D1" → "D1", "Éxito" → "É", "Super Inter" → "S". */
 export const storeInitials = (name: string) => {
-  const words = name.trim().split(/\s+/).filter(w => !/^(de|del|la|el|los|las|y|&)$/i.test(w));
-  if (!words.length) return '?';
-  if (words.length === 1) return words[0].slice(0, words[0].length <= 3 ? 3 : 2).toUpperCase();
-  return (words[0][0] + words[1][0]).toUpperCase();
+  const w = name.trim().split(/\s+/)[0] ?? '';
+  if (/^[a-z]\d$/i.test(w) || (w.length <= 2 && w)) return w.toUpperCase();
+  return (w.charAt(0) || '?').toUpperCase();
 };
 
+export const storeColor = (name: string) => COLORS[hash(name) % COLORS.length];
+
 export default function StoreBadge({ name, size = 36, className = '' }: { name?: string; size?: number; className?: string }) {
+  const radius = size * 0.32;
   if (!name) {
     return (
-      <span style={{ width: size, height: size, borderRadius: size * 0.3 }} className={`inline-flex items-center justify-center shrink-0 bg-white/[0.06] ring-1 ring-white/10 text-slate-400 ${className}`} aria-hidden="true">
-        <Store size={size * 0.5} />
+      <span style={{ width: size, height: size, borderRadius: radius }} className={`inline-flex items-center justify-center shrink-0 bg-white/[0.06] ring-1 ring-white/10 text-slate-400 ${className}`} aria-hidden="true">
+        <Store size={size * 0.48} strokeWidth={2} />
       </span>
     );
   }
-  const [bg, fg] = PALETTE[hash(name) % PALETTE.length];
+  const color = storeColor(name);
+  const Icon = kindIcon(name);
   const initials = storeInitials(name);
   return (
-    <span aria-hidden="true" style={{ width: size, height: size, borderRadius: size * 0.3, background: `linear-gradient(140deg, ${bg}, ${bg}CC)`, color: fg, fontSize: size * (initials.length > 2 ? 0.3 : 0.38) }}
-      className={`relative inline-flex items-center justify-center shrink-0 font-black tracking-tight shadow-md shadow-black/30 ring-1 ring-white/15 overflow-hidden ${className}`}>
-      <span className="absolute -right-1 -top-1 w-1/2 h-1/2 rounded-full bg-white/20 blur-[2px]" />
-      <span className="relative leading-none">{initials}</span>
+    <span aria-hidden="true"
+      style={{ width: size, height: size, borderRadius: radius, color, background: `linear-gradient(160deg, ${color}2E, ${color}14)`, boxShadow: `inset 0 0 0 1px ${color}55, 0 4px 14px -6px ${color}66` }}
+      className={`relative inline-flex items-center justify-center shrink-0 overflow-hidden ${className}`}>
+      {/* brillo suave arriba */}
+      <span className="absolute inset-x-0 top-0 h-1/2" style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.10), transparent)' }} />
+      {Icon
+        ? <Icon size={size * 0.5} strokeWidth={2.1} className="relative" />
+        : <span className="relative font-extrabold leading-none tracking-tight" style={{ fontSize: size * (initials.length > 1 ? 0.36 : 0.46), fontFamily: 'inherit' }}>{initials}</span>}
     </span>
   );
 }
