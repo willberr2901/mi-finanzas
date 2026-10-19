@@ -86,15 +86,19 @@ export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onCl
                   <ChevronRight size={16} className="text-slate-400" />
                 </motion.button>
               )}
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => { onClose(); openInstagram(); }} className="flex items-center gap-2 p-2.5 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 text-left active:scale-[0.98]">
-                  <InstagramIcon size={30} />
-                  <span className="min-w-0"><span className="block text-[12px] font-bold text-white">Síguenos</span><span className="block text-[10px] text-slate-400 truncate">@{INSTAGRAM_USER}</span></span>
-                </button>
-                <button onClick={() => { onClose(); openWhatsAppChannel(); }} className="flex items-center gap-2 p-2.5 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 text-left active:scale-[0.98]">
-                  <ChannelIcon size={30} />
-                  <span className="min-w-0"><span className="block text-[12px] font-bold text-white">Canal</span><span className="block text-[10px] text-slate-400 truncate">de WhatsApp</span></span>
-                </button>
+              {/* Redes: tarjetas con el nombre de cada red bien visible */}
+              <div className="rounded-2xl bg-white/[0.04] ring-1 ring-white/10 p-1.5">
+                <p className="px-2 pt-1 pb-1.5 text-[10px] font-bold tracking-wider text-slate-400">SÍGUENOS</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button onClick={() => { onClose(); openInstagram(); }} className="flex flex-col items-start gap-2 p-3 rounded-xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] ring-1 ring-white/10 text-left active:scale-[0.97] transition-transform">
+                    <InstagramIcon size={34} />
+                    <span className="min-w-0 w-full"><span className="block text-[13px] font-extrabold text-white">Instagram</span><span className="block text-[10px] text-slate-400 truncate">@{INSTAGRAM_USER}</span></span>
+                  </button>
+                  <button onClick={() => { onClose(); openWhatsAppChannel(); }} className="flex flex-col items-start gap-2 p-3 rounded-xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] ring-1 ring-white/10 text-left active:scale-[0.97] transition-transform">
+                    <ChannelIcon size={34} />
+                    <span className="min-w-0 w-full"><span className="block text-[13px] font-extrabold text-white">WhatsApp</span><span className="block text-[10px] text-slate-400 truncate">Canal · Ahorra en casa</span></span>
+                  </button>
+                </div>
               </div>
               <button onClick={() => { onClose(); setTimeout(openSecurityCenter, 180); }} className="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 text-left active:scale-[0.98]">
                 <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"><ShieldCheck size={18} className="text-brand-lime" /></span>

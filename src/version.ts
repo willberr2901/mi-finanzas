@@ -6,7 +6,7 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.13.1';
+export const APP_VERSION = '1.13.2';
 
 export const RELEASE_NOTES: string[] = [
   'Nuevo: únete a nuestro canal de WhatsApp "Mi Finanzas · Ahorra en casa" desde el menú ☰',
