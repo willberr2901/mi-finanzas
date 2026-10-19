@@ -55,12 +55,58 @@ export interface ListenOptions {
  * Empieza a escuchar en español de Colombia. Devuelve una función para parar.
  * Se detiene solo cuando dejas de hablar unos segundos.
  */
+/**
+ * Quita repeticiones seguidas que mete el dictado de Android:
+ * "gasté gasté gasté 25 mil" → "gasté 25 mil";
+ * "cinco paquetes cinco paquetes de cinco paquetes de ramen" → "cinco paquetes de ramen".
+ */
+export function cleanRepeats(text: string): string {
+  let words = text.trim().split(/\s+/).filter(Boolean);
+  const same = (a: string, b: string) => a.toLowerCase().replace(/[.,;:!?¿¡]/g, '') === b.toLowerCase().replace(/[.,;:!?¿¡]/g, '');
+  let changed = true;
+  while (changed) {
+    changed = false;
+    // Frase repetida seguida (de 1 a 8 palabras): "A B A B" → "A B"
+    for (let n = 1; n <= 8 && !changed; n++) {
+      for (let i = 0; i + 2 * n <= words.length; i++) {
+        let eq = true;
+        for (let k = 0; k < n; k++) if (!same(words[i + k], words[i + n + k])) { eq = false; break; }
+        if (eq) { words = [...words.slice(0, i), ...words.slice(i + n)]; changed = true; break; }
+      }
+    }
+  }
+  return words.join(' ');
+}
+
+/**
+ * Une los pedazos que entrega el reconocimiento. Android a veces manda la misma frase
+ * varias veces mientras "crece" ("cinco", "cinco paquetes", "cinco paquetes de ramen"):
+ * si un pedazo empieza igual que el anterior, lo reemplaza en vez de sumarlo.
+ */
+const joinPieces = (pieces: string[]) => {
+  const out: string[] = [];
+  const low = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+  for (const raw of pieces) {
+    const t = raw.trim();
+    if (!t) continue;
+    const last = out[out.length - 1];
+    if (last && low(t).startsWith(low(last))) out[out.length - 1] = t;     // creció: reemplaza
+    else if (last && low(last).startsWith(low(t))) continue;               // repetido más corto: ignora
+    else out.push(t);
+  }
+  return cleanRepeats(out.join(' '));
+};
+
+const isAndroid = () => /android/i.test(navigator.userAgent);
+
 export function listen({ onText, onEnd }: ListenOptions): () => void {
   const Ctor = getCtor();
   if (!Ctor) { onEnd('no-soportado'); return () => {}; }
   const rec = new Ctor();
   rec.lang = 'es-CO';
-  rec.continuous = true;
+  // En Android el modo continuo repite palabras: escuchamos una frase a la vez
+  // (para seguir, se toca otra vez el micrófono).
+  rec.continuous = !isAndroid();
   rec.interimResults = true;
   rec.maxAlternatives = 1;
 
@@ -72,13 +118,17 @@ export function listen({ onText, onEnd }: ListenOptions): () => void {
   const armSilence = () => { clearTimeout(silence); silence = setTimeout(() => { try { rec.stop(); } catch { /* ya paró */ } }, 2500); };
 
   rec.onresult = (e) => {
+    // Se reconstruye todo desde el principio en cada evento (no se va sumando),
+    // así nunca se duplica lo que ya estaba.
+    const finals: string[] = [];
     let interim = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
+    for (let i = 0; i < e.results.length; i++) {
       const r = e.results[i];
-      if (r.isFinal) finalText += (finalText ? ' ' : '') + r[0].transcript.trim();
-      else interim += r[0].transcript;
+      if (r.isFinal) finals.push(r[0].transcript);
+      else interim = r[0].transcript;
     }
-    onText((finalText + (interim ? ' ' + interim : '')).trim(), !interim);
+    finalText = joinPieces(finals);
+    onText(joinPieces([...finals, interim]), !interim);
     armSilence();
   };
   rec.onerror = (e) => {
