@@ -13,6 +13,7 @@ import { openFeedback } from '../services/feedbackService';
 import { openInstall, canOfferInstall } from './pwa/InstallAppSheet';
 import { openSecurityCenter } from './security/SecurityCenter';
 import { InstagramIcon, openInstagram, INSTAGRAM_USER } from './social/Instagram';
+import { ChannelIcon, openWhatsAppChannel } from './social/WhatsAppChannel';
 import { openShareApp } from './share/ShareAppSheet';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MODULES } from '../utils/modules';
@@ -90,11 +91,16 @@ export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onCl
                   <InstagramIcon size={30} />
                   <span className="min-w-0"><span className="block text-[12px] font-bold text-white">Síguenos</span><span className="block text-[10px] text-slate-400 truncate">@{INSTAGRAM_USER}</span></span>
                 </button>
-                <button onClick={() => { onClose(); setTimeout(openSecurityCenter, 180); }} className="flex items-center gap-2 p-2.5 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 text-left active:scale-[0.98]">
-                  <span className="w-[30px] h-[30px] rounded-[9px] bg-white/10 flex items-center justify-center"><ShieldCheck size={17} className="text-brand-lime" /></span>
-                  <span className="min-w-0"><span className="block text-[12px] font-bold text-white">Seguridad</span><span className="block text-[10px] text-slate-400 truncate">Cómo te protege</span></span>
+                <button onClick={() => { onClose(); openWhatsAppChannel(); }} className="flex items-center gap-2 p-2.5 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 text-left active:scale-[0.98]">
+                  <ChannelIcon size={30} />
+                  <span className="min-w-0"><span className="block text-[12px] font-bold text-white">Canal</span><span className="block text-[10px] text-slate-400 truncate">de WhatsApp</span></span>
                 </button>
               </div>
+              <button onClick={() => { onClose(); setTimeout(openSecurityCenter, 180); }} className="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 text-left active:scale-[0.98]">
+                <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"><ShieldCheck size={18} className="text-brand-lime" /></span>
+                <span className="flex-1 min-w-0"><span className="block text-sm font-bold text-white">Seguridad</span><span className="block text-[11px] text-slate-400">Cómo te protege la app</span></span>
+                <ChevronRight size={16} className="text-slate-400" />
+              </button>
               <button onClick={() => { onClose(); setTimeout(openFeedback, 180); }} className="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 text-left active:scale-[0.98]">
                 <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center"><MessageSquareHeart size={18} className="text-brand-lime" /></span>
                 <span className="flex-1 min-w-0"><span className="block text-sm font-bold text-white">Danos tu opinión</span><span className="block text-[11px] text-slate-400">¿Qué te gusta y qué mejorarías?</span></span>
