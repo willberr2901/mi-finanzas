@@ -50,6 +50,7 @@ export interface Trip {
   missing: string[];      // lo que quedó sin comprar
   estimate: number;       // lo que se esperaba gastar en lo comprado de la lista
   by?: string;
+  store?: string;         // dónde se compró (D1, Éxito, la plaza…)
   rev: number;
   deleted?: boolean;
 }
@@ -158,7 +159,7 @@ export const matchPending = (name: string): ListItem | null => {
 };
 
 // ═══ SECCIÓN: Historial de precios ═══
-export interface PricePoint { date: string; price: number; unit: Unit }
+export interface PricePoint { date: string; price: number; unit: Unit; store?: string }
 
 /** Precios pagados por un producto, del más reciente al más antiguo. */
 export const priceHistory = (name: string): PricePoint[] => {
@@ -166,11 +167,95 @@ export const priceHistory = (name: string): PricePoint[] => {
   const out: PricePoint[] = [];
   for (const t of tripsList()) {
     const found = t.items.find(i => norm(i.name) === k);
-    if (found && found.price > 0) out.push({ date: t.date, price: found.price, unit: found.unit });
+    if (found && found.price > 0) out.push({ date: t.date, price: found.price, unit: found.unit, store: t.store });
   }
   return out;
 };
 export const lastPrice = (name: string) => priceHistory(name)[0]?.price ?? null;
+
+// ═══ SECCIÓN: Tiendas (dónde compras y dónde sale más barato) ═══
+/** Tiendas comunes en Colombia para elegir rápido (también se puede escribir cualquier otra). */
+export const COMMON_STORES = ['D1', 'Ara', 'Éxito', 'Olímpica', 'Jumbo', 'Carulla', 'Makro', 'PriceSmart', 'Isimo', 'Surtimax', 'Tienda del barrio', 'Plaza de mercado'];
+const STORE_KEY = 'mf_market_store';
+const STORE_EVENT = 'mf:market-store';
+export const storeKey = (s: string) => norm(s).replace(/\s/g, '');
+/** Escribe la tienda bonita: "d1" → "D1", "exito" → "Éxito", "tienda don pepe" → "Tienda don pepe". */
+export const cleanStore = (s: string) => {
+  const t = s.trim().replace(/\s+/g, ' ').slice(0, 40);
+  if (!t) return '';
+  const common = COMMON_STORES.find(c => storeKey(c) === storeKey(t));
+  return common ?? t.charAt(0).toUpperCase() + t.slice(1);
+};
+
+/** Tienda donde estás comprando ahora (se recuerda en este celular). */
+export const getCurrentStore = () => { try { return localStorage.getItem(STORE_KEY) || ''; } catch { return ''; } };
+export const setCurrentStore = (s: string) => {
+  try { if (s) localStorage.setItem(STORE_KEY, cleanStore(s)); else localStorage.removeItem(STORE_KEY); } catch { /* sin almacenamiento */ }
+  window.dispatchEvent(new Event(STORE_EVENT));
+};
+export const useCurrentStore = () => {
+  const [store, setStore] = useState(getCurrentStore);
+  useEffect(() => {
+    const on = () => setStore(getCurrentStore());
+    window.addEventListener(STORE_EVENT, on);
+    return () => window.removeEventListener(STORE_EVENT, on);
+  }, []);
+  return store;
+};
+
+/** Tiendas usadas antes (más usadas primero) + las comunes. */
+export const knownStores = (): string[] => {
+  const count = new Map<string, { name: string; n: number }>();
+  for (const t of tripsList()) if (t.store) {
+    const k = storeKey(t.store);
+    const c = count.get(k);
+    if (c) c.n++; else count.set(k, { name: t.store, n: 1 });
+  }
+  const used = [...count.values()].sort((a, b) => b.n - a.n).map(c => c.name);
+  return [...used, ...COMMON_STORES.filter(c => !count.has(storeKey(c)))];
+};
+
+/** Último precio de un producto en una tienda concreta. */
+export const lastPriceAt = (name: string, store: string) => {
+  if (!store) return null;
+  const k = storeKey(store);
+  return priceHistory(name).find(p => p.store && storeKey(p.store) === k)?.price ?? null;
+};
+
+export interface StorePrice { store: string; price: number; date: string; unit: Unit }
+/** Último precio de un producto en cada tienda, del más barato al más caro. */
+export const pricesByStore = (name: string): StorePrice[] => {
+  const seen = new Map<string, StorePrice>();
+  for (const p of priceHistory(name)) {
+    if (!p.store) continue;
+    const k = storeKey(p.store);
+    if (!seen.has(k)) seen.set(k, { store: p.store, price: p.price, date: p.date, unit: p.unit });
+  }
+  return [...seen.values()].sort((a, b) => a.price - b.price);
+};
+
+export interface StoreRank { store: string; wins: number; compared: number; trips: number; spent: number; saving: number }
+/**
+ * Ranking de tiendas: en cuántos productos (comprados en 2 o más tiendas) cada una fue la más barata,
+ * y cuánto ahorrarías comprando ahí frente a la más cara.
+ */
+export const storeRanking = (): StoreRank[] => {
+  const rank = new Map<string, StoreRank>();
+  const get = (store: string) => {
+    const k = storeKey(store);
+    if (!rank.has(k)) rank.set(k, { store, wins: 0, compared: 0, trips: 0, spent: 0, saving: 0 });
+    return rank.get(k)!;
+  };
+  for (const t of tripsList()) if (t.store) { const r = get(t.store); r.trips++; r.spent += t.total; }
+  for (const p of knownProducts()) {
+    const list = pricesByStore(p.name);
+    if (list.length < 2) continue;
+    const cheapest = list[0], dearest = list[list.length - 1];
+    for (const s of list) get(s.store).compared++;
+    if (cheapest.price < dearest.price) { const r = get(cheapest.store); r.wins++; r.saving += dearest.price - cheapest.price; }
+  }
+  return [...rank.values()].sort((a, b) => b.wins - a.wins || b.trips - a.trips);
+};
 
 export type Trend = { dir: 'down' | 'up' | 'same'; diff: number; pct: number; before: number };
 /** Compara un precio con el de la última compra: 🔻 bajó, 🔺 subió, 🟰 igual. */
@@ -264,8 +349,8 @@ export const repeatLastTrip = () => {
   return n;
 };
 
-/** Cierra el mercado: guarda la compra en el historial y deja en la lista lo que faltó. */
-export const finishTrip = (): Trip | null => {
+/** Cierra el mercado: guarda la compra en el historial (con la tienda) y deja en la lista lo que faltó. */
+export const finishTrip = (store?: string): Trip | null => {
   const bought = listItems().filter(i => i.checked);
   if (!bought.length) return null;
   const missing = listItems().filter(i => !i.checked).map(i => i.name);
@@ -275,13 +360,21 @@ export const finishTrip = (): Trip | null => {
   const trip: Trip = {
     id: crypto.randomUUID(), date: new Date(now).toISOString(),
     total: Math.round(items.reduce((s, i) => s + i.price * i.qty, 0)),
-    items, missing, estimate: Math.round(estimate), by: myName(), rev: now,
+    items, missing, estimate: Math.round(estimate), by: myName(), store: store ? cleanStore(store) || undefined : undefined, rev: now,
   };
   state.trips[trip.id] = trip;
   const keys = [tripKey(trip.id)];
   for (const i of bought) { state.items[i.id] = { ...i, deleted: true, rev: now }; keys.push(itemKey(i.id)); }
   commit(keys);
   return trip;
+};
+
+/** Cambia la tienda de un mercado ya cerrado (desde el historial). */
+export const setTripStore = (id: string, store: string) => {
+  const t = state.trips[id];
+  if (!t) return;
+  state.trips[id] = { ...t, store: cleanStore(store) || undefined, rev: Date.now() };
+  commit([tripKey(id)]);
 };
 
 export const deleteTrip = (id: string) => {

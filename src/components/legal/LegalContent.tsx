@@ -8,7 +8,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 
-export const TERMS_VERSION = '2026-10-18-c';
+export const TERMS_VERSION = '2026-10-19-a';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="space-y-1.5">
@@ -40,9 +40,16 @@ export default function LegalContent() {
       <Section title="3. Fotos de facturas">
         <p>Cuando escaneas una factura, la imagen se procesa dentro de tu celular. Para leer el texto la app descarga una única vez las herramientas de reconocimiento; tu foto no se envía a ningún servidor.</p>
       </Section>
+      <Section title="3.1 Dictado por voz (opcional)">
+        <p>Si tocas el micrófono para dictar tu lista de mercado o un gasto, la app usa el reconocimiento de voz que ya trae tu celular o navegador (el mismo del teclado). Ese servicio es de tu sistema: en Android y Chrome lo presta Google y en iPhone lo presta Apple, y puede enviar el audio a sus servidores para convertirlo en texto, según sus propias políticas.</p>
+        <p>Mi Finanzas no graba, no guarda y no recibe tu audio: solo recibe el texto, lo interpreta dentro de tu celular y lo guarda junto con el resto de tu información local. El micrófono solo se activa cuando tú lo tocas y se apaga solo al dejar de hablar. Si prefieres no usarlo, puedes escribir como siempre.</p>
+      </Section>
+      <Section title="3.2 Tiendas donde compras">
+        <p>Si eliges dónde hiciste el mercado (D1, la plaza, etc.), ese dato se guarda con tu historial de compras para comparar precios. Los distintivos de las tiendas son diseños propios de la app (iniciales y colores) y no son los logos oficiales de esas marcas, que pertenecen a sus dueños.</p>
+      </Section>
       <Section title="4. Lo que sí se conecta a internet">
         <p>La descarga de la app y de sus actualizaciones desde el servidor donde está publicada. Ese servidor, como cualquier página web, puede registrar datos técnicos básicos de la visita (como la dirección IP), pero no tus datos financieros.</p>
-        <p>Las estadísticas anónimas (punto 6), que puedes apagar, y, solo si tú lo activas, el hogar sincronizado (punto 5).</p>
+        <p>Las estadísticas anónimas (punto 6), que puedes apagar, y, solo si tú lo activas, el hogar sincronizado (punto 5) y el dictado por voz del celular (punto 3.1).</p>
       </Section>
       <Section title="5. Hogar sincronizado (opcional)">
         <p>Sirve para compartir la lista de mercado, el historial de compras y los precios con las personas de tu hogar. Está apagado hasta que tú creas un hogar o te unes a uno.</p>

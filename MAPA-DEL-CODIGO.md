@@ -29,7 +29,9 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | Encabezado de cada pantalla (menú, Guíame, campana) | `src/components/ui/ModuleHeader.tsx` |
 | Pantalla **Inicio** | `src/pages/HomePage.tsx` |
 | Pantalla **Mercado** | `src/pages/MarketPage.tsx` + `src/components/market/` |
-| Lógica del mercado (tachar, extras, precios, historial) | `src/services/market/marketStore.ts` |
+| Lógica del mercado (tachar, extras, precios, historial, tiendas) | `src/services/market/marketStore.ts` |
+| 🎤 Dictar por voz (mercado y gastos) | `src/components/voice/VoiceSheet.tsx` + `src/services/voice/` (`speech.ts` micrófono, `parseVoice.ts` entiende la frase) |
+| 🏪 Tiendas (elegir, distintivo, comparar precios) | `src/components/market/StorePicker.tsx`, `StoreBadge.tsx`, `MarketHistory.tsx` (Precios → Por tienda) |
 | **Hogar sincronizado** (QR, unirse, salir) | `src/components/household/HouseholdSheet.tsx` |
 | Sincronización cifrada | `src/services/household/householdSync.ts` y `householdCrypto.ts` |
 | Pantalla **Finanzas** (movimientos, metas, reportes) | `src/pages/FinancePage.tsx` |
@@ -78,7 +80,8 @@ src/
 │   └── LegalPage        ⚖️ Privacidad
 │
 ├── components/          🧱 Piezas de pantalla
-│   ├── market/          🛒 Producto, terminar mercado, historial, flechitas de precio
+│   ├── market/          🛒 Producto, terminar mercado, historial, flechitas de precio, tiendas
+│   ├── voice/           🎤 Hoja de dictado por voz
 │   ├── household/       🏠 Hogar sincronizado
 │   ├── notifications/   🔔 Campana y diseño de avisos
 │   ├── bills/           📅 Formulario de pagos y Cuentas claras
@@ -95,6 +98,7 @@ src/
 │
 ├── services/            🧠 Lógica (no dibuja nada)
 │   ├── market/          🛒 Datos del mercado
+│   ├── voice/           🎤 Micrófono y "entender" lo dictado (sin internet)
 │   ├── household/       🏠 Sincronización cifrada
 │   ├── alertsService    🚨 Avisos de la campana
 │   ├── notificationService 🔔 notify() para mostrar avisos

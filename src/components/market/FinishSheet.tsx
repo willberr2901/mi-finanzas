@@ -4,20 +4,23 @@
  * ────────────────────────────────────────────────────────────────────
  * Muestra: lo comprado de la lista, los antojos (extras), lo que faltó y
  * la diferencia contra el estimado. Al confirmar:
- *   1) guarda el mercado en el historial (se sincroniza con el hogar),
+ *   1) guarda el mercado en el historial con la tienda (se sincroniza con el hogar),
  *   2) opcional: lo registra como gasto "Mercado" en Finanzas (solo en este celular),
  *   3) lo que faltó se queda en la lista para la próxima vez.
  * ════════════════════════════════════════════════════════════════════
  */
-import { useState } from 'react';
-import { CheckCircle2, Sparkles, ListChecks, PackageX, Wallet } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CheckCircle2, Sparkles, ListChecks, PackageX, Wallet, Store } from 'lucide-react';
+import StorePicker from './StorePicker';
 import BottomSheet from '../ui/BottomSheet';
 import { finishTrip, lastPrice, type ListItem, type Trip } from '../../services/market/marketStore';
 import { db } from '../../utils/database';
 import { formatCOP, todayISO } from '../../utils/format';
 
-export default function FinishSheet({ open, items, onClose, onDone }: { open: boolean; items: ListItem[]; onClose: () => void; onDone: (t: Trip) => void }) {
+export default function FinishSheet({ open, items, store = '', onClose, onDone }: { open: boolean; items: ListItem[]; store?: string; onClose: () => void; onDone: (t: Trip) => void }) {
   const [register, setRegister] = useState(true);
+  const [where, setWhere] = useState(store);
+  useEffect(() => { if (open) setWhere(store); }, [open, store]);
   const bought = items.filter(i => i.checked);
   const planned = bought.filter(i => !i.extra);
   const extras = bought.filter(i => i.extra);
@@ -28,11 +31,11 @@ export default function FinishSheet({ open, items, onClose, onDone }: { open: bo
   const diff = sum(planned) - estimate;
 
   const confirm = async () => {
-    const trip = finishTrip();
+    const trip = finishTrip(where);
     if (!trip) return;
     if (register && trip.total > 0) {
       try {
-        await db.transactions.add({ id: crypto.randomUUID(), date: todayISO(), type: 'expense', amount: trip.total, category: 'Mercado', description: `Mercado · ${trip.items.length} productos`, createdAt: Date.now() });
+        await db.transactions.add({ id: crypto.randomUUID(), date: todayISO(), type: 'expense', amount: trip.total, category: 'Mercado', description: `Mercado${trip.store ? ` en ${trip.store}` : ''} · ${trip.items.length} productos`, createdAt: Date.now() });
         window.dispatchEvent(new Event('mf:data-changed'));
       } catch { /* el historial del mercado ya quedó guardado */ }
     }
@@ -62,6 +65,10 @@ export default function FinishSheet({ open, items, onClose, onDone }: { open: bo
         <Row icon={<ListChecks size={17} />} label={`De tu lista · ${planned.length}`} value={formatCOP(sum(planned))} />
         <Row icon={<Sparkles size={17} />} label={`Antojos (extras) · ${extras.length}`} value={formatCOP(sum(extras))} sub={extras.map(e => e.name).join(', ') || 'Ninguno, ¡bien!'} tone={extras.length ? 'text-amber-300' : ''} />
         <Row icon={<PackageX size={17} />} label={`Sin comprar · ${missing.length}`} value={missing.length ? 'Pasan a la próxima' : '—'} sub={missing.map(m => m.name).join(', ') || 'Compraste todo'} tone="text-slate-300" />
+      </div>
+      <div className="mt-3 p-3.5 rounded-2xl bg-white/[0.04] ring-1 ring-white/10">
+        <p className="text-white text-sm font-semibold mb-2 flex items-center gap-1.5"><Store size={15} className="text-brand-lime" /> ¿Dónde compraste?</p>
+        <StorePicker value={where} onChange={setWhere} />
       </div>
       <button onClick={() => setRegister(r => !r)} role="switch" aria-checked={register}
         className="mt-3 w-full flex items-center gap-3 p-3.5 rounded-2xl bg-white/[0.04] ring-1 ring-white/10 text-left">

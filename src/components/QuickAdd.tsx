@@ -2,7 +2,8 @@
  * ════════════════════════════════════════════════════════════════════
  * ➕ BOTÓN FLOTANTE "+"
  * ────────────────────────────────────────────────────────────────────
- * Qué hace: Botón redondo abajo a la derecha para registrar un gasto o ingreso rápido, o pegar la notificación del banco.
+ * Qué hace: Botón redondo abajo a la derecha para registrar un gasto o ingreso rápido, dictarlo por voz 🎤
+ *           ("gasté 25 mil en almuerzo") o pegar la notificación del banco.
  * Dónde se ve: Inicio, Finanzas, Pagos y Ajustes (se oculta en Mercado, Escáner y Privacidad).
  * Si lo cambias: Cambia el registro rápido de movimientos.
  * ════════════════════════════════════════════════════════════════════
@@ -11,8 +12,9 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, ArrowDownCircle, ArrowUpCircle, ShoppingCart, CalendarPlus, Check, MessageSquareText, ChevronRight } from 'lucide-react';
+import { Plus, X, ArrowDownCircle, ArrowUpCircle, ShoppingCart, CalendarPlus, Check, MessageSquareText, ChevronRight, Mic } from 'lucide-react';
 import { openPasteMovement } from './quick/PasteMovementSheet';
+import VoiceSheet from './voice/VoiceSheet';
 import MoneyInput from './ui/MoneyInput';
 import { db } from '../utils/database';
 import { guessCategory, segmentOf, SEGMENT_INFO } from '../utils/categories';
@@ -27,6 +29,7 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
   const [amount, setAmount] = useState(0);
   const [desc, setDesc] = useState('');
   const [saved, setSaved] = useState(false);
+  const [voice, setVoice] = useState(false);
   const navigate = useNavigate();
 
   const reset = () => { setMode(null); setAmount(0); setDesc(''); setSaved(false); };
@@ -96,7 +99,16 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
                           <span className="block text-[11px] text-slate-400">{a.desc}</span>
                         </motion.button>
                       ))}
-                      <motion.button onClick={() => { close(); setTimeout(() => openPasteMovement(), 200); }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} whileTap={{ scale: 0.97 }}
+                      <motion.button onClick={() => setVoice(true)} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} whileTap={{ scale: 0.97 }}
+                        className="col-span-2 flex items-center gap-3 text-left p-4 rounded-3xl bg-gradient-to-r from-violet-500/20 to-transparent ring-1 ring-violet-400/30">
+                        <span className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shrink-0"><Mic size={22} className="text-white" /></span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-white font-bold">Dictar por voz</span>
+                          <span className="block text-[11px] text-slate-400">"Gasté 25 mil en almuerzo"</span>
+                        </span>
+                        <ChevronRight size={18} className="text-slate-400" />
+                      </motion.button>
+                      <motion.button onClick={() => { close(); setTimeout(() => openPasteMovement(), 200); }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.24 }} whileTap={{ scale: 0.97 }}
                         className="col-span-2 flex items-center gap-3 text-left p-4 rounded-3xl bg-gradient-to-r from-brand-lime/15 to-transparent ring-1 ring-brand-lime/30">
                         <span className="w-11 h-11 rounded-2xl bg-brand-lime flex items-center justify-center shrink-0"><MessageSquareText size={22} className="text-brand-ink" /></span>
                         <span className="flex-1 min-w-0">
@@ -110,9 +122,12 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
                     <motion.div key="form" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
                       <MoneyInput value={amount} onChange={setAmount} prefix placeholder="$ 0" ariaLabel="Valor"
                         className="w-full bg-transparent text-center text-4xl font-extrabold text-white outline-none py-3 placeholder:text-slate-600" />
-                      <input value={desc} onChange={e => setDesc(e.target.value)} placeholder={mode === 'expense' ? '¿En qué? Ej: Uber, almuerzo, luz' : '¿De dónde? Ej: sueldo, recargos'} autoFocus
-                        onKeyDown={e => e.key === 'Enter' && save()}
-                        className="w-full mt-2 h-14 px-4 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-violet-400" />
+                      <div className="relative mt-2">
+                        <input value={desc} onChange={e => setDesc(e.target.value)} placeholder={mode === 'expense' ? '¿En qué? Ej: Uber, almuerzo, luz' : '¿De dónde? Ej: sueldo, recargos'} autoFocus
+                          onKeyDown={e => e.key === 'Enter' && save()}
+                          className="w-full h-14 pl-4 pr-14 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-violet-400" />
+                        <button onClick={() => setVoice(true)} aria-label="Dictar por voz" className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-violet-500/20 text-violet-200 flex items-center justify-center"><Mic size={18} /></button>
+                      </div>
                       {mode === 'expense' && desc && (
                         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[11px] text-slate-400 mt-2">
                           Categoría: <span className="text-white font-semibold">{category}</span> · <span className={SEGMENT_INFO[segmentOf('expense', category) as 'obligatorio'].color}>{SEGMENT_INFO[segmentOf('expense', category) as 'obligatorio'].short}</span>
@@ -131,6 +146,8 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
         </AnimatePresence>,
         document.body
       )}
+      <VoiceSheet kind="movement" open={voice} onClose={() => setVoice(false)}
+        onMovement={m => { setOpen(true); setSaved(false); setMode(m.type); setAmount(m.amount); setDesc(m.description); }} />
     </>
   );
 }

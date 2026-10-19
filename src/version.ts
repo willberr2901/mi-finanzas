@@ -6,12 +6,13 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.9.1';
+export const APP_VERSION = '1.10.0';
 
 export const RELEASE_NOTES: string[] = [
-  'Nuevo: "Danos tu opinión" — califica la app con estrellas y cuéntanos qué te gusta y qué mejorarías',
-  'Tu opinión es anónima (el nombre es opcional) y se envía sin salir de la app',
-  'Reporte en Excel renovado: ahora es un archivo de Excel de verdad, con hojas de Resumen, Movimientos, Pagos, Mercado y Metas',
-  'Valores con formato de pesos, fechas reales y filtros en cada columna',
-  'La invitación a seguirnos en Instagram ahora se cierra sola y no tapa la pantalla',
-];
+  'Nuevo: dicta tu mercado 🎤 — toca "Dictar" y di "dos libras de arroz, leche y huevos": la app los agrega solita',
+  'Comprando: di "leche a 4.500" y se tacha de la lista con su precio; lo que no estaba te lo pregunta como antojo',
+  'Dicta tus gastos desde el botón +: "gasté 25 mil en almuerzo" y solo revisas y guardas',
+  'Nuevo: ¿dónde estás comprando? Elige la tienda (D1, Ara, Éxito, la plaza…) y compara precios entre tiendas',
+  'En Precios → "Por tienda" ves dónde te sale más barato cada producto y cuánto te ahorras',
+  'Tu voz no se graba ni se guarda: la convierte en texto el servicio de voz de tu celular',
+]

@@ -9,13 +9,15 @@
  *                  si estaba en la lista se tacha solo; si no, sale el aviso
  *                  "Producto adicional" (Sí lo agrega / No lo borra).
  * Datos: services/market/marketStore.ts · Hogar: services/household/householdSync.ts
- * Piezas: components/market/* (ItemSheet, FinishSheet, MarketHistory, TrendBadge, QtyUnit)
+ * Piezas: components/market/* (ItemSheet, FinishSheet, MarketHistory, TrendBadge, QtyUnit, StorePicker, StoreBadge)
+ * 🎤 Dictar: botón "Dictar" del cuadro de agregar → components/voice/VoiceSheet.tsx
+ * 🏪 Tienda: en Comprando eliges dónde estás; se guarda con el mercado para comparar precios.
  * ════════════════════════════════════════════════════════════════════
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Check, Pencil, ShoppingBasket, Sparkles, ShoppingCart, ClipboardList, History, Tag, Repeat, X, ListChecks, Users } from 'lucide-react';
+import { Plus, Check, Pencil, ShoppingBasket, Sparkles, ShoppingCart, ClipboardList, History, Tag, Repeat, X, ListChecks, Users, Mic, Store } from 'lucide-react';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import MoneyInput from '../components/ui/MoneyInput';
 import { usePageTour } from '../components/tour/Tour';
@@ -24,8 +26,11 @@ import { notify } from '../services/notificationService';
 import { formatCOP } from '../utils/format';
 import {
   useMarket, addItem, checkItem, uncheckItem, removeItem, setBudget, matchPending, lastPrice, trendOf, knownProducts,
-  estimateList, repeatLastTrip, norm, unitLabel, myName, type ListItem, type Unit, type Trip,
+  estimateList, repeatLastTrip, norm, unitLabel, myName, lastPriceAt, useCurrentStore, setCurrentStore, type ListItem, type Unit, type Trip,
 } from '../services/market/marketStore';
+import VoiceSheet from '../components/voice/VoiceSheet';
+import StorePicker from '../components/market/StorePicker';
+import StoreBadge from '../components/market/StoreBadge';
 import { useHousehold } from '../services/household/householdSync';
 import { HouseholdChip, openHousehold } from '../components/household/HouseholdSheet';
 import { QtyStepper, UnitPicker, fmtQty } from '../components/market/QtyUnit';
@@ -60,12 +65,15 @@ export default function MarketPage() {
   const [finishing, setFinishing] = useState(false);
   const [celebrate, setCelebrate] = useState<Trip | null>(null);
   const [fresh, setFresh] = useState<string | null>(null);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [pickingStore, setPickingStore] = useState(false);
+  const store = useCurrentStore();
   const nameRef = useRef<HTMLInputElement>(null);
 
   usePageTour('mercado2', [
     { target: 'mk-mode', title: 'Dos momentos', text: 'En "Planear" armas la lista en casa, sin precios. En "Comprando" escribes lo que echas al carrito y se tacha solo de la lista.' },
     { target: 'mk-hero', title: 'Total aproximado', text: 'Con los precios de tus mercados anteriores te decimos cuánto costaría la lista. Es un aproximado: los precios cambian.' },
-    { target: 'mk-composer', title: 'Agrega productos', text: 'Escribe el producto, la cantidad y la unidad (und, lb, kg…). Al comprar, si algo no estaba en la lista te preguntamos si lo agregas.' },
+    { target: 'mk-composer', title: 'Agrega productos', text: 'Escribe el producto, la cantidad y la unidad (und, lb, kg…), o toca "Dictar" y dilo en voz alta. Al comprar, si algo no estaba en la lista te preguntamos si lo agregas.' },
     { target: 'mk-list', title: 'Precios con flechitas', text: '🔻 verde: bajó frente a la última compra. 🔺 rojo: subió. 🟰 sigue igual.' },
     { target: 'mk-household', title: 'Comparte con tu hogar', text: 'Crea tu hogar y une a tu familia con un QR: la lista se actualiza en vivo en todos los celulares, cifrada.' },
   ]);
@@ -101,7 +109,8 @@ export default function MarketPage() {
   const reset = () => { setName(''); setQty(1); setUnit('und'); setPrice(0); };
   const pick = (s: { name: string; price: number | null; unit: Unit }) => {
     setName(s.name); setUnit(s.unit);
-    if (mode === 'shop' && s.price) setPrice(s.price);
+    const here = lastPriceAt(s.name, store);
+    if (mode === 'shop' && (here || s.price)) setPrice(here || s.price || 0);
     nameRef.current?.focus();
   };
 
@@ -291,9 +300,34 @@ export default function MarketPage() {
           </div>
         </motion.div>
 
+        {/* Tienda donde se está comprando */}
+        {mode === 'shop' && (
+          <div className="mt-4 bg-surface border border-white/10 rounded-[24px] p-3.5">
+            {store && !pickingStore ? (
+              <button onClick={() => setPickingStore(true)} className="w-full flex items-center gap-3 text-left">
+                <StoreBadge name={store} size={40} />
+                <span className="flex-1 min-w-0"><span className="block text-[11px] text-slate-400">Estás comprando en</span><span className="block text-white font-bold truncate">{store}</span></span>
+                <span className="text-xs font-bold text-brand-lime">Cambiar</span>
+              </button>
+            ) : (
+              <>
+                <p className="text-white text-sm font-bold mb-2 flex items-center gap-1.5"><Store size={15} className="text-brand-lime" /> ¿Dónde estás comprando?</p>
+                <StorePicker value={store} onChange={s => { setCurrentStore(s); if (s) setPickingStore(false); }} />
+                <p className="text-[10px] text-slate-500 mt-1.5">Así comparamos precios entre tiendas. Es opcional.</p>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Agregar producto */}
         <motion.div data-tour="mk-composer" className="mt-4 bg-surface border border-white/10 rounded-[28px] p-4 shadow-xl shadow-black/20">
-          <p className="text-white font-bold mb-2">{mode === 'shop' ? '¿Qué echaste al carrito?' : '¿Qué hace falta en la casa?'}</p>
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-white font-bold">{mode === 'shop' ? '¿Qué echaste al carrito?' : '¿Qué hace falta en la casa?'}</p>
+            <motion.button whileTap={{ scale: 0.9 }} onClick={() => setVoiceOpen(true)} data-tour="mk-voice"
+              className="shrink-0 flex items-center gap-1.5 pl-2.5 pr-3 h-9 rounded-full bg-brand-lime/15 ring-1 ring-brand-lime/40 text-brand-lime text-xs font-bold">
+              <Mic size={15} /> Dictar
+            </motion.button>
+          </div>
           <div className="relative">
             {mode === 'shop' ? <ShoppingCart size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-lime" aria-hidden="true" /> : <ShoppingBasket size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-lime" aria-hidden="true" />}
             <input ref={nameRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
@@ -387,7 +421,8 @@ export default function MarketPage() {
       </>}
 
       <ItemSheet item={sheet?.item ?? null} mode={sheet?.mode ?? 'edit'} onClose={() => setSheet(null)} />
-      <FinishSheet open={finishing} items={items} onClose={() => setFinishing(false)} onDone={t => { setFinishing(false); setCelebrate(t); setMode('plan'); setTimeout(() => setCelebrate(null), 3200); celebrateWithInstagram('primer-mercado', '¡Terminaste tu primer mercado! 🎉'); }} />
+      <VoiceSheet kind="market" open={voiceOpen} onClose={() => setVoiceOpen(false)} marketMode={mode} store={store} onAdded={ids => ids[0] && setFresh(ids[0])} />
+      <FinishSheet open={finishing} items={items} store={store} onClose={() => setFinishing(false)} onDone={t => { setFinishing(false); setCelebrate(t); setMode('plan'); setCurrentStore(''); setTimeout(() => setCelebrate(null), 3200); celebrateWithInstagram('primer-mercado', '¡Terminaste tu primer mercado! 🎉'); }} />
 
       {/* Celebración al terminar */}
       <AnimatePresence>
@@ -399,6 +434,7 @@ export default function MarketPage() {
               </motion.div>
               <p className="text-white text-xl font-bold mt-4">¡Mercado listo!</p>
               <p className="text-brand-lime text-3xl font-extrabold mt-1">{formatCOP(celebrate.total)}</p>
+              {celebrate.store && <p className="text-slate-300 text-xs mt-1 flex items-center justify-center gap-1.5"><StoreBadge name={celebrate.store} size={18} /> en {celebrate.store}</p>}
               <p className="text-slate-300 text-sm mt-2">{celebrate.items.length} productos guardados en tu historial{household ? ' y en el de tu hogar' : ''}.</p>
               {celebrate.missing.length > 0 && <p className="text-slate-400 text-xs mt-1">{celebrate.missing.length} quedaron en la lista para la próxima.</p>}
             </motion.div>

@@ -20,7 +20,7 @@ services:
         value: "no-referrer"
       - path: /*
         name: Permissions-Policy
-        value: "camera=(self), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+        value: "camera=(self), microphone=(self), geolocation=(), payment=(), usb=(), interest-cohort=()"
       - path: /*
         name: Strict-Transport-Security
         value: "max-age=63072000; includeSubDomains; preload"
