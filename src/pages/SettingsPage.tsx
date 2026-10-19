@@ -18,7 +18,7 @@ import {
 import ModuleHeader from '../components/ui/ModuleHeader';
 import MoneyInput from '../components/ui/MoneyInput';
 import { useSecurity, biometricSupported } from '../contexts/SecurityContext';
-import { enableReminders, sendTestNotification, updateNoticesOn, setUpdateNotices, testUpdateNotice } from '../services/alertsService';
+import { enableReminders, sendTestNotification, updateNoticesOn, setUpdateNotices, testUpdateNotice, noticeStatus } from '../services/alertsService';
 import { activateDailyReminder, dailyGoogleCalendarLink, downloadDailyICS } from '../services/dailyReminder';
 import { exportBackup, importBackup } from '../services/backupService';
 import { notify } from '../services/notificationService';
@@ -120,6 +120,8 @@ export default function SettingsPage() {
   const [partner, setPartner] = useState(prefs.names.pareja);
   const [perm, setPerm] = useState<NotificationPermission | 'none'>('Notification' in window ? Notification.permission : 'none');
   const [updNotices, setUpdNotices] = useState(updateNoticesOn);
+  const [nStatus, setNStatus] = useState<Awaited<ReturnType<typeof noticeStatus>> | null>(null);
+  useEffect(() => { noticeStatus().then(setNStatus).catch(() => {}); }, [perm]);
   const [sheet, setSheet] = useState<SheetId>(null);
   const [pinStep, setPinStep] = useState<'first' | 'confirm'>('first');
   const [pin1, setPin1] = useState(''); const [pin2, setPin2] = useState('');
@@ -332,7 +334,14 @@ export default function SettingsPage() {
             desc={perm === 'granted' ? 'Te avisamos 2 días antes, el día del pago y si algo se vence.' : perm === 'denied' ? 'Bloqueados. Actívalos en Ajustes del celular → Apps → Chrome → Notificaciones.' : 'Actívalos para que no se te pase ninguna fecha de pago.'}
             right={perm === 'granted' ? <span className="text-brand-lime text-xs font-bold">ACTIVOS</span> : perm === 'default' ? <button onClick={async () => setPerm(await enableReminders())} className="px-3 py-1.5 rounded-xl bg-brand-lime text-brand-ink text-xs font-bold">Activar</button> : undefined} />
           <Row icon={Gift} title="Avisos de nuevas versiones"
-            desc={perm === 'granted' ? (updNotices ? <>Te avisamos en el celular cuando salga una versión nueva. <button onClick={() => testUpdateNotice()} className="text-brand-lime font-bold underline underline-offset-2">Ver ejemplo</button></> : 'Apagados: verás las novedades al abrir la app.') : 'Activa los avisos del celular para enterarte de cada versión nueva.'}
+            desc={perm === 'granted' ? (updNotices ? <>
+              Te avisamos en el celular cuando salga una versión nueva. <button onClick={() => testUpdateNotice()} className="text-brand-lime font-bold underline underline-offset-2">Ver ejemplo</button>
+              {nStatus && <span className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1.5">
+                <span className="text-emerald-300">✓ Permiso</span>
+                <span className={nStatus.installed ? 'text-emerald-300' : 'text-amber-300'}>{nStatus.installed ? '✓ App instalada' : '✗ Abierta en el navegador (instálala)'}</span>
+                <span className={nStatus.background ? 'text-emerald-300' : 'text-amber-300'}>{nStatus.background ? '✓ Revisión automática' : nStatus.background === null ? '✗ Este celular no permite revisión automática' : '✗ Revisión automática pendiente'}</span>
+              </span>}
+            </> : 'Apagados: verás las novedades al abrir la app.') : 'Activa los avisos del celular para enterarte de cada versión nueva.'}
             right={perm === 'granted' ? <Toggle on={updNotices} label="Avisos de nuevas versiones" onChange={() => { const v = !updNotices; setUpdNotices(v); setUpdateNotices(v); }} /> : perm === 'default' ? <button onClick={async () => setPerm(await enableReminders())} className="px-3 py-1.5 rounded-xl bg-brand-lime text-brand-ink text-xs font-bold">Activar</button> : undefined} />
           <Row icon={AlarmClock} title="Recordatorio diario de gastos"
             desc={prefs.reminder.enabled ? <>Todos los días a las <button onClick={() => openSheet('daily')} className="text-brand-lime font-bold underline underline-offset-2">{fmtTime(prefs.reminder.time)}</button>, si no has anotado nada.</> : 'Un aviso diario para que no se te olvide anotar lo que gastas.'}

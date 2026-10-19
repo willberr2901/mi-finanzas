@@ -163,6 +163,21 @@ export const setUpdateNotices = async (on: boolean) => {
   // El service worker no puede leer localStorage: se lo dejamos en su caché.
   try { await (await caches.open('mf-meta')).put(new Request('/__mf_update_notif'), new Response(on ? 'on' : 'off')); } catch { /* sin caché */ }
 };
+/**
+ * Estado real de los avisos en este celular (para mostrarlo en Ajustes):
+ * permiso de notificaciones, app instalada y revisión automática en segundo plano.
+ */
+export const noticeStatus = async () => {
+  const permission = remindersSupported() ? Notification.permission : 'denied';
+  const installed = window.matchMedia?.('(display-mode: standalone)').matches || (navigator as any).standalone === true;
+  let background: boolean | null = null;   // null = este navegador no tiene revisión automática
+  try {
+    const reg: any = await navigator.serviceWorker?.getRegistration();
+    if (reg?.periodicSync) background = (await reg.periodicSync.getTags()).includes('mf-pagos');
+  } catch { background = null; }
+  return { permission, installed, background };
+};
+
 /** Muestra ya un ejemplo del aviso de versión nueva (para probar). */
 export const testUpdateNotice = async () => {
   if (!remindersSupported() || Notification.permission !== 'granted') return false;

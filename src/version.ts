@@ -6,12 +6,12 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.12.0';
+export const APP_VERSION = '1.13.0';
 
 export const RELEASE_NOTES: string[] = [
-  'Nuevo: el escáner de facturas ahora entiende la factura: comercio, fecha, medio de pago, productos y total',
-  'Cada producto con su cantidad × valor de cada uno = valor de la línea (ej: 4 leches × $3.090 = $12.360)',
-  'Ya no toma impuestos, CUFE, cajero ni resolución como si fueran productos',
-  'Te dice si "todo cuadra" (la suma de productos = el total) y puedes ver la foto en grande para comparar',
-  'Los precios de la factura pasan a Mercado para comparar entre tiendas',
+  'Nueva "Salud financiera": se calcula con tu ahorro, tus pagos al día, tus gustos y tus deudas del mes',
+  'Tócala para ver cada parte y el consejo que más te ayudaría',
+  'Si aún no registras ingresos, te invita a hacerlo en vez de mostrar 0',
+  'Ajustes → Recordatorios ahora muestra si tu celular está listo para recibir avisos de nuevas versiones',
+  'Escáner de facturas: comercio, fecha, medio de pago, productos con cantidad y total que cuadra',
 ]

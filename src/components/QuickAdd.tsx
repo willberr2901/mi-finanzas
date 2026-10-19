@@ -8,7 +8,7 @@
  * Si lo cambias: Cambia el registro rápido de movimientos.
  * ════════════════════════════════════════════════════════════════════
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,6 +31,12 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
   const [saved, setSaved] = useState(false);
   const [voice, setVoice] = useState(false);
   const navigate = useNavigate();
+  // Otras pantallas pueden abrir el registro directo en gasto o ingreso (ej: Salud financiera → "Registrar un ingreso").
+  useEffect(() => {
+    const on = (e: Event) => { const m = (e as CustomEvent).detail; setOpen(true); setSaved(false); if (m === 'income' || m === 'expense') setMode(m); };
+    window.addEventListener('mf:quick-add', on);
+    return () => window.removeEventListener('mf:quick-add', on);
+  }, []);
 
   const reset = () => { setMode(null); setAmount(0); setDesc(''); setSaved(false); };
   const close = () => { setOpen(false); setTimeout(reset, 250); };

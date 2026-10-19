@@ -10,9 +10,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, ArrowDownRight, ArrowUpRight, ChevronRight, CalendarClock, ShoppingCart, Target, Landmark, Gauge, CalendarDays, TrendingUp, Wallet, Flame } from 'lucide-react';
+import { Eye, EyeOff, ArrowDownRight, ArrowUpRight, ChevronRight, CalendarClock, ShoppingCart, Target, Landmark, CalendarDays, TrendingUp, Wallet, Flame } from 'lucide-react';
 import { db, type Transaction, type SavingsGoal, type Bill } from '../utils/database';
-import { calculateHealthScore } from '../services/financialIntelligence';
+import { computeHealth } from '../services/healthScore';
+import HealthCard from '../components/home/HealthCard';
 import { loadBillStatuses, type BillStatus } from '../services/billsService';
 import { formatCOP, parseLocalDate, todayISO } from '../utils/format';
 import { segmentOf, SEGMENT_INFO } from '../utils/categories';
@@ -119,11 +120,8 @@ export default function HomePage() {
 
   const balance = s.income - s.expense;
   const spentPct = s.income > 0 ? Math.round((s.expense / s.income) * 100) : 0;
-  const totalBalance = tx.reduce((a, t) => a + (t.type === 'income' ? t.amount : -t.amount), 0);
-  const recent = tx.some(t => now.getTime() - parseLocalDate(t.date).getTime() < 30 * 86400000);
-  const health = recent ? calculateHealthScore(tx, goals, totalBalance) : null;
-  const hColor = !health ? '#6A7396' : health.total >= 80 ? '#C6F432' : health.total >= 60 ? '#A3E64F' : health.total >= 40 ? '#fbbf24' : '#f87171';
-  const hLabel = !health ? 'Faltan datos' : health.total >= 80 ? 'Excelente' : health.total >= 60 ? 'Buen camino' : health.total >= 40 ? 'Ajustar hábitos' : 'Requiere atención';
+  // Salud financiera del ciclo (ver services/healthScore.ts)
+  const health = useMemo(() => computeHealth({ income: s.income, expense: s.expense, gustos: s.split.gusto, bills }), [s, bills]);
 
   const billTotal = bills.reduce((a, b) => a + (b.payment?.amount ?? b.bill.amount), 0);
   const billPaid = bills.filter(b => b.paid).reduce((a, b) => a + (b.payment?.amount ?? 0), 0);
@@ -378,13 +376,7 @@ export default function HomePage() {
               </>
             ) : <p className="text-[11px] text-slate-400 mt-1">Sin créditos en cuotas</p>}
           </Link>
-          <div className="bg-surface border border-white/5 rounded-[26px] p-4">
-            <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-400 flex items-center justify-center"><Gauge size={16} className="text-white" /></span>
-            <p className="text-white font-bold text-sm mt-2">Salud financiera</p>
-            <div className="flex items-baseline gap-1 mt-1"><span className="text-2xl font-extrabold" style={{ color: hColor }}>{health?.total ?? '—'}</span><span className="text-[10px] text-slate-500">/100</span></div>
-            <p className="text-[10px] font-semibold" style={{ color: hColor }}>{hLabel}</p>
-            {health && <p className="text-[10px] text-slate-400 mt-1">Ahorras el {health.savingsRate}% de lo que entra</p>}
-          </div>
+          <HealthCard health={health} cycleLabel={cycle.label} />
         </motion.div>
       </motion.div>
     </div>
