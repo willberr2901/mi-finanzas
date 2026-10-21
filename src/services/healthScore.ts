@@ -30,7 +30,7 @@ const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(Number.isFinit
 const pct = (n: number) => `${Math.round(n)}%`;
 
 export const healthLabel = (t: number | null) => t === null ? 'Faltan tus ingresos' : t >= 80 ? 'Excelente' : t >= 60 ? 'Vas por buen camino' : t >= 40 ? 'Puedes mejorar' : 'Necesita atención';
-export const healthColor = (t: number | null) => t === null ? '#8A93B8' : t >= 80 ? '#C6F432' : t >= 60 ? '#A3E64F' : t >= 40 ? '#FBBF24' : '#F87171';
+export const healthColor = (t: number | null) => t === null ? '#8A93B8' : t >= 80 ? 'rgb(var(--brand))' : t >= 60 ? '#A3E64F' : t >= 40 ? '#FBBF24' : '#F87171';
 
 export function computeHealth(data: { income: number; expense: number; gustos: number; bills: BillStatus[] }): HealthResult {
   const { income, expense, gustos, bills } = data;

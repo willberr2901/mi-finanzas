@@ -6,13 +6,10 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.13.2';
+export const APP_VERSION = '1.14.0';
 
 export const RELEASE_NOTES: string[] = [
-  'Nuevo: únete a nuestro canal de WhatsApp "Mi Finanzas · Ahorra en casa" desde el menú ☰',
-  'Nueva "Salud financiera": se calcula con tu ahorro, tus pagos al día, tus gustos y tus deudas del mes',
-  'Tócala para ver cada parte y el consejo que más te ayudaría',
-  'Si aún no registras ingresos, te invita a hacerlo en vez de mostrar 0',
-  'Ajustes → Recordatorios ahora muestra si tu celular está listo para recibir avisos de nuevas versiones',
-  'Escáner de facturas: comercio, fecha, medio de pago, productos con cantidad y total que cuadra',
+  'Nuevo: temas de temporada 🎃🎄 La app se viste sola: mes de brujas en octubre y Navidad del 1 de diciembre al 1 de enero',
+  'Colores, adornos animados y consejos de plata especiales para cada temporada',
+  'Si prefieres el diseño de siempre, apágalo en Ajustes → Apariencia',
 ]

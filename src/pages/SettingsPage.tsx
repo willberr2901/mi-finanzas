@@ -36,6 +36,7 @@ import { statsEnabled, setStatsEnabled } from '../services/statsService';
 import { openInstall, canOfferInstall } from '../components/pwa/InstallAppSheet';
 import { openInstagram, INSTAGRAM_USER } from '../components/social/Instagram';
 import { openWhatsAppChannel } from '../components/social/WhatsAppChannel';
+import { seasonEnabled, setSeasonEnabled, todaySeason } from '../services/season';
 import { openFeedback } from '../services/feedbackService';
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
@@ -121,6 +122,7 @@ export default function SettingsPage() {
   const [partner, setPartner] = useState(prefs.names.pareja);
   const [perm, setPerm] = useState<NotificationPermission | 'none'>('Notification' in window ? Notification.permission : 'none');
   const [updNotices, setUpdNotices] = useState(updateNoticesOn);
+  const [seasonOn, setSeasonOn] = useState(seasonEnabled);
   const [nStatus, setNStatus] = useState<Awaited<ReturnType<typeof noticeStatus>> | null>(null);
   useEffect(() => { noticeStatus().then(setNStatus).catch(() => {}); }, [perm]);
   const [sheet, setSheet] = useState<SheetId>(null);
@@ -361,7 +363,7 @@ export default function SettingsPage() {
                   <button key={t.id} role="radio" aria-checked={active} onClick={() => setPrefs({ theme: t.id })}
                     className={`relative rounded-2xl p-2 pb-2.5 ring-2 transition-all ${active ? 'ring-brand-lime bg-white/[0.06]' : 'ring-white/10'}`}>
                     <div className={`h-16 rounded-xl overflow-hidden flex flex-col gap-1 p-1.5 ${t.id === 'light' ? 'theme-swatch-light' : t.id === 'dark' ? 'theme-swatch-dark' : 'theme-swatch-auto'}`}>
-                      <span className="h-3 w-3/4 rounded bg-[#C6F432]" />
+                      <span className="h-3 w-3/4 rounded bg-brand-lime" />
                       <span className="h-2 w-full rounded swatch-line" />
                       <span className="h-2 w-2/3 rounded swatch-line" />
                     </div>
@@ -373,6 +375,9 @@ export default function SettingsPage() {
             </div>
             <p className="text-[11px] text-slate-400 mt-3">"Automático" usa el tema de tu celular.</p>
           </div>
+          <Row icon={Sparkles} title="Decoración de temporada"
+            desc={todaySeason() ? `${todaySeason()!.emoji} ${todaySeason()!.name}: colores y adornos especiales. ${todaySeason()!.until}.` : 'La app se viste sola: 🎃 en octubre y 🎄 en diciembre.'}
+            right={<Toggle on={seasonOn} label="Decoración de temporada" onChange={() => { const v = !seasonOn; setSeasonOn(v); setSeasonEnabled(v); }} />} />
         </Section>
 
         <Section icon={ShieldCheck} title="Seguridad">

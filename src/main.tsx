@@ -12,6 +12,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { applyHardening } from './utils/hardening';
+import { startSeasons } from './services/season';
 
 // 🛡️ Protecciones antes de todo (ver utils/hardening.ts)
 applyHardening();
@@ -22,6 +23,9 @@ try {
   const light = pref === 'light' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: light)').matches);
   document.documentElement.classList.add(light ? 'light' : 'dark');
 } catch { document.documentElement.classList.add('dark'); }
+
+// 🎃🎄 Tema de temporada según la fecha (octubre: brujas · diciembre: Navidad). Ver services/season.ts
+startSeasons();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

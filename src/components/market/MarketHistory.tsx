@@ -118,7 +118,7 @@ const Spark = ({ values }: { values: number[] }) => {
   const pts = v.map((x, i) => `${(i / (v.length - 1)) * 100},${28 - ((x - min) / span) * 24}`).join(' ');
   return (
     <svg viewBox="0 0 100 32" className="w-full h-10" aria-hidden="true" preserveAspectRatio="none">
-      <polyline points={pts} fill="none" stroke="#C6F432" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+      <polyline points={pts} fill="none" stroke="rgb(var(--brand))" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 };

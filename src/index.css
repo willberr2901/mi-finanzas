@@ -12,6 +12,7 @@
 @tailwind utilities;
 
 :root, html.light .theme-dark {
+  --brand: 198 244 50;   /* color de acento de la marca (cambia con la temporada) */
   --navy-50: 244 246 251;
   --navy-100: 231 234 244;
   --navy-200: 205 210 230;
@@ -191,3 +192,54 @@ html.light .theme-dark .text-amber-300 { color: #fcd34d; }
 .Toastify__toast.mf-toast-error .Toastify__progress-bar { background: #fb7185 !important; }
 .Toastify__toast.mf-toast-warning .Toastify__progress-bar { background: #fbbf24 !important; }
 .Toastify__toast.mf-toast .Toastify__progress-bar--bg { background: rgba(255,255,255,0.06) !important; opacity: 1 !important; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   🎃🎄 TEMAS DE TEMPORADA (se ponen y se quitan solos según la fecha)
+   ────────────────────────────────────────────────────────────────────
+   services/season.ts pone en <html> la clase .season-halloween (todo octubre)
+   o .season-navidad (1 de diciembre al 1 de enero). Aquí cambian:
+   el color de acento, la familia "lima" y, en tema oscuro, los fondos
+   y degradados de las tarjetas. La decoración animada está en
+   components/season/SeasonDecor.tsx.
+   ════════════════════════════════════════════════════════════════════ */
+html.season-halloween {
+  --brand: 255 138 31;
+  --lime-50: 255 247 237; --lime-100: 255 237 213; --lime-200: 254 215 170; --lime-300: 253 186 116; --lime-400: 255 150 55;
+  --lime-500: 255 138 31; --lime-600: 234 110 10; --lime-700: 194 84 12; --lime-800: 154 62 18; --lime-900: 124 50 18; --lime-950: 67 22 6;
+  --accent-text: #FF8A1F; --accent-primary: #FF8A1F;
+}
+html.season-halloween:not(.light), html.season-halloween .theme-dark {
+  --c-appbg: 13 8 22; --c-surface: 27 17 42; --c-surface2: 24 13 46;
+  --navy-950: 12 7 22; --navy-900: 25 14 44; --navy-800: 40 25 64;
+  --bg-primary: #0D0816; --bg-secondary: #160C26;
+}
+html.season-navidad {
+  --brand: 247 201 72;
+  --lime-50: 255 251 235; --lime-100: 254 243 199; --lime-200: 253 230 138; --lime-300: 252 211 77; --lime-400: 247 201 72;
+  --lime-500: 247 201 72; --lime-600: 217 165 32; --lime-700: 180 130 20; --lime-800: 140 100 20; --lime-900: 110 80 20; --lime-950: 60 42 8;
+  --accent-text: #F7C948; --accent-primary: #F7C948;
+}
+html.season-navidad:not(.light), html.season-navidad .theme-dark {
+  --c-appbg: 6 18 14; --c-surface: 14 32 26; --c-surface2: 12 30 24;
+  --navy-950: 6 18 14; --navy-900: 12 30 24; --navy-800: 20 48 38;
+  --bg-primary: #06120E; --bg-secondary: #0A1F17;
+}
+/* Degradados de las tarjetas principales (solo en tema oscuro) */
+html.season-halloween:not(.light) .from-\[\#232C5A\]{--tw-gradient-from:#3B1E5E var(--tw-gradient-from-position);--tw-gradient-to:rgb(59 30 94 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}
+html.season-halloween:not(.light) .via-\[\#141B3D\]{--tw-gradient-to:rgb(36 18 61 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), #24123D var(--tw-gradient-via-position), var(--tw-gradient-to)}
+html.season-halloween:not(.light) .from-\[\#1D2550\]{--tw-gradient-from:#34195A var(--tw-gradient-from-position);--tw-gradient-to:rgb(52 25 90 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}
+html.season-halloween:not(.light) .via-\[\#121938\]{--tw-gradient-to:rgb(31 15 54 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), #1F0F36 var(--tw-gradient-via-position), var(--tw-gradient-to)}
+html.season-halloween:not(.light) .from-\[\#2A3570\]{--tw-gradient-from:#4A2470 var(--tw-gradient-from-position);--tw-gradient-to:rgb(74 36 112 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}
+html.season-halloween:not(.light) .to-\[\#0B1026\]{--tw-gradient-to:#120A22 var(--tw-gradient-to-position)}
+html.season-halloween:not(.light) .to-\[\#0E1430\]{--tw-gradient-to:#170C2A var(--tw-gradient-to-position)}
+html.season-halloween:not(.light) .to-\[\#151D45\]{--tw-gradient-to:#1E0F38 var(--tw-gradient-to-position)}
+html.season-navidad:not(.light) .from-\[\#232C5A\]{--tw-gradient-from:#145A3A var(--tw-gradient-from-position);--tw-gradient-to:rgb(20 90 58 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}
+html.season-navidad:not(.light) .via-\[\#141B3D\]{--tw-gradient-to:rgb(13 59 39 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), #0D3B27 var(--tw-gradient-via-position), var(--tw-gradient-to)}
+html.season-navidad:not(.light) .from-\[\#1D2550\]{--tw-gradient-from:#11502F var(--tw-gradient-from-position);--tw-gradient-to:rgb(17 80 47 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}
+html.season-navidad:not(.light) .via-\[\#121938\]{--tw-gradient-to:rgb(11 51 34 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), #0B3322 var(--tw-gradient-via-position), var(--tw-gradient-to)}
+html.season-navidad:not(.light) .from-\[\#2A3570\]{--tw-gradient-from:#7A1424 var(--tw-gradient-from-position);--tw-gradient-to:rgb(122 20 36 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}
+html.season-navidad:not(.light) .to-\[\#0B1026\]{--tw-gradient-to:#071F16 var(--tw-gradient-to-position)}
+html.season-navidad:not(.light) .to-\[\#0E1430\]{--tw-gradient-to:#0A2A1D var(--tw-gradient-to-position)}
+html.season-navidad:not(.light) .to-\[\#151D45\]{--tw-gradient-to:#3D0D16 var(--tw-gradient-to-position)}
+@media (prefers-reduced-motion: reduce) { .season-anim { animation: none !important; } }

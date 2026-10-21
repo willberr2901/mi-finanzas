@@ -117,7 +117,10 @@ export default function InstallAppSheet({ ready }: { ready: boolean }) {
   useEffect(() => {
     if (!ready || !canOfferInstall()) return;
     try { if (sessionStorage.getItem(SNOOZE_KEY)) return; } catch { /* sin almacenamiento */ }
-    const t = setTimeout(() => { if (canOfferInstall()) setNudge(true); }, 2500);
+    const t = setTimeout(() => {
+      try { if (sessionStorage.getItem(SNOOZE_KEY)) return; } catch { /* sin almacenamiento */ }  // otro aviso (ej. temporada) pidió esperar
+      if (canOfferInstall()) setNudge(true);
+    }, 2500);
     return () => clearTimeout(t);
   }, [ready]);
   const closeNudge = () => { setNudge(false); try { sessionStorage.setItem(SNOOZE_KEY, '1'); } catch { /* sin almacenamiento */ } };

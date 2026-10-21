@@ -35,6 +35,7 @@ import InstallAppSheet from './components/pwa/InstallAppSheet';
 import SecurityCenter, { securityIntroSeen } from './components/security/SecurityCenter';
 import { InstagramMoment } from './components/social/Instagram';
 import FeedbackSheet from './components/feedback/FeedbackSheet';
+import { SeasonDecor, SeasonPopup } from './components/season/Season';
 import { startStats } from './services/statsService';
 
 // Lazy loading de páginas. Si tras una actualización falla la carga de una página
@@ -197,6 +198,8 @@ function AppContent() {
         <SecurityCenter autoIntro={showIntro} onIntroDone={afterIntro} />
         <InstagramMoment />
         <FeedbackSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
+        <SeasonDecor />
+        <SeasonPopup ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
         <UpdateManager />
         <ToastProvider />
         <AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence>

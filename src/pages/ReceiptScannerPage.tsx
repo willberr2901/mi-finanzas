@@ -154,7 +154,7 @@ export default function ReceiptScannerPage() {
               <div className="relative flex items-center gap-4">
                 <div className="relative w-16 h-16 shrink-0 rounded-2xl bg-white/5 ring-1 ring-white/10 flex items-center justify-center overflow-hidden">
                   <ScanLine className="text-brand-lime" size={30} />
-                  <motion.span className="absolute left-2 right-2 h-0.5 bg-brand-lime/80 rounded-full shadow-[0_0_12px_#C6F432]" animate={{ top: ['18%', '82%', '18%'] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }} />
+                  <motion.span className="absolute left-2 right-2 h-0.5 bg-brand-lime/80 rounded-full shadow-[0_0_12px_rgb(var(--brand))]" animate={{ top: ['18%', '82%', '18%'] }} transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }} />
                 </div>
                 <div>
                   <p className="text-white font-bold">Escanea tu factura</p>
@@ -204,7 +204,7 @@ export default function ReceiptScannerPage() {
           <motion.div key="reading" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="rounded-[28px] p-5 bg-white/[0.04] ring-1 ring-white/10 text-center">
             <div className="relative mx-auto w-44 h-56 rounded-2xl overflow-hidden ring-1 ring-white/10 bg-black/30">
               {preview && <img src={preview} alt="Factura" className="w-full h-full object-cover opacity-70" />}
-              <motion.span className="absolute left-0 right-0 h-1 bg-brand-lime shadow-[0_0_18px_#C6F432]" animate={{ top: ['4%', '94%', '4%'] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }} />
+              <motion.span className="absolute left-0 right-0 h-1 bg-brand-lime shadow-[0_0_18px_rgb(var(--brand))]" animate={{ top: ['4%', '94%', '4%'] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }} />
             </div>
             <p className="text-white font-bold mt-5">{stage}…</p>
             <div className="mt-3 h-2 rounded-full bg-white/10 overflow-hidden">

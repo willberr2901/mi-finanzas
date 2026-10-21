@@ -88,7 +88,7 @@ export default function MarketPage() {
   const shown = mode === 'shop' ? cartTotal : est.total;
   const pct = budget > 0 ? (shown / budget) * 100 : 0;
   const left = budget - shown;
-  const barColor = pct >= 100 ? 'from-rose-500 to-red-500' : pct >= 85 ? 'from-amber-300 to-orange-500' : 'from-lime-300 to-[#C6F432]';
+  const barColor = pct >= 100 ? 'from-rose-500 to-red-500' : pct >= 85 ? 'from-amber-300 to-orange-500' : 'from-lime-300 to-brand-lime';
   const known = useMemo(() => knownProducts(), [trips.length]);
   const me = myName();
 

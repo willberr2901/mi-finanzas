@@ -87,7 +87,7 @@ function QrScanner({ onResult, onCancel }: { onResult: (t: string) => void; onCa
       {error ? <p className="text-sm text-slate-300 py-4">{error}</p> : (
         <div className="relative mx-auto w-64 h-64 rounded-3xl overflow-hidden bg-black ring-2 ring-brand-lime/50">
           <video ref={video} playsInline muted className="w-full h-full object-cover" />
-          <motion.div className="absolute inset-x-6 h-0.5 bg-brand-lime shadow-[0_0_12px_#C6F432]" animate={{ top: ['15%', '85%', '15%'] }} transition={{ duration: 2.4, repeat: Infinity }} />
+          <motion.div className="absolute inset-x-6 h-0.5 bg-brand-lime shadow-[0_0_12px_rgb(var(--brand))]" animate={{ top: ['15%', '85%', '15%'] }} transition={{ duration: 2.4, repeat: Infinity }} />
         </div>
       )}
       <button onClick={onCancel} className="mt-3 text-xs text-slate-300 underline">Volver</button>

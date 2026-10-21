@@ -18,7 +18,7 @@ export default {
         violet: lime, purple: lime, indigo: lime, fuchsia: lime,
         cyan: limeGreen, emerald: limeGreen,
         surface: v('c-surface'), surface2: v('c-surface2'), appbg: v('c-appbg'),
-        brand: { lime: '#C6F432', navy: '#0B1026', navy2: '#1A2140', ink: '#070B18' },
+        brand: { lime: v('brand'), navy: '#0B1026', navy2: '#1A2140', ink: '#070B18' }, // brand-lime cambia con la temporada (src/index.css → .season-*)
       },
     },
   },

@@ -14,6 +14,8 @@ import { Eye, EyeOff, ArrowDownRight, ArrowUpRight, ChevronRight, CalendarClock,
 import { db, type Transaction, type SavingsGoal, type Bill } from '../utils/database';
 import { computeHealth } from '../services/healthScore';
 import HealthCard from '../components/home/HealthCard';
+import { SeasonCard } from '../components/season/Season';
+import { useSeason } from '../services/season';
 import { loadBillStatuses, type BillStatus } from '../services/billsService';
 import { formatCOP, parseLocalDate, todayISO } from '../utils/format';
 import { segmentOf, SEGMENT_INFO } from '../utils/categories';
@@ -29,7 +31,7 @@ import { amountsHidden, setAmountsHidden } from '../utils/privacyMask';
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const SEGS = ['obligatorio', 'necesario', 'gusto', 'ahorro'] as const;
-const SEG_HEX: Record<typeof SEGS[number], string> = { obligatorio: '#C6F432', necesario: '#8792C4', gusto: '#F59E0B', ahorro: '#5EEAD4' };
+const SEG_HEX: Record<typeof SEGS[number], string> = { obligatorio: 'rgb(var(--brand))', necesario: '#8792C4', gusto: '#F59E0B', ahorro: '#5EEAD4' };
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
 const item = { hidden: { opacity: 0, y: 22 }, show: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 22, stiffness: 200 } } };
@@ -59,6 +61,7 @@ export default function HomePage() {
   const [bills, setBills] = useState<BillStatus[]>([]);
   const [debts, setDebts] = useState<Bill[]>([]);
   const name = localStorage.getItem('miFinanzasUserName');
+  const season = useSeason();
   const [prefs] = usePrefs();
 
   usePageTour('inicio', [
@@ -144,7 +147,7 @@ export default function HomePage() {
 
   return (
     <div className="pb-28">
-      <ModuleHeader module="inicio" title={name ? `Hola, ${name}` : 'Mi Finanzas'} subtitle={`${DAYS[now.getDay()][0].toUpperCase()}${DAYS[now.getDay()].slice(1)} ${now.getDate()} de ${MONTHS[now.getMonth()]}`} />
+      <ModuleHeader module="inicio" title={`${name ? `Hola, ${name}` : 'Mi Finanzas'}${season ? ` ${season.emoji}` : ''}`} subtitle={`${DAYS[now.getDay()][0].toUpperCase()}${DAYS[now.getDay()].slice(1)} ${now.getDate()} de ${MONTHS[now.getMonth()]}`} />
 
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-4">
         {/* 1. Resumen del mes */}
@@ -169,7 +172,7 @@ export default function HomePage() {
             <div className="relative w-24 h-24 shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90" aria-hidden="true">
                 <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.12)" strokeWidth="10" />
-                <motion.circle cx="50" cy="50" r="42" fill="none" stroke="#C6F432" strokeWidth="10" strokeLinecap="round" strokeDasharray={263.9}
+                <motion.circle cx="50" cy="50" r="42" fill="none" stroke="rgb(var(--brand))" strokeWidth="10" strokeLinecap="round" strokeDasharray={263.9}
                   initial={{ strokeDashoffset: 263.9 }} animate={{ strokeDashoffset: 263.9 * (1 - Math.min(spentPct, 100) / 100) }} transition={{ duration: 1.3, delay: 0.3 }} />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
@@ -195,6 +198,9 @@ export default function HomePage() {
             </Link>
           </div>
         </motion.div>
+
+        {/* 🎃🎄 Consejos de temporada (solo en octubre y diciembre) */}
+        {season && <motion.div variants={item}><SeasonCard season={season} /></motion.div>}
 
         {/* 2. Indicadores */}
         <motion.div variants={item} className="grid grid-cols-3 gap-2">
@@ -241,7 +247,7 @@ export default function HomePage() {
                     const soon = b.state === 'pronto';
                     const frac = Math.max(0, Math.min(1, 1 - b.daysLeft / 30));
                     const grad = urgent ? 'from-rose-500/30 to-red-600/10 border-rose-400/40' : soon ? 'from-amber-500/25 to-orange-500/10 border-amber-400/40' : 'from-violet-500/20 to-indigo-500/5 border-violet-400/25';
-                    const ring = urgent ? '#fb7185' : soon ? '#fbbf24' : '#C6F432';
+                    const ring = urgent ? '#fb7185' : soon ? '#fbbf24' : 'rgb(var(--brand))';
                     return (
                       <motion.div key={b.bill.id} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 + i * 0.07 }} className="snap-start shrink-0">
                         <Link to="/pagos" className={`block w-40 rounded-3xl p-3.5 bg-gradient-to-br border ${grad}`}>

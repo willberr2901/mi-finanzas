@@ -18,20 +18,20 @@ export default function StoreBadge({ size = 36, className = '' }: { name?: strin
         {/* Fachada */}
         <rect x="8" y="19" width="32" height="22" rx="2.5" fill="#F4F6FF" />
         {/* Toldo a rayas */}
-        <path d="M6 12.5 9 7h30l3 5.5z" fill="#C6F432" />
+        <path d="M6 12.5 9 7h30l3 5.5z" fill="rgb(var(--brand))" />
         <g>
           {[0, 1, 2, 3, 4, 5].map(i => (
-            <path key={i} d={`M${6 + i * 6} 12.5h6v3.2a3 3 0 0 1-6 0z`} fill={i % 2 ? '#F4F6FF' : '#C6F432'} />
+            <path key={i} d={`M${6 + i * 6} 12.5h6v3.2a3 3 0 0 1-6 0z`} fill={i % 2 ? '#F4F6FF' : 'rgb(var(--brand))'} />
           ))}
         </g>
         {/* Puerta */}
         <rect x="27" y="26" width="8.5" height="15" rx="1.5" fill="#1B2350" />
-        <circle cx="33.6" cy="34" r="0.9" fill="#C6F432" />
+        <circle cx="33.6" cy="34" r="0.9" fill="rgb(var(--brand))" />
         {/* Vitrina */}
         <rect x="12" y="26" width="11.5" height="8.5" rx="1.5" fill="#7DD3FC" />
         <path d="M13.5 33l3-3.5 2.5 2.5 2-1.5 1.5 2.5z" fill="#F4F6FF" opacity=".75" />
         {/* Andén */}
-        <rect x="5" y="40.5" width="38" height="2.5" rx="1.25" fill="#C6F432" opacity=".55" />
+        <rect x="5" y="40.5" width="38" height="2.5" rx="1.25" fill="rgb(var(--brand))" opacity=".55" />
       </svg>
     </span>
   );

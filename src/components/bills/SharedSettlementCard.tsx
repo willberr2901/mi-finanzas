@@ -95,7 +95,7 @@ export default function SharedSettlementCard({ statuses, period }: { statuses: B
                   <button key={p} onClick={() => setPrefs({ split: p })} className={`px-3 py-1.5 rounded-full text-xs font-bold ${pctMe === p ? 'bg-brand-lime text-brand-ink' : 'bg-white/[0.07] text-white ring-1 ring-white/10'}`}>{p}/{100 - p}</button>
                 ))}
               </div>
-              <input type="range" min={0} max={100} step={5} value={pctMe} onChange={e => setPrefs({ split: Number(e.target.value) })} className="w-full mt-3 accent-[#C6F432]" aria-label={`Porcentaje de ${me}`} />
+              <input type="range" min={0} max={100} step={5} value={pctMe} onChange={e => setPrefs({ split: Number(e.target.value) })} className="w-full mt-3 accent-brand-lime" aria-label={`Porcentaje de ${me}`} />
               <div className="flex justify-between text-[11px] text-slate-300"><span>{me}: {pctMe}%</span><span>{partner}: {100 - pctMe}%</span></div>
             </div>
           </motion.div>
