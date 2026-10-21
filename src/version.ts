@@ -6,7 +6,7 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.14.0';
+export const APP_VERSION = '1.14.1';
 
 export const RELEASE_NOTES: string[] = [
   'Nuevo: temas de temporada 🎃🎄 La app se viste sola: mes de brujas en octubre y Navidad del 1 de diciembre al 1 de enero',

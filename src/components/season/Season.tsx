@@ -16,9 +16,9 @@ import { useSeason, seasonPopupPending, markSeasonPopupSeen, setSeasonEnabled, t
 
 // ═══ SECCIÓN: Dibujos (propios de la app) ═══
 const Bat = ({ size = 46 }: { size?: number }) => (
-  <svg width={size} height={size * 0.5} viewBox="0 0 64 32" aria-hidden="true">
-    <path d="M32 10c2-4 4-6 4-6l1 5c3-1 6-1 8 1 4-3 10-4 19-2-6 2-8 6-8 10-3-2-7-2-9 1-2-2-5-3-8-1-2 3-4 6-7 9-3-3-5-6-7-9-3-2-6-1-8 1-2-3-6-3-9-1 0-4-2-8-8-10 9-2 15-1 19 2 2-2 5-2 8-1l1-5s2 2 4 6z" fill="#1A0B2E" opacity=".85" />
-    <circle cx="29.5" cy="12" r="1.2" fill="#FF8A1F" /><circle cx="34.5" cy="12" r="1.2" fill="#FF8A1F" />
+  <svg width={size} height={size * 0.5} viewBox="0 0 64 32" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 5px rgba(255,138,31,.75)) drop-shadow(0 0 1px rgba(255,190,120,.9))' }}>
+    <path d="M32 10c2-4 4-6 4-6l1 5c3-1 6-1 8 1 4-3 10-4 19-2-6 2-8 6-8 10-3-2-7-2-9 1-2-2-5-3-8-1-2 3-4 6-7 9-3-3-5-6-7-9-3-2-6-1-8 1-2-3-6-3-9-1 0-4-2-8-8-10 9-2 15-1 19 2 2-2 5-2 8-1l1-5s2 2 4 6z" fill="#14081F" />
+    <circle cx="29.5" cy="12" r="1.4" fill="#FFB347" /><circle cx="34.5" cy="12" r="1.4" fill="#FFB347" />
   </svg>
 );
 const Pumpkin = ({ size = 28 }: { size?: number }) => (
@@ -39,10 +39,10 @@ export function SeasonDecor() {
 
   if (season.id === 'halloween') return (
     <div className="fixed inset-0 z-[45] pointer-events-none overflow-hidden" aria-hidden="true">
-      {[{ top: '14%', dur: 22, delay: 0, size: 44 }, { top: '42%', dur: 28, delay: 9, size: 34 }, { top: '68%', dur: 25, delay: 17, size: 40 }].map((b, i) => (
+      {[{ top: '13%', dur: 16, delay: 0.5, size: 52 }, { top: '44%', dur: 20, delay: 6, size: 40 }, { top: '70%', dur: 18, delay: 11, size: 46 }].map((b, i) => (
         <motion.div key={i} className="absolute season-anim" style={{ top: b.top, left: 0 }}
           initial={{ x: '-15vw' }} animate={{ x: ['-15vw', '115vw'], y: [0, -26, 8, -18, 0] }}
-          transition={{ x: { duration: b.dur, delay: b.delay, repeat: Infinity, ease: 'linear', repeatDelay: 6 }, y: { duration: 3, repeat: Infinity, ease: 'easeInOut' } }}>
+          transition={{ x: { duration: b.dur, delay: b.delay, repeat: Infinity, ease: 'linear', repeatDelay: 4 }, y: { duration: 3, repeat: Infinity, ease: 'easeInOut' } }}>
           <motion.div animate={{ scaleY: [1, 0.55, 1] }} transition={{ duration: 0.35, repeat: Infinity }}><Bat size={b.size} /></motion.div>
         </motion.div>
       ))}
