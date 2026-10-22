@@ -3,7 +3,7 @@
  * 💬 VENTANA "¿QUÉ TAL TE HA PARECIDO?" (opinión del usuario)
  * ────────────────────────────────────────────────────────────────────
  * Paso 1: estrellas (1 a 5). Paso 2: qué le gusta, qué mejoraría, en qué parte
- * y un apodo opcional. Paso 3: gracias (+ invitación a Instagram si dio 4-5).
+ * y un apodo opcional. Paso 3: gracias + invitación a seguirnos (canal de WhatsApp e Instagram).
  * Se abre sola cada vez que abren la app hasta que respondan (reglas en
  * feedbackService.ts → shouldAskFeedback), o con openFeedback()
  * (Menú ☰ → "Danos tu opinión" y Ajustes). Montada en App.tsx.
@@ -16,6 +16,7 @@ import { Star, MessageSquareHeart, Send, X, ShieldCheck, Loader2 } from 'lucide-
 import { AREAS, sendFeedback, shouldAskFeedback, snoozeFeedback, countUsageDay, type FeedbackArea } from '../../services/feedbackService';
 import { notify } from '../../services/notificationService';
 import { openInstagram, InstagramIcon, INSTAGRAM_USER } from '../social/Instagram';
+import { openWhatsAppChannel, ChannelIcon } from '../social/WhatsAppChannel';
 
 const FACES = ['', 'Muy mala 😞', 'Mala 😕', 'Regular 😐', 'Buena 🙂', '¡Excelente! 🤩'];
 
@@ -79,14 +80,23 @@ export default function FeedbackSheet({ ready }: { ready: boolean }) {
               <div className="text-center py-2">
                 <motion.span initial={{ scale: 0 }} animate={{ scale: [0, 1.2, 1] }} className="mx-auto w-16 h-16 rounded-[22px] bg-brand-lime flex items-center justify-center"><MessageSquareHeart size={30} className="text-brand-ink" /></motion.span>
                 <h2 id="fb-title" className="text-white text-xl font-extrabold mt-4">¡Gracias por tu opinión!</h2>
-                <p className="text-slate-300 text-sm mt-1.5">La leemos con cariño y nos ayuda a mejorar la app para todos.</p>
-                {rating >= 4 && (
-                  <button onClick={() => { openInstagram(); setOpen(false); }} className="mt-5 w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 text-left">
+                <p className="text-slate-300 text-sm mt-1.5">La leemos con cariño y con ella decidimos qué mejorar.</p>
+                {/* Invitación a seguirnos (para todos) */}
+                <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }} className="mt-5 p-4 rounded-[24px] bg-white/[0.05] ring-1 ring-brand-lime/30 text-left">
+                  <p className="text-white font-extrabold text-center">¿Nos sigues? 💚</p>
+                  <p className="text-[12px] text-slate-300 text-center mt-0.5">Entérate primero de las novedades, consejos de plata y sorpresas.</p>
+                  <button onClick={openWhatsAppChannel} className="mt-3 w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 text-left active:scale-[0.98]">
+                    <ChannelIcon size={38} />
+                    <span className="flex-1"><span className="block text-white text-sm font-bold">Únete al canal de WhatsApp</span><span className="block text-[11px] text-slate-400">Avisos de cada versión nueva</span></span>
+                    <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-brand-lime text-brand-ink">Unirme</span>
+                  </button>
+                  <button onClick={openInstagram} className="mt-2 w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 text-left active:scale-[0.98]">
                     <InstagramIcon size={38} />
                     <span className="flex-1"><span className="block text-white text-sm font-bold">Síguenos en Instagram</span><span className="block text-[11px] text-slate-400">@{INSTAGRAM_USER}</span></span>
+                    <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-brand-lime text-brand-ink">Seguir</span>
                   </button>
-                )}
-                <button onClick={() => setOpen(false)} className="mt-3 w-full h-12 rounded-2xl bg-brand-lime text-brand-ink font-extrabold">Listo</button>
+                </motion.div>
+                <button onClick={() => setOpen(false)} className="mt-3 w-full h-12 rounded-2xl bg-white/[0.08] text-white font-bold">Listo</button>
               </div>
             ) : (
               <>
