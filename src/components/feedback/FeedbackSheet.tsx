@@ -4,7 +4,8 @@
  * ────────────────────────────────────────────────────────────────────
  * Paso 1: estrellas (1 a 5). Paso 2: qué le gusta, qué mejoraría, en qué parte
  * y un apodo opcional. Paso 3: gracias (+ invitación a Instagram si dio 4-5).
- * Se abre sola después de varios días de uso, o con openFeedback()
+ * Se abre sola cada vez que abren la app hasta que respondan (reglas en
+ * feedbackService.ts → shouldAskFeedback), o con openFeedback()
  * (Menú ☰ → "Danos tu opinión" y Ajustes). Montada en App.tsx.
  * Lo enviado llega a Reportes → Opiniones (solo administradora).
  * ════════════════════════════════════════════════════════════════════
@@ -36,12 +37,25 @@ export default function FeedbackSheet({ ready }: { ready: boolean }) {
     window.addEventListener('mf:open-feedback', on);
     return () => window.removeEventListener('mf:open-feedback', on);
   }, []);
-  // Aparece sola (con calma) a quien ya usa la app hace unos días.
+  // Aparece sola al abrir la app (y al volver a ella) a quien aún no ha opinado.
+  // Espera a que no haya otra ventana abierta (temporada, instalar, novedades…).
+  const [visits, setVisits] = useState(0);
   useEffect(() => {
-    if (!ready || !shouldAskFeedback()) return;
-    const t = setTimeout(() => { if (shouldAskFeedback() && !document.querySelector('[role="dialog"]')) { reset(); setAuto(true); setOpen(true); } }, 20000);
+    const onVis = () => { if (document.visibilityState === 'visible') setVisits(v => v + 1); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, []);
+  useEffect(() => {
+    if (!ready || open || !shouldAskFeedback()) return;
+    let tries = 0;
+    let t = setTimeout(function check() {
+      if (!shouldAskFeedback()) return;
+      if (document.querySelector('[role="dialog"]') && tries++ < 40) { t = setTimeout(check, 3000); return; }
+      if (!document.querySelector('[role="dialog"]')) { reset(); setAuto(true); setOpen(true); }
+    }, 6000);
     return () => clearTimeout(t);
-  }, [ready]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, visits]);
 
   const close = () => { if (step < 3 && auto) snoozeFeedback(); setOpen(false); };
   const send = async () => {
@@ -79,7 +93,7 @@ export default function FeedbackSheet({ ready }: { ready: boolean }) {
                 <div className="text-center">
                   <span className="mx-auto w-14 h-14 rounded-[20px] bg-brand-lime flex items-center justify-center"><MessageSquareHeart size={26} className="text-brand-ink" /></span>
                   <h2 id="fb-title" className="text-white text-xl font-extrabold mt-3">{step === 1 ? '¿Qué tal te ha parecido Mi Finanzas?' : 'Cuéntanos un poco más'}</h2>
-                  {step === 1 && <p className="text-slate-300 text-sm mt-1">Tu opinión es anónima y nos ayuda a mejorar.</p>}
+                  {step === 1 && <p className="text-slate-300 text-sm mt-1">Te toma menos de 1 minuto, es anónima y con tus ideas decidimos qué mejorar 💚</p>}
                 </div>
 
                 {/* Estrellas */}

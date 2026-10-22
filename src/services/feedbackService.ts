@@ -5,8 +5,10 @@
  * Qué hace: envía al servidor la calificación (1 a 5 estrellas), lo que les
  *           gusta, lo que mejorarían, la parte de la app y un apodo OPCIONAL.
  *           No se envía nada más: ni nombre real obligatorio, ni datos financieros.
- * Cuándo se pide: después de varios días de uso (ver shouldAskFeedback), máximo
- *           una vez cada 30 días; si dicen "Ahora no", se espera 10 días.
+ * Cuándo se pide (ver shouldAskFeedback):
+ *   • Quien NUNCA ha respondido: cada vez que abre la app (desde su segundo día de uso).
+ *     "Ahora no" la calla solo por 2 horas, para que no salga en cada toque.
+ *   • Quien ya respondió: otra vez a los 30 días; "Ahora no" espera 10 días.
  * Dónde se ve el resultado: Reportes → Opiniones (solo administradora).
  * Servidor: funciones feedback_send / feedback_list / feedback_mark (supabase/sync.sql).
  * ════════════════════════════════════════════════════════════════════
@@ -65,18 +67,23 @@ export const countUsageDay = () => {
     localStorage.setItem(K.days, String(Number(localStorage.getItem(K.days) || 0) + 1));
   } catch { /* sin almacenamiento */ }
 };
+/** ¿Esta persona ya envió alguna vez su opinión desde este celular? */
+export const hasSentFeedback = () => { try { return Number(localStorage.getItem(K.sent) || 0) > 0; } catch { return false; } };
 export const shouldAskFeedback = () => {
   try {
     const days = Number(localStorage.getItem(K.days) || 0);
     const sent = Number(localStorage.getItem(K.sent) || 0);
     const snooze = Number(localStorage.getItem(K.snooze) || 0);
-    if (days < 3) return false;                                  // primero que la conozcan
-    if (Date.now() - sent < 30 * 86400000) return false;         // ya opinó este mes
-    if (Date.now() < snooze) return false;                       // dijo "Ahora no"
-    return true;
+    if (Date.now() < snooze) return false;                       // dijo "Ahora no" hace poco
+    if (!sent) return days >= 2;                                 // nunca ha opinado: cada vez que abre (desde su 2.º día)
+    return Date.now() - sent >= 30 * 86400000;                   // ya opinó: otra vez al mes
   } catch { return false; }
 };
-export const snoozeFeedback = (days = 10) => { try { localStorage.setItem(K.snooze, String(Date.now() + days * 86400000)); } catch { /* sin almacenamiento */ } };
+/** "Ahora no": 2 horas si nunca ha opinado (vuelve a salir la próxima vez que abra), 10 días si ya opinó. */
+export const snoozeFeedback = () => {
+  const ms = hasSentFeedback() ? 10 * 86400000 : 2 * 3600000;
+  try { localStorage.setItem(K.snooze, String(Date.now() + ms)); } catch { /* sin almacenamiento */ }
+};
 export const openFeedback = () => window.dispatchEvent(new Event('mf:open-feedback'));
 
 // ═══ SECCIÓN: Administradora ═══

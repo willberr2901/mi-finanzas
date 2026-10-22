@@ -6,11 +6,10 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.15.0';
+export const APP_VERSION = '1.15.1';
 
 export const RELEASE_NOTES: string[] = [
-  'Mes de brujas más vivo 🎃 Calabazas con velita que titila, se mecen y dan saltitos',
-  'Los murciélagos ahora aletean de verdad 🦇 y una arañita baja de vez en cuando 🕷️',
-  'La app arranca más rápido: el lector de facturas se carga solo cuando lo usas',
-  'Mejoras de seguridad y limpieza interna para que todo funcione más estable',
+  'Queremos escucharte 💬 Cuéntanos qué te gusta y qué mejorarías: te toma menos de 1 minuto y es anónimo',
+  'Mes de brujas más vivo 🎃 Calabazas con velita, murciélagos que aletean y una arañita',
+  'La app arranca más rápido y quedó más estable',
 ]
