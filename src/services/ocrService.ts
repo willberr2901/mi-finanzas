@@ -9,7 +9,6 @@
  * Si lo cambias: No cambies las rutas /ocr/… o el escáner deja de funcionar.
  * ════════════════════════════════════════════════════════════════════
  */
-import Tesseract from 'tesseract.js';
 
 // Lector de facturas: todo se procesa en el celular (Tesseract en el navegador).
 // La foto nunca se guarda ni se envía a un servidor propio.
@@ -48,6 +47,8 @@ export const scanReceipt = async (file: File, onProgress?: (pct: number, stage: 
   onProgress?.(3, 'Preparando la foto');
   const image = await prepareImage(file);
   // El lector vive en el mismo servidor de la app: no se usa ningún servicio externo.
+  // Se carga solo cuando se escanea una factura (no pesa en el arranque de la app)
+  const { default: Tesseract } = await import('tesseract.js');
   const worker = await Tesseract.createWorker('spa', 1, {
     workerPath: '/ocr/worker.min.js',
     corePath: '/ocr/core',

@@ -3,7 +3,7 @@
  * 🎃🎄 DECORACIÓN, AVISO Y TARJETA DE TEMPORADA
  * ────────────────────────────────────────────────────────────────────
  * SeasonDecor  → adornos animados encima de toda la app (no estorban los toques):
- *                🎃 murciélagos que cruzan la pantalla · 🎄 nieve y luces navideñas.
+ *                🎃 murciélagos que aletean, arañita y calabazas con velita · 🎄 nieve y luces.
  * SeasonPopup  → "¡Una nueva versión llegó por ti!" una sola vez por temporada.
  * SeasonCard   → tarjeta en Inicio con consejos de plata de la temporada.
  * Cuándo sale cada temporada y cómo se apaga: services/season.ts
@@ -15,18 +15,80 @@ import { X, Sparkles } from 'lucide-react';
 import { useSeason, seasonPopupPending, markSeasonPopupSeen, setSeasonEnabled, type Season } from '../../services/season';
 
 // ═══ SECCIÓN: Dibujos (propios de la app) ═══
-const Bat = ({ size = 46 }: { size?: number }) => (
-  <svg width={size} height={size * 0.5} viewBox="0 0 64 32" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 5px rgba(255,138,31,.75)) drop-shadow(0 0 1px rgba(255,190,120,.9))' }}>
-    <path d="M32 10c2-4 4-6 4-6l1 5c3-1 6-1 8 1 4-3 10-4 19-2-6 2-8 6-8 10-3-2-7-2-9 1-2-2-5-3-8-1-2 3-4 6-7 9-3-3-5-6-7-9-3-2-6-1-8 1-2-3-6-3-9-1 0-4-2-8-8-10 9-2 15-1 19 2 2-2 5-2 8-1l1-5s2 2 4 6z" fill="#14081F" />
-    <circle cx="29.5" cy="12" r="1.4" fill="#FFB347" /><circle cx="34.5" cy="12" r="1.4" fill="#FFB347" />
+/** Murciélago con alas que aletean de verdad (cada ala gira desde el hombro). */
+const Bat = ({ size = 46, speed = 0.32 }: { size?: number; speed?: number }) => (
+  <svg width={size} height={size * 0.62} viewBox="0 0 64 40" aria-hidden="true" overflow="visible"
+    style={{ filter: 'drop-shadow(0 0 5px rgba(255,138,31,.75)) drop-shadow(0 0 1px rgba(255,190,120,.9))' }}>
+    {/* Ala izquierda */}
+    <g className="bat-wing bat-wing-l season-anim" style={{ animationDuration: `${speed}s` }}>
+      <path d="M27 15C22 9 13 6 2 9c4 2 6 5 6 9 3-2 6-2 8 0 1-3 4-4 7-2 1-2 3-3 5-2z" fill="#14081F" />
+      <path d="M26 15 8 12M24 16 12 17" stroke="#3A2050" strokeWidth=".8" fill="none" />
+    </g>
+    {/* Ala derecha */}
+    <g className="bat-wing bat-wing-r season-anim" style={{ animationDuration: `${speed}s` }}>
+      <path d="M37 15c5-6 14-9 25-6-4 2-6 5-6 9-3-2-6-2-8 0-1-3-4-4-7-2-1-2-3-3-5-2z" fill="#14081F" />
+      <path d="M38 15 56 12M40 16 52 17" stroke="#3A2050" strokeWidth=".8" fill="none" />
+    </g>
+    {/* Cuerpo, orejas, colmillos y ojos */}
+    <ellipse cx="32" cy="19" rx="5.5" ry="8" fill="#1B0C29" />
+    <path d="M27.5 12.5 28.5 6l3 4.5h1L35.5 6l1 6.5z" fill="#1B0C29" />
+    <circle className="bat-eye season-anim" cx="30" cy="13.5" r="1.3" fill="#FFB347" />
+    <circle className="bat-eye season-anim" cx="34" cy="13.5" r="1.3" fill="#FFB347" />
+    <path d="M31 16.3l.5 1.4.5-1.4M32.4 16.3l.5 1.4.5-1.4" stroke="#fff" strokeWidth=".6" fill="none" />
   </svg>
 );
-const Pumpkin = ({ size = 28 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-    <path d="M16 7c1-3 3-4 5-4" stroke="#3F7D2A" strokeWidth="2.4" fill="none" strokeLinecap="round" />
-    <ellipse cx="16" cy="19" rx="13" ry="11" fill="#FF8A1F" /><ellipse cx="16" cy="19" rx="6" ry="11" fill="#FFA24D" opacity=".6" />
-    <path d="M10 17l2.5-3 2.5 3zM17 17l2.5-3 2.5 3zM10 23c3 2.5 9 2.5 12 0l-2 1-2-1-2 1-2-1-2 1z" fill="#2A1206" />
+
+/** Calabaza de Halloween con cara tallada y una velita adentro que titila. */
+const Pumpkin = ({ size = 44, face = 0 }: { size?: number; face?: 0 | 1 }) => (
+  <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" overflow="visible">
+    <defs>
+      <radialGradient id={`pk-body-${face}`} cx="50%" cy="40%" r="65%">
+        <stop offset="0%" stopColor="#FFB04A" /><stop offset="65%" stopColor="#F27A12" /><stop offset="100%" stopColor="#B4500A" />
+      </radialGradient>
+      <radialGradient id={`pk-fire-${face}`} cx="50%" cy="55%" r="60%">
+        <stop offset="0%" stopColor="#FFF6B0" /><stop offset="55%" stopColor="#FFD23F" /><stop offset="100%" stopColor="#FF8A1F" />
+      </radialGradient>
+    </defs>
+    {/* Halo de luz detrás */}
+    <circle className="pk-halo season-anim" cx="24" cy="29" r="22" fill="#FF8A1F" opacity=".25" />
+    {/* Tallo y hojita con zarcillo */}
+    <path d="M23 12c0-4 1-7 4-9l2 1.5c-2 2-3 4-3 7.5z" fill="#4E7A27" />
+    <path d="M27 9c3-3 7-3 10-1-3 2-6 3-10 1z" fill="#6BA234" />
+    <path d="M26 11c-3 0-5-2-4-4" stroke="#6BA234" strokeWidth="1" fill="none" strokeLinecap="round" />
+    {/* Gajos */}
+    <ellipse cx="13" cy="29" rx="10" ry="15" fill={`url(#pk-body-${face})`} />
+    <ellipse cx="35" cy="29" rx="10" ry="15" fill={`url(#pk-body-${face})`} />
+    <ellipse cx="24" cy="29" rx="11" ry="16" fill={`url(#pk-body-${face})`} />
+    <path d="M24 13.5v31M17 15c-3 4-3 24 0 29M31 15c3 4 3 24 0 29" stroke="#C25E0C" strokeWidth=".9" fill="none" opacity=".7" />
+    {/* Cara tallada: luz de vela adentro */}
+    <g className="pk-fire season-anim" fill={`url(#pk-fire-${face})`} stroke="#6B2804" strokeWidth=".9" strokeLinejoin="round">
+      {face === 0 ? (<>
+        <path d="M13 24l4.5-5 4 5z" /><path d="M26.5 24l4-5 4.5 5z" />
+        <path d="M22.5 27.5l1.5-2.5 1.5 2.5z" />
+        <path d="M11 32c4 6 22 6 26 0l-3 1-1.5 2.5L30 33l-3 1.5-3-1.5-3 1.5-3-1.5-2.5 2.5L14 33z" />
+      </>) : (<>
+        <circle cx="17.5" cy="23" r="3.3" /><circle cx="30.5" cy="23" r="3.3" />
+        <path d="M14 31c3 4 17 4 20 0-2 4-6 6-10 6s-8-2-10-6z" />
+      </>)}
+    </g>
+    {face === 1 && <><circle cx="18.3" cy="23.6" r="1.2" fill="#2A1206" /><circle cx="31.3" cy="23.6" r="1.2" fill="#2A1206" /></>}
   </svg>
+);
+
+/** Arañita que baja de su hilo y vuelve a subir. */
+const Spider = () => (
+  <div className="spider season-anim">
+    <div className="mx-auto w-px h-[60vh] bg-gradient-to-b from-white/0 via-white/35 to-white/60" />
+    <svg width="26" height="22" viewBox="0 0 26 22" className="-mt-1 mx-auto block" aria-hidden="true" style={{ filter: 'drop-shadow(0 0 4px rgba(168,85,247,.7))' }}>
+      <g className="spider-legs season-anim" stroke="#1B0C29" strokeWidth="1.4" fill="none" strokeLinecap="round">
+        <path d="M10 9 4 4 1 8M10 11 3 10 0 14M10 13 4 15 2 20M11 14 7 19 6 22" />
+        <path d="M16 9l6-5 3 4M16 11l7-1 3 4M16 13l6 2 2 5M15 14l4 5 1 3" />
+      </g>
+      <ellipse cx="13" cy="12" rx="4.6" ry="5.4" fill="#1B0C29" />
+      <circle cx="13" cy="6.5" r="3" fill="#1B0C29" />
+      <circle cx="11.9" cy="6.3" r=".8" fill="#FF8A1F" /><circle cx="14.1" cy="6.3" r=".8" fill="#FF8A1F" />
+    </svg>
+  </div>
 );
 
 // ═══ SECCIÓN: Adornos animados ═══
@@ -39,15 +101,21 @@ export function SeasonDecor() {
 
   if (season.id === 'halloween') return (
     <div className="fixed inset-0 z-[45] pointer-events-none overflow-hidden" aria-hidden="true">
-      {[{ top: '13%', dur: 16, delay: 0.5, size: 52 }, { top: '44%', dur: 20, delay: 6, size: 40 }, { top: '70%', dur: 18, delay: 11, size: 46 }].map((b, i) => (
+      {/* Murciélagos que cruzan la pantalla aleteando */}
+      {[{ top: '13%', dur: 16, delay: 0.5, size: 54, flap: 0.3 }, { top: '44%', dur: 20, delay: 6, size: 40, flap: 0.24 }, { top: '70%', dur: 18, delay: 11, size: 48, flap: 0.34 }].map((b, i) => (
         <motion.div key={i} className="absolute season-anim" style={{ top: b.top, left: 0 }}
-          initial={{ x: '-15vw' }} animate={{ x: ['-15vw', '115vw'], y: [0, -26, 8, -18, 0] }}
-          transition={{ x: { duration: b.dur, delay: b.delay, repeat: Infinity, ease: 'linear', repeatDelay: 4 }, y: { duration: 3, repeat: Infinity, ease: 'easeInOut' } }}>
-          <motion.div animate={{ scaleY: [1, 0.55, 1] }} transition={{ duration: 0.35, repeat: Infinity }}><Bat size={b.size} /></motion.div>
+          initial={{ x: '-15vw' }} animate={{ x: ['-15vw', '115vw'], y: [0, -26, 8, -18, 0], rotate: [0, -6, 4, -3, 0] }}
+          transition={{ x: { duration: b.dur, delay: b.delay, repeat: Infinity, ease: 'linear', repeatDelay: 4 }, y: { duration: 3, repeat: Infinity, ease: 'easeInOut' }, rotate: { duration: 3, repeat: Infinity, ease: 'easeInOut' } }}>
+          <Bat size={b.size} speed={b.flap} />
         </motion.div>
       ))}
-      {/* Calabacitas en las esquinas de abajo */}
-      <div className="absolute left-2 bottom-2 opacity-80"><Pumpkin size={30} /></div>
+      {/* Arañita colgando arriba a la derecha */}
+      <div className="absolute right-[18%] top-0"><Spider /></div>
+      {/* Calabazas con velita, que se mecen y dan saltitos */}
+      <div className="absolute left-1 bottom-1 flex items-end gap-0.5">
+        <div className="pumpkin-rock season-anim"><Pumpkin size={46} face={0} /></div>
+        <div className="pumpkin-hop season-anim"><Pumpkin size={30} face={1} /></div>
+      </div>
     </div>
   );
 

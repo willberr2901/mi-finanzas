@@ -30,7 +30,7 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | Pantalla **Inicio** | `src/pages/HomePage.tsx` |
 | Pantalla **Mercado** | `src/pages/MarketPage.tsx` + `src/components/market/` |
 | Lógica del mercado (tachar, extras, precios, historial, tiendas) | `src/services/market/marketStore.ts` |
-| 🎃🎄 Temas de temporada (fechas, colores, adornos, aviso) | `src/services/season.ts` + `src/components/season/Season.tsx` + colores al final de `src/index.css` |
+| 🎃🎄 Temas de temporada (fechas, colores, adornos, aviso) | `src/services/season.ts` + `src/components/season/Season.tsx` + colores y animaciones (alas, calabazas, araña) al final de `src/index.css` |
 | 💚 Salud financiera (puntaje y consejos) | `src/services/healthScore.ts` + `src/components/home/HealthCard.tsx` |
 | 🧾 Entender facturas escaneadas (comercio, fecha, productos, total, pago) | `src/services/receipt/receiptParser.ts` (la foto se lee en `src/services/ocrService.ts`) |
 | 🎤 Dictar por voz (mercado y gastos) | `src/components/voice/VoiceSheet.tsx` + `src/services/voice/` (`speech.ts` micrófono, `parseVoice.ts` entiende la frase) |
@@ -132,6 +132,7 @@ supabase/sync.sql        🏠 Copia de lo que hay en el servidor del hogar (solo
 
 ## 4. Antes de publicar un cambio
 
-1. Sube el número en `src/version.ts` y escribe las novedades.
-2. Si cambiaste textos legales, sube `TERMS_VERSION` en `LegalContent.tsx`.
-3. Al subir a `main`, la app se publica sola y a todos les sale el aviso de actualización.
+1. Corre `npm test` (pruebas automáticas en `src/__tests__/`: voz, facturas, mensajes del banco, salud financiera y temporadas). Todo debe salir en verde.
+2. Sube el número en `src/version.ts` y escribe las novedades.
+3. Si cambiaste textos legales, sube `TERMS_VERSION` en `LegalContent.tsx`.
+4. Al subir a `main`, la app se publica sola y a todos les sale el aviso de actualización.

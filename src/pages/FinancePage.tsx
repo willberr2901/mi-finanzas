@@ -34,7 +34,6 @@ export default function FinancePage() {
   const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
-  const [pushEnabled, setPushEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [txDate, setTxDate] = useState(todayISO());
@@ -81,25 +80,9 @@ export default function FinancePage() {
     try {
       const txs = await db.transactions.toArray();
       const gals = await db.goals.toArray();
-      const settings = await db.settings.get('global');
       setTransactions(txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       setGoals(gals);
-      if (settings?.pushEnabled) setPushEnabled(true);
     } catch {}
-  };
-
-  const checkPushPermission = async () => {
-    if ('Notification' in window) {
-      if (Notification.permission === 'granted') {
-        setPushEnabled(true);
-      } else if (Notification.permission !== 'denied') {
-        const granted = await Notification.requestPermission();
-        if (granted === 'granted') {
-          setPushEnabled(true);
-          await db.settings.update('global', { pushEnabled: true });
-        }
-      }
-    }
   };
 
   // ═══ SECCIÓN: Guardar, editar y borrar movimientos y metas ═══

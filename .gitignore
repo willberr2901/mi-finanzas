@@ -7,3 +7,9 @@ build/
 *.log
 .DS_Store
 .vscode/
+# Configuraciones locales del editor y scripts temporales
+settings.json
+.vscode/
+*.local.js
+restructure.js
+coverage/

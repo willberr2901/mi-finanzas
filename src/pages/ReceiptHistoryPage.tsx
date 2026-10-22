@@ -10,7 +10,7 @@
 import ModuleHeader from '../components/ui/ModuleHeader';
 import { useState, useEffect } from 'react';
 import { secureStorage } from '../utils/security';
-import { DollarSign, Calendar, Trash2, AlertTriangle } from 'lucide-react';
+import { DollarSign, Calendar, Trash2 } from 'lucide-react';
 import { askConfirm } from '../components/ui/ConfirmDialog';
 
 interface Invoice {

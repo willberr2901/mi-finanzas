@@ -129,7 +129,7 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
                       <MoneyInput value={amount} onChange={setAmount} prefix placeholder="$ 0" ariaLabel="Valor"
                         className="w-full bg-transparent text-center text-4xl font-extrabold text-white outline-none py-3 placeholder:text-slate-600" />
                       <div className="relative mt-2">
-                        <input value={desc} onChange={e => setDesc(e.target.value)} placeholder={mode === 'expense' ? '¿En qué? Ej: Uber, almuerzo, luz' : '¿De dónde? Ej: sueldo, recargos'} autoFocus
+                        <input value={desc} maxLength={80} onChange={e => setDesc(e.target.value)} placeholder={mode === 'expense' ? '¿En qué? Ej: Uber, almuerzo, luz' : '¿De dónde? Ej: sueldo, recargos'} autoFocus
                           onKeyDown={e => e.key === 'Enter' && save()}
                           className="w-full h-14 pl-4 pr-14 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-violet-400" />
                         <button onClick={() => setVoice(true)} aria-label="Dictar por voz" className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-violet-500/20 text-violet-200 flex items-center justify-center"><Mic size={18} /></button>

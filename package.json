@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/realtime-js": "^2.118.0",
@@ -36,6 +37,7 @@
     "typescript": "^5.5.3",
     "vite": "^5.4.2",
     "vite-plugin-pwa": "^0.19.8",
+    "vitest": "^2.1.9",
     "workbox-core": "^7.4.0",
     "workbox-precaching": "^7.4.0",
     "workbox-routing": "^7.4.0"

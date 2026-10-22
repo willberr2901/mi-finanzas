@@ -243,3 +243,24 @@ html.season-navidad:not(.light) .to-\[\#0B1026\]{--tw-gradient-to:#071F16 var(--
 html.season-navidad:not(.light) .to-\[\#0E1430\]{--tw-gradient-to:#0A2A1D var(--tw-gradient-to-position)}
 html.season-navidad:not(.light) .to-\[\#151D45\]{--tw-gradient-to:#3D0D16 var(--tw-gradient-to-position)}
 @media (prefers-reduced-motion: reduce) { .season-anim { animation: none !important; } }
+
+/* ───── 🎃 Halloween: alas, calabazas y arañita (Season.tsx) ───── */
+.bat-wing { transform-box: fill-box; animation: bat-flap .3s ease-in-out infinite alternate; }
+.bat-wing-l { transform-origin: 100% 40%; }
+.bat-wing-r { transform-origin: 0% 40%; animation-name: bat-flap-r; }
+@keyframes bat-flap { from { transform: rotate(-22deg) scaleY(1.05); } to { transform: rotate(28deg) scaleY(.45); } }
+@keyframes bat-flap-r { from { transform: rotate(22deg) scaleY(1.05); } to { transform: rotate(-28deg) scaleY(.45); } }
+.bat-eye { animation: bat-blink 4s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes bat-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.1); } }
+.pk-fire { animation: pk-flicker 1.7s infinite; }
+@keyframes pk-flicker { 0%,100% { opacity: 1; } 18% { opacity: .72; } 22% { opacity: .95; } 47% { opacity: .8; } 52% { opacity: 1; } 76% { opacity: .66; } 80% { opacity: .92; } }
+.pk-halo { animation: pk-halo 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes pk-halo { 0%,100% { opacity: .18; transform: scale(.9); } 50% { opacity: .38; transform: scale(1.08); } }
+.pumpkin-rock { transform-origin: 50% 100%; animation: pk-rock 3.2s ease-in-out infinite; }
+@keyframes pk-rock { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+.pumpkin-hop { transform-origin: 50% 100%; animation: pk-hop 4.5s ease-in-out infinite; }
+@keyframes pk-hop { 0%,70%,100% { transform: translateY(0) scale(1,1); } 74% { transform: translateY(0) scale(1.12,.86); } 82% { transform: translateY(-14px) scale(.94,1.06) rotate(-8deg); } 90% { transform: translateY(0) scale(1.1,.9); } 95% { transform: translateY(0) scale(1,1); } }
+.spider { transform: translateY(-60vh); animation: spider-drop 14s ease-in-out infinite; }
+@keyframes spider-drop { 0%, 30% { transform: translateY(-62vh); } 48%, 60% { transform: translateY(-46vh); } 54% { transform: translateY(-47.5vh); } 80%, 100% { transform: translateY(-62vh); } }
+.spider-legs { animation: spider-wiggle .5s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: center; }
+@keyframes spider-wiggle { from { transform: scaleY(1); } to { transform: scaleY(.88); } }
