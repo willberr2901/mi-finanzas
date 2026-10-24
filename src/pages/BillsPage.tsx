@@ -11,9 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ownerLabel } from '../utils/prefs';
 import SharedSettlementCard from '../components/bills/SharedSettlementCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, ChevronLeft, ChevronRight, CalendarDays, Pencil, Trash2, Undo2, CheckCircle2, AlertCircle, HandCoins } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useLoans, loanTotals } from '../services/loansService';
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, Pencil, Trash2, Undo2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { db, type Bill, type Owner } from '../utils/database';
 import { loadBillStatuses, payBill, unpayBill, describeDue, periodOf, googleCalendarLink, buildICS, type BillStatus } from '../services/billsService';
 import { formatCOP, todayISO } from '../utils/format';
@@ -160,8 +158,6 @@ export default function BillsPage() {
     </motion.div>
   );
 
-  const navigate = useNavigate();
-  const loanT = loanTotals(useLoans());
   return (
     <div className="space-y-5 pb-28">
       <ModuleHeader module="pagos" />
@@ -170,15 +166,6 @@ export default function BillsPage() {
         <Plus size={20} /> Agregar pago fijo o deuda
       </button>
 
-      {/* Préstamos con personas (módulo aparte) */}
-      <button onClick={() => navigate('/prestamos')} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-surface border border-white/10 text-left active:scale-[0.99]">
-        <span className="w-10 h-10 rounded-xl bg-brand-lime/15 text-brand-lime flex items-center justify-center shrink-0"><HandCoins size={20} /></span>
-        <span className="flex-1 min-w-0">
-          <span className="block text-white text-sm font-bold">Préstamos con personas</span>
-          <span className="block text-[11px] text-slate-400 truncate">{loanT.meDeben || loanT.debo ? `Te deben ${formatCOP(loanT.meDeben)} · Debes ${formatCOP(loanT.debo)}` : 'Lo del pasaje, el almuerzo… lo que debes y te deben'}</span>
-        </span>
-        <ChevronRight size={18} className="text-slate-500" />
-      </button>
 
       <div className="flex gap-2 overflow-x-auto no-scrollbar">
         {(['todos', 'yo', 'pareja', 'compartido'] as const).map(o => (

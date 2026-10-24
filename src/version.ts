@@ -6,11 +6,11 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.15.2';
+export const APP_VERSION = '1.16.0';
 
 export const RELEASE_NOTES: string[] = [
-  'Queremos escucharte 💬 Cuéntanos qué te gusta y qué mejorarías: te toma menos de 1 minuto y es anónimo',
-  'Síguenos en el canal de WhatsApp y en Instagram para enterarte primero de las novedades',
-  'Mes de brujas más vivo 🎃 Calabazas con velita, murciélagos que aletean y una arañita',
-  'La app arranca más rápido y quedó más estable',
+  'Mercado más rápido 🛒 "Agrega con un toque": tus productos de siempre y lo básico, sin escribir',
+  'Mientras escribes, la app te propone el producto y cada uno se ordena solo por categoría (Panadería, Lácteos, Despensa…)',
+  'Tu factura se sincroniza sola con la lista: tacha lo que compraste y te pregunta lo que no esté claro',
+  'Nuevo módulo Préstamos 🤝 Anota lo que debes y lo que te deben, con abonos y recordatorio por WhatsApp',
 ]

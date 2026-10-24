@@ -39,6 +39,9 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | Sincronización cifrada | `src/services/household/householdSync.ts` y `householdCrypto.ts` |
 | Pantalla **Finanzas** (movimientos, metas, reportes) | `src/pages/FinancePage.tsx` |
 | Pantalla **Pagos** | `src/pages/BillsPage.tsx` + `src/components/bills/` |
+| 🤝 Módulo **Préstamos** (Me deben / Yo debo, abonos, recordar por WhatsApp) | `src/pages/LoansPage.tsx` + `src/services/loansService.ts` |
+| 🗂️ Categorías automáticas del mercado, catálogo para agregar con un toque y cruce factura ↔ lista | `src/services/market/categories.ts` |
+| 🧾⇄🛒 Avisos de sincronización de la factura con la lista | `src/components/market/ReceiptSync.tsx` |
 | Pantalla **Ajustes** | `src/pages/SettingsPage.tsx` |
 | Escáner de facturas | `src/pages/ReceiptScannerPage.tsx` + `src/services/ocrService.ts` |
 | Diseño de los avisos de arriba (toasts) | `src/components/notifications/ToastCard.tsx` |
@@ -76,6 +79,7 @@ src/
 │   ├── MarketPage       🛒 Mercado (Lista · Historial · Precios)
 │   ├── FinancePage      💰 Finanzas
 │   ├── BillsPage        📅 Pagos
+│   ├── LoansPage        🤝 Préstamos (Me deben · Yo debo)
 │   ├── SettingsPage     ⚙️ Ajustes
 │   ├── ReceiptScannerPage 📷 Escáner
 │   ├── ReceiptHistoryPage 🧾 Facturas

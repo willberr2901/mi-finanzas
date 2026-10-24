@@ -47,6 +47,12 @@ export default function LegalContent() {
       <Section title="3.2 Tiendas donde compras">
         <p>Si eliges dónde hiciste el mercado (D1, la plaza, etc.), ese dato se guarda con tu historial de compras para comparar precios. La imagen de tienda que ves es un dibujo propio de la app, igual para todas; no usamos los logos oficiales de esas marcas, que pertenecen a sus dueños.</p>
       </Section>
+      <Section title="3.3 Préstamos con personas">
+        <p>Los préstamos que anotas (a quién le debes o quién te debe, cuánto y sus abonos) se guardan solo en tu celular, cifrados, como el resto de tu información. Si usas "Recordar", la app abre WhatsApp con un mensaje ya escrito: eres tú quien decide enviarlo; Mi Finanzas no envía nada ni conoce a esas personas.</p>
+      </Section>
+      <Section title="3.4 Cruce de facturas con tu lista">
+        <p>Al escanear una factura, la app la compara con tu lista del mercado dentro de tu celular. Las uniones que confirmas (por ejemplo, que "TOSTADAS BIMBO" es tu "Pan tajado") se recuerdan solo en tu celular para cruzar la próxima factura automáticamente.</p>
+      </Section>
       <Section title="4. Lo que sí se conecta a internet">
         <p>La descarga de la app y de sus actualizaciones desde el servidor donde está publicada. Ese servidor, como cualquier página web, puede registrar datos técnicos básicos de la visita (como la dirección IP), pero no tus datos financieros.</p>
         <p>Las estadísticas anónimas (punto 6), que puedes apagar, y, solo si tú lo activas, el hogar sincronizado (punto 5) y el dictado por voz del celular (punto 3.1).</p>
