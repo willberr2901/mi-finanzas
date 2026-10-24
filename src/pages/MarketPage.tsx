@@ -198,6 +198,19 @@ export default function MarketPage() {
     reset(); nameRef.current?.focus();
   };
 
+  /**
+   * Cerrar la hoja de Agregar. Si quedó algo escrito, se guarda primero (antes se perdía al tocar "Listo").
+   * Comprando sin precio: con "Listo" pide el precio; con la X o deslizando se descarta.
+   */
+  const closeAdd = async (dismiss: boolean) => {
+    const clean = name.trim();
+    if (clean) {
+      if (mode === 'plan' || price) await submit();
+      else if (!dismiss) { nameRef.current?.focus(); return notify({ title: `¿Cuánto costó ${clean}?`, message: 'Escribe el precio para echarlo al carrito.', type: 'info', log: false }); }
+    }
+    setAdding(false); reset();
+  };
+
   const repeat = () => {
     const n = repeatLastTrip();
     notify(n ? { title: `Agregamos ${n} productos`, message: 'Los de tu último mercado. Quita lo que no necesites.', type: 'success', log: false }
@@ -422,7 +435,7 @@ export default function MarketPage() {
       </>}
 
       {/* Ventana para agregar (abre con el botón flotante) */}
-      <BottomSheet open={adding} onClose={() => { setAdding(false); reset(); }} labelId="mk-add-title"
+      <BottomSheet open={adding} onClose={() => closeAdd(true)} labelId="mk-add-title"
         title={mode === 'shop' ? '¿Qué echaste al carrito?' : '¿Qué hace falta en la casa?'}
         subtitle={mode === 'shop' ? 'Si estaba en la lista se tacha solo' : 'Se clasifica solo en su categoría'}
         icon={mode === 'shop' ? <ShoppingCart size={20} /> : <ShoppingBasket size={20} />}>
@@ -432,14 +445,14 @@ export default function MarketPage() {
             <Mic size={15} /> Dictar
           </motion.button>
         </div>
-        <div className="relative">
+        <form className="relative" onSubmit={e => { e.preventDefault(); submit(); }}>
           {mode === 'shop' ? <ShoppingCart size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-lime" aria-hidden="true" /> : <ShoppingBasket size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-lime" aria-hidden="true" />}
-          <input ref={nameRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
+          <input ref={nameRef} value={name} onChange={e => setName(e.target.value)}
             onFocus={() => setFocused(true)} onBlur={() => setTimeout(() => setFocused(false), 150)}
             placeholder={mode === 'shop' ? 'Ej: Arroz Diana 500 g' : 'Ej: Arroz, leche, huevos…'} aria-label="Nombre del producto" autoComplete="off" enterKeyHint={mode === 'shop' ? 'next' : 'done'}
             className="w-full h-14 pl-11 pr-10 rounded-2xl bg-white/5 border border-white/10 text-white text-base outline-none focus:border-brand-lime transition-colors" />
-          {name && <button onClick={reset} aria-label="Borrar" className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400"><X size={16} /></button>}
-        </div>
+          {name && <button type="button" onClick={reset} aria-label="Borrar" className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400"><X size={16} /></button>}
+        </form>
         {/* Categoría automática */}
         {name.trim() && (
           <div className="mt-2">
@@ -522,7 +535,7 @@ export default function MarketPage() {
             </div>
           </div>
         )}
-        <button onClick={() => { setAdding(false); reset(); }} className="mt-4 w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white font-bold">Listo</button>
+        <button onClick={() => closeAdd(false)} className={`mt-4 w-full h-12 rounded-2xl font-bold ${name.trim() ? 'bg-brand-lime text-brand-ink' : 'bg-white/[0.07] ring-1 ring-white/10 text-white'}`}>{name.trim() ? (mode === 'shop' ? 'Echar al carrito y cerrar' : 'Guardar y cerrar') : 'Listo'}</button>
       </BottomSheet>
 
       <ItemSheet item={sheet?.item ?? null} mode={sheet?.mode ?? 'edit'} onClose={() => setSheet(null)} />

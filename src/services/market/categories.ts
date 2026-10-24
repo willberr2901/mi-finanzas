@@ -45,13 +45,13 @@ const WORDS: Record<Exclude<CategoryId, 'otros'>, string[]> = {
     'mozzarella', 'leche en polvo', 'leche condensada', 'avena liquida', 'suero', 'bon yurt'],
   carnes: ['carne', 'res', 'pollo', 'cerdo', 'pechuga', 'muslo', 'contramuslo', 'costilla', 'chuleta', 'salchicha', 'jamon', 'mortadela', 'chorizo', 'tocino',
     'pescado', 'mojarra', 'tilapia', 'salmon', 'camaron', 'carne molida', 'higado', 'lomo', 'alas', 'butifarra', 'longaniza', 'salchichon', 'pavo',
-    'bagre', 'trucha', 'posta', 'sobrebarriga', 'morrillo', 'bistec', 'hamburguesa', 'nugget', 'chicharron', 'pernil', 'menudencia', 'rellena', 'morcilla'],
+    'bagre', 'trucha', 'posta', 'sobrebarriga', 'morrillo', 'bistec', 'hamburguesa', 'nugget', 'chicharron', 'pernil', 'menudencia', 'rellena', 'morcilla', 'tocineta', 'alita', 'filete', 'churrasco', 'punta de anca'],
   panaderia: ['pan', 'tostada', 'arepa', 'almojabana', 'pandebono', 'bunuelo', 'torta', 'ponque', 'pan tajado', 'mogolla', 'croissant', 'roscon', 'pan de queso',
     'tajado', 'calado', 'galleta de soda', 'pan integral', 'pan blanco', 'pan perro', 'pan hamburguesa', 'tortilla'],
   despensa: ['arroz', 'frijol', 'lenteja', 'garbanzo', 'pasta', 'espagueti', 'macarron', 'harina', 'azucar', 'sal', 'aceite', 'panela', 'cafe', 'chocolate',
     'avena', 'atun', 'sardina', 'enlatado', 'salsa', 'mayonesa', 'ketchup', 'salsa de tomate', 'mostaza', 'vinagre', 'condimento', 'comino', 'color', 'caldo',
     'maggi', 'maizena', 'fecula', 'gelatina', 'cereal', 'granola', 'miel', 'mermelada', 'sopa', 'maiz', 'harina pan', 'pimienta', 'canela', 'te', 'aromatica',
-    'cuchuco', 'arveja seca', 'cubo', 'triguisimo', 'adobo', 'oregano', 'laurel', 'bicarbonato', 'levadura', 'cocoa', 'milo', 'nescafe', 'endulzante', 'stevia',
+    'cuchuco', 'arveja seca',  'cubo', 'triguisimo', 'adobo', 'oregano', 'laurel', 'bicarbonato', 'levadura', 'cocoa', 'milo', 'nescafe', 'endulzante', 'stevia',
     'aceituna', 'conserva', 'pure', 'spaghetti', 'fideo', 'coditos', 'tallarin', 'quinua', 'chia', 'linaza', 'manteca'],
   bebidas: ['gaseosa', 'coca cola', 'agua', 'jugo', 'cerveza', 'vino', 'refresco', 'pony', 'hit', 'gatorade', 'te frio', 'colombiana', 'postobon', 'aguardiente',
     'ron', 'whisky', 'soda', 'malta', 'bebida', 'tampico', 'agua con gas', 'energizante', 'speed'],
@@ -60,10 +60,10 @@ const WORDS: Record<Exclude<CategoryId, 'otros'>, string[]> = {
     'cocosette', 'festival', 'tosh', 'trululu', 'chocolatinas'],
   aseo: ['jabon', 'detergente', 'suavizante', 'cloro', 'blanqueador', 'limpido', 'desinfectante', 'esponja', 'escoba', 'trapero', 'bolsa de basura', 'bolsa basura',
     'lavaloza', 'jabon de loza', 'axion', 'ambientador', 'papel higienico', 'servilleta', 'toalla de cocina', 'fabuloso', 'varsol', 'guante', 'fab', 'ariel',
-    'dersa', 'rey', 'limpiavidrio', 'insecticida', 'raid', 'recogedor', 'balde', 'brillo', 'sabra', 'clorox', 'quitamanchas', 'papel aluminio', 'vinipel', 'aluminio'],
+    'dersa', 'rey', 'limpiavidrio', 'insecticida', 'raid', 'recogedor', 'balde', 'brillo', 'sabra', 'clorox', 'quitamanchas', 'papel aluminio', 'vinipel', 'aluminio', 'lavaplatos', 'jabon en polvo', 'jabon liquido de ropa', 'trapo', 'bayetilla', 'lustramuebles'],
   personal: ['shampoo', 'champu', 'crema dental', 'cepillo de diente', 'cepillo dental', 'desodorante', 'toalla higienica', 'protector', 'afeitar', 'maquina de afeitar',
     'panal', 'talco', 'acondicionador', 'enjuague', 'hilo dental', 'algodon', 'crema corporal', 'jabon de bano', 'jabon antibacterial', 'gel', 'tampon',
-    'pañito', 'panito', 'toallita humeda', 'bloqueador', 'colgate', 'pañal', 'rasuradora', 'labial', 'crema para peinar', 'tinte', 'curita', 'acetaminofen', 'medicamento'],
+    'pañito', 'panito', 'toallita humeda', 'bloqueador', 'colgate', 'pañal', 'rasuradora', 'labial', 'crema para peinar', 'tinte', 'curita', 'acetaminofen', 'medicamento', 'pasta dental', 'enjuague bucal', 'cuchilla', 'jabon intimo', 'crema de mano'],
   mascotas: ['concentrado', 'cuido', 'arena de gato', 'arena para gato', 'croqueta', 'mascota', 'perro', 'gato', 'dog chow', 'cat chow', 'chunky', 'pedigree', 'whiskas', 'snack perro'],
 };
 
@@ -74,8 +74,10 @@ const DICT: { key: string; words: string[]; cat: CategoryId }[] = Object.entries
   .map(x => ({ ...x, words: x.key.split(' ') }))
   .sort((a, b) => b.key.length - a.key.length);
 
+// "tomates" se normaliza como "tomat": por eso también vale la palabra + "e" (tomat + e = tomate).
+const sameWord = (h: string, w: string) => h === w || (h.length > 3 && h + 'e' === w);
 const containsPhrase = (hay: string[], words: string[]) => {
-  for (let i = 0; i + words.length <= hay.length; i++) if (words.every((w, j) => hay[i + j] === w)) return true;
+  for (let i = 0; i + words.length <= hay.length; i++) if (words.every((w, j) => sameWord(hay[i + j], w))) return true;
   return false;
 };
 
