@@ -12,6 +12,8 @@
  * Piezas: components/market/* (ItemSheet, FinishSheet, MarketHistory, TrendBadge, QtyUnit, StorePicker, StoreBadge)
  * 🎤 Dictar: botón "Dictar" del cuadro de agregar → components/voice/VoiceSheet.tsx
  * 🏪 Tienda: en Comprando eliges dónde estás; se guarda con el mercado para comparar precios.
+ * ➕ Agregar: botón flotante abajo → ventana para agregar (o echar al carrito).
+ * 🗂️ La lista se agrupa sola por categoría según el nombre (services/market/categories.ts).
  * ════════════════════════════════════════════════════════════════════
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -39,6 +41,9 @@ import ItemSheet from '../components/market/ItemSheet';
 import FinishSheet from '../components/market/FinishSheet';
 import { TripsHistory, PricesHistory } from '../components/market/MarketHistory';
 import { celebrateWithInstagram } from '../components/social/Instagram';
+import BottomSheet from '../components/ui/BottomSheet';
+import CategoryIcon from '../components/market/CategoryIcon';
+import { CATEGORIES, categoryOf, setCategoryFor, groupByCategory, searchCatalog, BASICS, type CategoryId } from '../services/market/categories';
 
 type Mode = 'plan' | 'shop';
 type Tab = 'lista' | 'historial' | 'precios';
@@ -67,13 +72,16 @@ export default function MarketPage() {
   const [fresh, setFresh] = useState<string | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [pickingStore, setPickingStore] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [pickCat, setPickCat] = useState(false);
+  const [, setCatTick] = useState(0);
   const store = useCurrentStore();
   const nameRef = useRef<HTMLInputElement>(null);
 
   usePageTour('mercado2', [
     { target: 'mk-mode', title: 'Dos momentos', text: 'En "Planear" armas la lista en casa, sin precios. En "Comprando" escribes lo que echas al carrito y se tacha solo de la lista.' },
     { target: 'mk-hero', title: 'Total aproximado', text: 'Con los precios de tus mercados anteriores te decimos cuánto costaría la lista. Es un aproximado: los precios cambian.' },
-    { target: 'mk-composer', title: 'Agrega productos', text: 'Escribe el producto, la cantidad y la unidad (und, lb, kg…), o toca "Dictar" y dilo en voz alta. Al comprar, si algo no estaba en la lista te preguntamos si lo agregas.' },
+    { target: 'mk-composer', title: 'Agrega productos', text: 'Toca "Agregar": escribe el producto (se clasifica solo en su categoría), la cantidad y la unidad, o toca el micrófono y dilo en voz alta.' },
     { target: 'mk-list', title: 'Precios con flechitas', text: '🔻 verde: bajó frente a la última compra. 🔺 rojo: subió. 🟰 sigue igual.' },
     { target: 'mk-household', title: 'Comparte con tu hogar', text: 'Crea tu hogar y une a tu familia con un QR: la lista se actualiza en vivo en todos los celulares, cifrada.' },
   ]);
@@ -100,13 +108,32 @@ export default function MarketPage() {
     const fromList: Sug[] = mode === 'shop' ? pending.filter(i => norm(i.name).includes(q)).map(i => ({ name: i.name, price: lastPrice(i.name), unit: i.unit, inList: i })) : [];
     const taken = new Set([...items.map(i => norm(i.name))]);
     const fromKnown: Sug[] = known.filter(k => norm(k.name).includes(q) && !taken.has(norm(k.name))).map(k => ({ name: k.name, price: k.price, unit: k.unit }));
-    return [...fromList, ...fromKnown].slice(0, 6);
+    // Catálogo de productos comunes: aparece mientras escribes ("hue" → Huevos)
+    const seen = new Set([...taken, ...fromKnown.map(k => norm(k.name)), ...fromList.map(k => norm(k.name))]);
+    const fromCatalog: Sug[] = searchCatalog(name, seen, 8).map(c => ({ name: c.name, price: lastPrice(c.name), unit: 'und' as Unit }));
+    return [...fromList, ...fromKnown, ...fromCatalog].slice(0, 7);
   }, [q, mode, items, known]);
   const frequent = known.filter(k => !items.some(i => norm(i.name) === norm(k.name))).slice(0, 8);
+  // "Agrega con un toque": lo que más compras + lo básico que aún no está en la lista
+  const quick = useMemo(() => {
+    const taken = new Set(items.filter(i => !i.checked).map(i => norm(i.name)));
+    const out: { name: string; unit: Unit; price: number | null }[] = [];
+    for (const k of known) if (!taken.has(norm(k.name)) && out.length < 8) { out.push({ name: k.name, unit: k.unit, price: k.price }); taken.add(norm(k.name)); }
+    for (const b of BASICS) if (!taken.has(norm(b)) && out.length < 14) { out.push({ name: b, unit: 'und', price: lastPrice(b) }); taken.add(norm(b)); }
+    return out;
+  }, [items, known]);
+  /** Agrega a la lista con un solo toque (sin escribir ni presionar +). */
+  const quickAdd = (n: string, u: Unit = 'und', q2 = 1) => {
+    const dup = items.find(i => !i.checked && norm(i.name) === norm(n));
+    if (dup) return notify({ title: `${dup.name} ya está en la lista`, type: 'info', log: false });
+    const it = addItem({ name: n, qty: q2, unit: u });
+    setFresh(it.id);
+    notify({ title: `${n} agregado`, message: `En ${CATEGORIES.find(c => c.id === categoryOf(n))?.label}`, type: 'success', log: false });
+  };
 
   useEffect(() => { if (fresh) { const t = setTimeout(() => setFresh(null), 1600); return () => clearTimeout(t); } }, [fresh]);
 
-  const reset = () => { setName(''); setQty(1); setUnit('und'); setPrice(0); };
+  const reset = () => { setName(''); setQty(1); setUnit('und'); setPrice(0); setPickCat(false); };
   const pick = (s: { name: string; price: number | null; unit: Unit }) => {
     setName(s.name); setUnit(s.unit);
     const here = lastPriceAt(s.name, store);
@@ -319,67 +346,22 @@ export default function MarketPage() {
           </div>
         )}
 
-        {/* Agregar producto */}
-        <motion.div data-tour="mk-composer" className="mt-4 bg-surface border border-white/10 rounded-[28px] p-4 shadow-xl shadow-black/20">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <p className="text-white font-bold">{mode === 'shop' ? '¿Qué echaste al carrito?' : '¿Qué hace falta en la casa?'}</p>
-            <motion.button whileTap={{ scale: 0.9 }} onClick={() => setVoiceOpen(true)} data-tour="mk-voice"
-              className="shrink-0 flex items-center gap-1.5 pl-2.5 pr-3 h-9 rounded-full bg-brand-lime/15 ring-1 ring-brand-lime/40 text-brand-lime text-xs font-bold">
-              <Mic size={15} /> Dictar
-            </motion.button>
-          </div>
-          <div className="relative">
-            {mode === 'shop' ? <ShoppingCart size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-lime" aria-hidden="true" /> : <ShoppingBasket size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-lime" aria-hidden="true" />}
-            <input ref={nameRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
-              onFocus={() => setFocused(true)} onBlur={() => setTimeout(() => setFocused(false), 150)}
-              placeholder={mode === 'shop' ? 'Ej: Arroz Diana 500 g' : 'Ej: Arroz, leche, huevos…'} aria-label="Nombre del producto" autoComplete="off" enterKeyHint={mode === 'shop' ? 'next' : 'done'}
-              className="w-full h-14 pl-11 pr-10 rounded-2xl bg-white/5 border border-white/10 text-white text-base outline-none focus:border-brand-lime transition-colors" />
-            {name && <button onClick={reset} aria-label="Borrar" className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400"><X size={16} /></button>}
-          </div>
-          <AnimatePresence>
-            {focused && suggestions.length > 0 && (
-              <motion.ul initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-2 rounded-2xl bg-white/[0.04] ring-1 ring-white/10 divide-y divide-white/5 overflow-hidden">
-                {suggestions.map(s => (
-                  <li key={s.name}>
-                    <button onMouseDown={e => e.preventDefault()} onClick={() => pick(s)} className="w-full flex items-center gap-2 px-3.5 py-2.5 text-left">
-                      <span className="flex-1 text-sm text-white truncate">{s.name}</span>
-                      {s.inList && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-brand-lime/15 text-brand-lime flex items-center gap-0.5"><ListChecks size={9} />EN TU LISTA</span>}
-                      {s.price ? <span className="text-xs text-slate-400">{formatCOP(s.price)}</span> : null}
-                    </button>
-                  </li>
-                ))}
-              </motion.ul>
-            )}
-          </AnimatePresence>
-          <div className="mt-3"><UnitPicker unit={unit} onChange={setUnit} /></div>
-          <div className="flex items-stretch gap-2 mt-3">
-            <QtyStepper qty={qty} unit={unit} onChange={setQty} />
-            {mode === 'shop'
-              ? <MoneyInput value={price} onChange={setPrice} prefix placeholder={`Precio por ${unitLabel(unit)}`} ariaLabel="Precio por unidad" className="flex-1 min-w-0 h-12 px-4 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-brand-lime" />
-              : <div className="flex-1 min-w-0 h-12 px-3 rounded-2xl bg-white/[0.03] border border-dashed border-white/10 flex items-center text-[11px] text-slate-400">{lastPrice(name) ? <>≈ {formatCOP((lastPrice(name) || 0) * qty)} <span className="ml-1 opacity-70">según tu último mercado</span></> : 'El precio lo pones al comprar'}</div>}
-            <motion.button whileTap={{ scale: 0.85 }} onClick={submit} aria-label={mode === 'shop' ? 'Echar al carrito' : 'Agregar a la lista'}
-              className="w-12 h-12 shrink-0 rounded-2xl bg-brand-lime flex items-center justify-center shadow-lg shadow-lime-400/30">
-              {mode === 'shop' ? <Check size={22} className="text-brand-ink" strokeWidth={3} /> : <Plus size={24} className="text-brand-ink" strokeWidth={3} />}
-            </motion.button>
-          </div>
-          {mode === 'shop' && price > 0 && qty !== 1 && <p className="text-[11px] text-slate-400 mt-2">{fmtQty(qty)} × {formatCOP(price)} = <strong className="text-white">{formatCOP(qty * price)}</strong></p>}
-          {mode === 'plan' && !name && (frequent.length > 0 || trips.length > 0) && (
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-[11px] text-slate-400 flex items-center gap-1"><Sparkles size={11} className="text-brand-lime" /> Lo que más compras</p>
-                {trips.length > 0 && <button onClick={repeat} className="text-[11px] font-bold text-brand-lime flex items-center gap-1"><Repeat size={12} /> Lo de siempre</button>}
-              </div>
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {frequent.map(k => (
-                  <motion.button whileTap={{ scale: 0.9 }} key={k.name} onClick={() => { const it = addItem({ name: k.name, unit: k.unit }); setFresh(it.id); }} className="shrink-0 px-3 py-2 rounded-2xl bg-white/5 border border-white/10 text-left">
-                    <span className="block text-white text-xs font-semibold">{k.name}</span>
-                    <span className="block text-[10px] text-slate-400">≈ {formatCOP(k.price)}</span>
-                  </motion.button>
-                ))}
-              </div>
+        {/* Agrega con un toque (sin escribir) */}
+        {mode === 'plan' && quick.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs font-bold text-slate-400 mb-2 tracking-wide flex items-center gap-1"><Sparkles size={12} className="text-brand-lime" /> AGREGA CON UN TOQUE</p>
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+              {quick.map(k => (
+                <motion.button whileTap={{ scale: 0.88 }} key={k.name} onClick={() => quickAdd(k.name, k.unit)}
+                  className="shrink-0 flex items-center gap-2 pl-2 pr-3 py-2 rounded-2xl bg-surface border border-white/10 text-left">
+                  <CategoryIcon id={categoryOf(k.name)} size={13} boxed />
+                  <span><span className="block text-white text-xs font-bold whitespace-nowrap">{k.name}</span><span className="block text-[10px] text-slate-400">{k.price ? `≈ ${formatCOP(k.price)}` : 'Toca para agregar'}</span></span>
+                  <Plus size={15} className="text-brand-lime" strokeWidth={3} />
+                </motion.button>
+              ))}
             </div>
-          )}
-        </motion.div>
+          </div>
+        )}
 
         {/* Lista */}
         <div data-tour="mk-list" className="mt-5">
@@ -389,18 +371,37 @@ export default function MarketPage() {
                 <ShoppingBasket size={36} className="text-brand-lime" />
               </motion.div>
               <p className="text-white font-semibold mt-4">Tu lista está vacía</p>
-              <p className="text-slate-400 text-sm">Agrega lo que hace falta en la casa.</p>
+              <p className="text-slate-400 text-sm">Toca <strong className="text-white">Agregar</strong> y escribe lo que hace falta: se ordena solo por categoría.</p>
               {!household && <button onClick={openHousehold} className="mt-4 text-xs font-bold text-brand-lime flex items-center gap-1 mx-auto"><Users size={14} /> Compartir la lista con mi hogar</button>}
             </div>
           ) : (
             <>
               {pending.length > 0 && <p className="text-xs font-bold text-slate-400 mb-2 tracking-wide">POR COMPRAR · {pending.length}</p>}
-              <ul className="space-y-2"><AnimatePresence initial={false}>{pending.map(row)}</AnimatePresence></ul>
+              <div className="space-y-4">
+                {groupByCategory(pending).map(g => (
+                  <div key={g.cat.id}>
+                    <p className="flex items-center gap-2 text-[11px] font-bold text-slate-300 mb-1.5"><CategoryIcon id={g.cat.id} size={13} boxed />{g.cat.label}<span className="text-slate-500">· {g.items.length}</span></p>
+                    <ul className="space-y-2"><AnimatePresence initial={false}>{g.items.map(row)}</AnimatePresence></ul>
+                  </div>
+                ))}
+              </div>
               {inCart.length > 0 && <p className="text-xs font-bold text-brand-lime mt-5 mb-2 tracking-wide flex items-center gap-1"><Check size={13} /> EN EL CARRITO · {inCart.length}</p>}
               <ul className="space-y-2"><AnimatePresence initial={false}>{inCart.map(row)}</AnimatePresence></ul>
               <p className="text-center text-[10px] text-slate-500 mt-3">Desliza un producto a la izquierda para quitarlo</p>
             </>
           )}
+        </div>
+
+        {/* Botones flotantes: dictar + agregar */}
+        <div data-tour="mk-composer" className={`fixed right-4 z-40 flex items-center gap-2.5 transition-[bottom] ${inCart.length > 0 ? 'bottom-[104px]' : 'bottom-6'}`}>
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setVoiceOpen(true)} data-tour="mk-voice" aria-label="Dictar productos"
+            className="w-14 h-14 rounded-full bg-surface2 border border-brand-lime/40 text-brand-lime flex items-center justify-center shadow-xl shadow-black/40">
+            <Mic size={22} />
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.93 }} onClick={() => { reset(); setAdding(true); setTimeout(() => nameRef.current?.focus(), 350); }}
+            className="h-14 pl-5 pr-6 rounded-full bg-brand-lime text-brand-ink font-extrabold flex items-center gap-2 shadow-xl shadow-lime-400/25">
+            {mode === 'shop' ? <ShoppingCart size={20} strokeWidth={2.6} /> : <Plus size={22} strokeWidth={3} />}{mode === 'shop' ? 'Al carrito' : 'Agregar'}
+          </motion.button>
         </div>
 
         {/* Barra fija para terminar */}
@@ -419,6 +420,110 @@ export default function MarketPage() {
           )}
         </AnimatePresence>
       </>}
+
+      {/* Ventana para agregar (abre con el botón flotante) */}
+      <BottomSheet open={adding} onClose={() => { setAdding(false); reset(); }} labelId="mk-add-title"
+        title={mode === 'shop' ? '¿Qué echaste al carrito?' : '¿Qué hace falta en la casa?'}
+        subtitle={mode === 'shop' ? 'Si estaba en la lista se tacha solo' : 'Se clasifica solo en su categoría'}
+        icon={mode === 'shop' ? <ShoppingCart size={20} /> : <ShoppingBasket size={20} />}>
+        <div className="flex justify-end -mt-2 mb-2">
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setAdding(false); setVoiceOpen(true); }}
+            className="shrink-0 flex items-center gap-1.5 pl-2.5 pr-3 h-9 rounded-full bg-brand-lime/15 ring-1 ring-brand-lime/40 text-brand-lime text-xs font-bold">
+            <Mic size={15} /> Dictar
+          </motion.button>
+        </div>
+        <div className="relative">
+          {mode === 'shop' ? <ShoppingCart size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-lime" aria-hidden="true" /> : <ShoppingBasket size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-lime" aria-hidden="true" />}
+          <input ref={nameRef} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
+            onFocus={() => setFocused(true)} onBlur={() => setTimeout(() => setFocused(false), 150)}
+            placeholder={mode === 'shop' ? 'Ej: Arroz Diana 500 g' : 'Ej: Arroz, leche, huevos…'} aria-label="Nombre del producto" autoComplete="off" enterKeyHint={mode === 'shop' ? 'next' : 'done'}
+            className="w-full h-14 pl-11 pr-10 rounded-2xl bg-white/5 border border-white/10 text-white text-base outline-none focus:border-brand-lime transition-colors" />
+          {name && <button onClick={reset} aria-label="Borrar" className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400"><X size={16} /></button>}
+        </div>
+        {/* Categoría automática */}
+        {name.trim() && (
+          <div className="mt-2">
+            <button onClick={() => setPickCat(v => !v)} className="flex items-center gap-2 text-xs text-slate-300">
+              <CategoryIcon id={categoryOf(name)} size={14} boxed />
+              <span>Va en <strong className="text-white">{CATEGORIES.find(c => c.id === categoryOf(name))?.label}</strong></span>
+              <span className="text-brand-lime font-bold">{pickCat ? 'Listo' : 'Cambiar'}</span>
+            </button>
+            <AnimatePresence>
+              {pickCat && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                  <div className="flex flex-wrap gap-1.5 pt-2">
+                    {CATEGORIES.map(c => (
+                      <button key={c.id} onClick={() => { setCategoryFor(name, c.id as CategoryId); setCatTick(t => t + 1); setPickCat(false); }}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold ${categoryOf(name) === c.id ? 'bg-brand-lime text-brand-ink' : 'bg-white/[0.06] text-slate-200 ring-1 ring-white/10'}`}>
+                        <CategoryIcon id={c.id} size={12} />{c.label}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+        <AnimatePresence>
+          {(focused || mode === 'plan') && suggestions.length > 0 && (
+            <motion.ul initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-2 rounded-2xl bg-white/[0.04] ring-1 ring-white/10 divide-y divide-white/5 overflow-hidden">
+              {suggestions.map(s => (
+                <li key={s.name}>
+                  <button onMouseDown={e => e.preventDefault()} onClick={() => { if (mode === 'plan') { quickAdd(s.name, s.unit, qty); setName(''); nameRef.current?.focus(); } else pick(s); }} className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left">
+                    <CategoryIcon id={categoryOf(s.name)} size={13} boxed />
+                    <span className="flex-1 text-sm text-white truncate">{s.name}</span>
+                    {s.inList && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-brand-lime/15 text-brand-lime flex items-center gap-0.5"><ListChecks size={9} />EN TU LISTA</span>}
+                    {s.price ? <span className="text-xs text-slate-400">{formatCOP(s.price)}</span> : null}
+                    {mode === 'plan' && <span className="w-7 h-7 rounded-lg bg-brand-lime text-brand-ink flex items-center justify-center shrink-0"><Plus size={16} strokeWidth={3} /></span>}
+                  </button>
+                </li>
+              ))}
+            </motion.ul>
+          )}
+        </AnimatePresence>
+        <div className="mt-3"><UnitPicker unit={unit} onChange={setUnit} /></div>
+        <div className="flex items-stretch gap-2 mt-3">
+          <QtyStepper qty={qty} unit={unit} onChange={setQty} />
+          {mode === 'shop'
+            ? <MoneyInput value={price} onChange={setPrice} prefix placeholder={`Precio por ${unitLabel(unit)}`} ariaLabel="Precio por unidad" className="flex-1 min-w-0 h-12 px-4 rounded-2xl bg-white/5 border border-white/10 text-white outline-none focus:border-brand-lime" />
+            : <div className="flex-1 min-w-0 h-12 px-3 rounded-2xl bg-white/[0.03] border border-dashed border-white/10 flex items-center text-[11px] text-slate-400">{lastPrice(name) ? <>≈ {formatCOP((lastPrice(name) || 0) * qty)} <span className="ml-1 opacity-70">según tu último mercado</span></> : 'El precio lo pones al comprar'}</div>}
+          <motion.button whileTap={{ scale: 0.85 }} onClick={submit} aria-label={mode === 'shop' ? 'Echar al carrito' : 'Agregar a la lista'}
+            className="w-12 h-12 shrink-0 rounded-2xl bg-brand-lime flex items-center justify-center shadow-lg shadow-lime-400/30">
+            {mode === 'shop' ? <Check size={22} className="text-brand-ink" strokeWidth={3} /> : <Plus size={24} className="text-brand-ink" strokeWidth={3} />}
+          </motion.button>
+        </div>
+        {mode === 'shop' && price > 0 && qty !== 1 && <p className="text-[11px] text-slate-400 mt-2">{fmtQty(qty)} × {formatCOP(price)} = <strong className="text-white">{formatCOP(qty * price)}</strong></p>}
+        {mode === 'plan' && !name && (frequent.length > 0 || trips.length > 0) && (
+          <div className="mt-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[11px] text-slate-400 flex items-center gap-1"><Sparkles size={11} className="text-brand-lime" /> Lo que más compras</p>
+              {trips.length > 0 && <button onClick={repeat} className="text-[11px] font-bold text-brand-lime flex items-center gap-1"><Repeat size={12} /> Lo de siempre</button>}
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {frequent.map(k => (
+                <motion.button whileTap={{ scale: 0.9 }} key={k.name} onClick={() => { const it = addItem({ name: k.name, unit: k.unit }); setFresh(it.id); }} className="shrink-0 px-3 py-2 rounded-2xl bg-white/5 border border-white/10 text-left">
+                  <span className="block text-white text-xs font-semibold">{k.name}</span>
+                  <span className="block text-[10px] text-slate-400">≈ {formatCOP(k.price)}</span>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
+        {mode === 'plan' && !name && quick.length > 0 && (
+          <div className="mt-4">
+            <p className="text-[11px] text-slate-400 mb-1.5 flex items-center gap-1"><Plus size={11} className="text-brand-lime" /> Toca para agregar</p>
+            <div className="flex flex-wrap gap-1.5">
+              {quick.map(k => (
+                <motion.button whileTap={{ scale: 0.88 }} key={k.name} onClick={() => quickAdd(k.name, k.unit)}
+                  className="flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full bg-white/[0.05] ring-1 ring-white/10 text-xs font-semibold text-white">
+                  <CategoryIcon id={categoryOf(k.name)} size={11} boxed />{k.name}
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
+        <button onClick={() => { setAdding(false); reset(); }} className="mt-4 w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white font-bold">Listo</button>
+      </BottomSheet>
 
       <ItemSheet item={sheet?.item ?? null} mode={sheet?.mode ?? 'edit'} onClose={() => setSheet(null)} />
       <VoiceSheet kind="market" open={voiceOpen} onClose={() => setVoiceOpen(false)} marketMode={mode} store={store} onAdded={ids => ids[0] && setFresh(ids[0])} />

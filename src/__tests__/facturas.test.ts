@@ -44,3 +44,31 @@ describe('Mensajes del banco', () => {
       .toMatchObject({ type: 'income', amount: 200000, method: 'Nequi' });
   });
 });
+
+describe('Categorías automáticas y cruce con la lista', async () => {
+  const { guessCategory, expandReceiptName, crossReceipt } = await import('../services/market/categories');
+  test('clasifica solo con el nombre', () => {
+    expect(guessCategory('Arroz Diana')).toBe('despensa');
+    expect(guessCategory('Huevos')).toBe('lacteos');
+    expect(guessCategory('Papas fritas')).toBe('mecato');
+    expect(guessCategory('Papa pastusa')).toBe('frutas');
+    expect(guessCategory('Crema dental')).toBe('personal');
+    expect(guessCategory('Jabón de loza')).toBe('aseo');
+    expect(guessCategory('Pechuga de pollo')).toBe('carnes');
+    expect(guessCategory('Cosa rara')).toBe('otros');
+  });
+  test('entiende abreviaturas de factura', () => {
+    expect(expandReceiptName('LCHE ENT ALQ 1100')).toContain('leche');
+    expect(expandReceiptName('HUEVOS AA X30')).toBe('huevo');
+  });
+  test('cruza la factura con la lista', () => {
+    const list = [{ id: '1', name: 'Huevos' }, { id: '2', name: 'Leche' }, { id: '3', name: 'Pan tajado' }, { id: '4', name: 'Café' }];
+    const r = crossReceipt([{ name: 'HUEVOS AA X30' }, { name: 'LCHE ENT ALQ' }, { name: 'TOSTADAS BIMBO' }, { name: 'CHOCOLATINA JET' }], list);
+    const by = Object.fromEntries(r.pairs.map(p => [p.receipt.name, [p.item.name, p.level]]));
+    expect(by['HUEVOS AA X30']).toEqual(['Huevos', 'seguro']);
+    expect(by['LCHE ENT ALQ']).toEqual(['Leche', 'seguro']);
+    expect(by['TOSTADAS BIMBO']).toEqual(['Pan tajado', 'confirmar']);
+    expect(r.unmatched.map(u => u.name)).toEqual(['CHOCOLATINA JET']);
+    expect(r.leftover.map(l => l.name)).toEqual(['Café']);
+  });
+});

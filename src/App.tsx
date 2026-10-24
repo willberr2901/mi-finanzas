@@ -55,6 +55,7 @@ const loaders = {
   bills: () => import('./pages/BillsPage'),
   legal: () => import('./pages/LegalPage'),
   reports: () => import('./pages/ReportsPage'),
+  loans: () => import('./pages/LoansPage'),
 };
 const HomePage = lazyWithRetry(loaders.home);
 const MarketPage = lazyWithRetry(loaders.market);
@@ -65,6 +66,7 @@ const FinancePage = lazyWithRetry(loaders.finance);
 const BillsPage = lazyWithRetry(loaders.bills);
 const LegalPage = lazyWithRetry(loaders.legal);
 const ReportsPage = lazyWithRetry(loaders.reports);
+const LoansPage = lazyWithRetry(loaders.loans);
 
 /** Deja todas las pantallas cargadas en segundo plano: así abrir Ajustes u otro módulo
  *  es instantáneo y no depende de archivos que una actualización pudo reemplazar. */
@@ -176,6 +178,7 @@ function AppContent() {
                   <Route path="/finanzas" element={<FinancePage />} />
                   <Route path="/mercado" element={<MarketPage />} />
                   <Route path="/pagos" element={<BillsPage />} />
+                  <Route path="/prestamos" element={<LoansPage />} />
                   <Route path="/escaner" element={<ReceiptScannerPage />} />
                   <Route path="/ajustes" element={<SettingsPage />} />
                   <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
@@ -188,7 +191,7 @@ function AppContent() {
           </motion.div>
         </main>
 
-        <QuickAdd hidden={['/mercado', '/legal', '/escaner', '/reportes'].includes(location.pathname)} />
+        <QuickAdd hidden={['/mercado', '/prestamos', '/legal', '/escaner', '/reportes'].includes(location.pathname)} />
         <SidebarMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
         <ShareAppSheet />
         <PasteMovementSheet />

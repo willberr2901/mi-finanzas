@@ -21,7 +21,7 @@ import { APP_VERSION } from '../version';
 import AppLogo from './ui/AppLogo';
 
 const GROUPS: { title: string; items: (keyof typeof MODULES)[] }[] = [
-  { title: 'Principal', items: ['inicio', 'mercado', 'finanzas', 'pagos'] },
+  { title: 'Principal', items: ['inicio', 'mercado', 'finanzas', 'pagos', 'prestamos'] },
   { title: 'Herramientas', items: ['escaner', 'facturas'] },
   { title: 'Cuenta', items: ['ajustes', 'legal'] },
 ];

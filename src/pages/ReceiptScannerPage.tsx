@@ -6,6 +6,7 @@
  * Revisión: la foto al lado para comparar, comercio, fecha, medio de pago, total y cada producto
  *           con cantidad × valor unitario = valor de la línea. Un aviso dice si la suma cuadra.
  *           Opcional: guardar los precios en Mercado (para comparar por tienda).
+ *           Si es de Mercado y hay lista: "Cruzar con tu lista" (components/market/ReceiptSync).
  * Dónde se ve: Menú → Escáner.
  * Si lo cambias: La lectura de la foto está en services/ocrService.ts y lo que significa
  *                cada línea en services/receipt/receiptParser.ts.
@@ -16,7 +17,8 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, ImagePlus, ScanLine, Check, X, Trash2, Plus, CalendarDays, ShieldCheck, FileText, ChevronRight, RotateCcw, CreditCard, AlertTriangle, CheckCircle2, Maximize2, ShoppingBasket, Minus } from 'lucide-react';
 import StoreBadge from '../components/market/StoreBadge';
-import { addTripFromReceipt, cleanStore } from '../services/market/marketStore';
+import { addTripFromReceipt, cleanStore, listItems } from '../services/market/marketStore';
+import ReceiptSync, { type SyncReceiptItem } from '../components/market/ReceiptSync';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import MoneyInput from '../components/ui/MoneyInput';
 import { usePageTour } from '../components/tour/Tour';
@@ -56,6 +58,7 @@ export default function ReceiptScannerPage() {
   const [date, setDate] = useState(todayISO());
   const [total, setTotal] = useState(0);
   const [items, setItems] = useState<ScannedItem[]>([]);
+  const [cross, setCross] = useState<{ store: string; items: SyncReceiptItem[] } | null>(null);
   const [category, setCategory] = useState('Mercado');
   const [payment, setPayment] = useState('');
   const [toMarket, setToMarket] = useState(true);
@@ -123,8 +126,10 @@ export default function ReceiptScannerPage() {
       products: good.map(i => ({ name: i.name.trim(), price: i.price, quantity: i.quantity || 1, unitPrice: i.unitPrice })),
       isValid: true,
     };
+    // ¿Hay lista de mercado pendiente? Entonces se sincroniza con ella (y el mercado se guarda al cerrarlo).
+    const willSync = category === 'Mercado' && good.length > 0 && listItems().some(i => !i.checked);
     // Precios al historial del Mercado (comparar tiendas)
-    if (toMarket && category === 'Mercado' && good.some(i => i.price > 0)) {
+    if (!willSync && toMarket && category === 'Mercado' && good.some(i => i.price > 0)) {
       addTripFromReceipt({ store: name === 'Factura' ? '' : name, date, total, items: good.filter(i => i.price > 0).map(i => ({ name: i.name, qty: i.quantity || 1, unit: i.unit, price: i.unitPrice || Math.round(i.price / (i.quantity || 1)) })) });
     }
     const list = [invoice, ...loadInvoices()].slice(0, 100);
@@ -134,10 +139,15 @@ export default function ReceiptScannerPage() {
       await db.transactions.add({ id: crypto.randomUUID(), date, type: 'expense', amount: total, category, description: `Factura ${name}${payment ? ` · ${payment}` : ''}`, createdAt: Date.now() });
       window.dispatchEvent(new Event('mf:data-changed'));
     }
-    notify({ title: asExpense ? 'Gasto registrado' : 'Factura guardada', message: `${name}: ${formatCOP(total)}`, type: 'success' });
+    // Si se va a sincronizar con la lista, ese aviso de arriba ya cuenta lo que pasó.
+    if (!willSync) notify({ title: asExpense ? 'Gasto registrado' : 'Factura guardada', message: `${name}: ${formatCOP(total)}`, type: 'success' });
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
     setStep('done');
+    // Cruce con la lista del mercado (si hay productos por comprar)
+    if (willSync) {
+      setCross({ store: name === 'Factura' ? '' : name, items: good.map(i => ({ name: i.name, price: i.price, quantity: i.quantity || 1, unitPrice: i.unitPrice || Math.round(i.price / (i.quantity || 1)) })) });
+    }
   };
 
   return (
@@ -351,6 +361,7 @@ export default function ReceiptScannerPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <ReceiptSync data={cross} onClose={() => setCross(null)} />
     </div>
   );
 }
