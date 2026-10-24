@@ -3,6 +3,7 @@
  * 🧾⇄🛒 SINCRONIZAR LA FACTURA CON LA LISTA DEL MERCADO (avisos arriba)
  * ────────────────────────────────────────────────────────────────────
  * Sale sola después de guardar una factura de Mercado si hay productos por comprar.
+ * Mismo diseño de tarjeta que los avisos de Préstamos (franja de color + ícono redondo + botones grandes).
  *   1. Lo que coincide seguro se TACHA SOLO con su precio (ej. "HUEVOS AA X30" = Huevos).
  *   2. Aviso arriba por cada duda: "¿Es el mismo producto?" → Sí, sincronizar / No.
  *   3. Aviso por cada producto que no está en la lista:
@@ -16,7 +17,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Check, X, RefreshCw, Plus, Link2, ArrowDown, ListChecks } from 'lucide-react';
+import { Check, X, Plus, Link2, ListChecks, ShoppingCart } from 'lucide-react';
 import { formatCOP } from '../../utils/format';
 import { notify } from '../../services/notificationService';
 import { listItems, checkItem, addItem, finishTrip, setCurrentStore, type ListItem } from '../../services/market/marketStore';
@@ -75,63 +76,78 @@ export default function ReceiptSync({ data, onClose }: { data: { store: string; 
   };
 
   const total = queue.length;
+  const pct = total ? Math.round((Math.min(i, total) / total) * 100) : 100;
+  // Colores y textos de la franja según el paso
+  const head = done
+    ? { grad: 'from-lime-200 via-lime-300 to-emerald-500', label: '✅ LISTA SINCRONIZADA', ring: '#C6F432' }
+    : step?.kind === 'confirmar'
+      ? { grad: 'from-amber-200 via-amber-300 to-orange-500', label: '🧾 ¿ES EL MISMO PRODUCTO?', ring: '#FB923C' }
+      : { grad: 'from-sky-200 via-sky-300 to-blue-500', label: '🛒 NO ESTÁ EN TU LISTA', ring: '#7DD3FC' };
+  const iconCat = done ? null : step?.kind === 'confirmar' ? categoryOf(step.item.name) : step ? guessCategory(expandReceiptName(step.r.name)) : null;
+
   return createPortal(
     <AnimatePresence>
       {data && (
-        <motion.div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-[2px] flex justify-center items-start p-3 pt-[max(12px,env(safe-area-inset-top))]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <motion.div key={done ? 'fin' : i} role="dialog" aria-modal="true" aria-labelledby="sync-title"
-            initial={{ y: -80, opacity: 0, scale: 0.97 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: -40, opacity: 0 }} transition={{ type: 'spring', damping: 24, stiffness: 300 }}
-            className="theme-dark w-full max-w-md max-h-[88vh] overflow-y-auto rounded-[28px] bg-gradient-to-b from-[#1D2550] to-[#0F1530] border border-brand-lime/30 shadow-2xl shadow-black/60 p-4">
-            {/* Encabezado */}
-            <div className="flex items-center gap-2">
-              <span className="w-9 h-9 rounded-xl bg-brand-lime text-brand-ink flex items-center justify-center"><RefreshCw size={18} strokeWidth={2.6} /></span>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-extrabold tracking-widest text-brand-lime">SINCRONIZANDO CON TU LISTA{!done && total > 0 ? ` · ${i + 1} DE ${total}` : ''}</p>
-                <p className="text-[11px] text-slate-300 truncate">{auto.length > 0 ? `✓ ${auto.length} ${auto.length === 1 ? 'producto se tachó solo' : 'productos se tacharon solos'}` : 'Revisemos tu factura'}{data.store ? ` · ${data.store}` : ''}</p>
+        <motion.div className="fixed inset-0 z-[150] bg-black/75 backdrop-blur-sm flex items-center justify-center p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div key={done ? 'fin' : `${i}-${choosing}`} role="dialog" aria-modal="true" aria-labelledby="sync-title"
+            initial={{ y: -60, scale: 0.9, opacity: 0, rotate: -2 }} animate={{ y: 0, scale: 1, opacity: 1, rotate: 0 }} exit={{ y: 40, opacity: 0 }} transition={{ type: 'spring', damping: 17, stiffness: 240 }}
+            className="theme-dark relative w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-[30px] bg-[#121938] border border-white/10 shadow-2xl shadow-black/60">
+            {/* Franja de color */}
+            <div className={`relative px-5 pt-4 pb-10 bg-gradient-to-br ${head.grad}`}>
+              <div aria-hidden="true" className="absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/25 blur-2xl" />
+              <div className="relative flex items-center justify-between gap-2">
+                <p className="text-[11px] font-extrabold tracking-widest text-[#0B1026]">{head.label}</p>
+                <button onClick={onClose} aria-label="Cerrar" className="p-1 text-[#0B1026]/70"><X size={18} /></button>
               </div>
-              <button onClick={onClose} aria-label="Cerrar" className="p-1.5 text-slate-400"><X size={18} /></button>
+              <div className="relative flex flex-wrap gap-1.5 mt-2">
+                {!done && total > 0 && <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-[#0B1026] text-white">{i + 1} DE {total}</span>}
+                {auto.length > 0 && <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-white/60 text-[#0B1026]">✓ {auto.length} {auto.length === 1 ? 'SE TACHÓ SOLO' : 'SE TACHARON SOLOS'}</span>}
+                {data.store && <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-white/40 text-[#0B1026]">{data.store.toUpperCase()}</span>}
+              </div>
             </div>
-            {!done && total > 0 && <div className="flex gap-1 mt-3">{queue.map((_, n) => <span key={n} className={`h-1 flex-1 rounded-full ${n < i ? 'bg-brand-lime' : n === i ? 'bg-brand-lime/60' : 'bg-white/15'}`} />)}</div>}
 
-            {/* 1) ¿Es el mismo? */}
-            {!done && step?.kind === 'confirmar' && (
-              <div className="mt-4">
-                <h2 id="sync-title" className="text-white text-lg font-extrabold">¿Es el mismo producto?</h2>
-                <div className="mt-3 rounded-2xl bg-[#F4F1E8] text-[#1F1D18] p-3">
-                  <p className="text-[10px] font-bold opacity-60">EN LA FACTURA</p>
-                  <div className="flex justify-between gap-2 font-mono font-bold text-sm"><span className="truncate">{step.r.name.toUpperCase()}</span><span>{formatCOP(unitOf(step.r))}</span></div>
+            {/* Ícono redondo con el avance */}
+            <div className="relative -mt-9 flex justify-center">
+              <motion.div initial={{ rotateY: 180, scale: 0.6 }} animate={{ rotateY: 0, scale: 1 }} transition={{ delay: 0.12, duration: 0.55 }}
+                className="w-[76px] h-[76px] rounded-full p-[4px]" style={{ background: `conic-gradient(${head.ring} ${pct * 3.6}deg, rgba(255,255,255,.12) 0deg)` }}>
+                <div className="w-full h-full rounded-full bg-[#121938] flex items-center justify-center">
+                  {done ? <Check size={34} strokeWidth={3} className="text-brand-lime" /> : iconCat ? <CategoryIcon id={iconCat} size={28} /> : <ShoppingCart size={28} className="text-sky-300" />}
                 </div>
-                <div className="flex justify-center my-1.5"><ArrowDown size={18} className="text-slate-400" /></div>
-                <div className="rounded-2xl bg-white/[0.06] ring-1 ring-white/10 p-3 flex items-center gap-3">
-                  <CategoryIcon id={categoryOf(step.item.name)} size={15} boxed />
-                  <div className="flex-1 min-w-0"><p className="text-[10px] font-bold text-slate-400">EN TU LISTA</p><p className="text-white font-bold truncate">{step.item.name}</p></div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <motion.button whileTap={{ scale: 0.96 }} onClick={() => no(step)} className="h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white font-bold">No es el mismo</motion.button>
-                  <motion.button whileTap={{ scale: 0.96 }} onClick={() => yes(step)} className="h-12 rounded-2xl bg-brand-lime text-brand-ink font-extrabold flex items-center justify-center gap-1.5"><Check size={17} strokeWidth={3} /> Sí, sincronizar</motion.button>
-                </div>
-              </div>
-            )}
+              </motion.div>
+            </div>
 
-            {/* 2) No está en la lista */}
-            {!done && step?.kind === 'nuevo' && (
-              <div className="mt-4">
-                <h2 id="sync-title" className="text-white text-lg font-extrabold">No está en tu lista</h2>
-                <div className="mt-3 rounded-2xl bg-[#F4F1E8] text-[#1F1D18] p-3">
-                  <p className="text-[10px] font-bold opacity-60">EN LA FACTURA</p>
-                  <div className="flex justify-between gap-2 font-mono font-bold text-sm"><span className="truncate">{step.r.name.toUpperCase()}</span><span>{formatCOP(unitOf(step.r))}</span></div>
-                  <p className="text-[11px] mt-1 flex items-center gap-1.5 opacity-80"><CategoryIcon id={guessCategory(expandReceiptName(step.r.name))} size={11} /> {CATEGORIES.find(c => c.id === guessCategory(expandReceiptName(step.r.name)))?.label}</p>
+            <div className="px-5 pb-5 pt-2 text-center">
+              {/* 1) ¿Es el mismo? */}
+              {!done && step?.kind === 'confirmar' && (<>
+                <div className="mx-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F4F1E8] text-[#1F1D18] font-mono font-bold text-xs">
+                  <span className="opacity-60">FACTURA</span><span className="truncate max-w-[170px]">{step.r.name.toUpperCase()}</span>
                 </div>
+                <h2 id="sync-title" className="text-white text-lg font-extrabold mt-3">¿Es <span className="text-orange-300">{step.item.name}</span> de tu lista?</h2>
+                <p className="text-[34px] font-extrabold leading-tight tracking-tight text-orange-300">{formatCOP(unitOf(step.r))}</p>
+                <p className="text-xs text-slate-300">Si dices que sí, se tacha con este precio y la próxima vez lo cruzo solo.</p>
+                <div className="mt-5 space-y-2">
+                  <motion.button whileTap={{ scale: 0.96 }} onClick={() => yes(step)} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-300 to-orange-500 text-[#1A1200] font-extrabold flex items-center justify-center gap-2"><Check size={19} strokeWidth={3} /> Sí, es el mismo</motion.button>
+                  <button onClick={() => no(step)} className="w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white font-bold">No, es otro producto</button>
+                </div>
+              </>)}
+
+              {/* 2) No está en la lista */}
+              {!done && step?.kind === 'nuevo' && (<>
+                <div className="mx-auto inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#F4F1E8] text-[#1F1D18] font-mono font-bold text-xs">
+                  <span className="opacity-60">FACTURA</span><span className="truncate max-w-[170px]">{step.r.name.toUpperCase()}</span>
+                </div>
+                <h2 id="sync-title" className="text-white text-lg font-extrabold mt-3"><span className="text-sky-300">{pretty(expandReceiptName(step.r.name) || step.r.name)}</span> no estaba en tu lista</h2>
+                <p className="text-[34px] font-extrabold leading-tight tracking-tight text-sky-300">{formatCOP(unitOf(step.r))}</p>
+                <p className="text-xs text-slate-300">Va en {CATEGORIES.find(c => c.id === guessCategory(expandReceiptName(step.r.name)))?.label}</p>
                 {!choosing ? (
-                  <div className="space-y-2 mt-4">
-                    <motion.button whileTap={{ scale: 0.97 }} onClick={() => incorporate(step.r)} className="w-full h-12 rounded-2xl bg-brand-lime text-brand-ink font-extrabold flex items-center justify-center gap-1.5"><Plus size={18} strokeWidth={3} /> Incorporar a la lista</motion.button>
-                    {pendingNow.length > 0 && <motion.button whileTap={{ scale: 0.97 }} onClick={() => setChoosing(true)} className="w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-brand-lime/40 text-brand-lime font-bold flex items-center justify-center gap-1.5"><Link2 size={16} /> Sincronizar con un producto de mi lista</motion.button>}
-                    <button onClick={next} className="w-full h-10 text-sm text-slate-400 font-semibold">Omitir</button>
+                  <div className="mt-5 space-y-2">
+                    <motion.button whileTap={{ scale: 0.96 }} onClick={() => incorporate(step.r)} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-sky-300 to-blue-500 text-[#06122B] font-extrabold flex items-center justify-center gap-2"><Plus size={19} strokeWidth={3} /> Incorporar a la lista</motion.button>
+                    {pendingNow.length > 0 && <button onClick={() => setChoosing(true)} className="w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white font-bold flex items-center justify-center gap-2"><Link2 size={17} /> Es uno de mi lista</button>}
                   </div>
                 ) : (
-                  <div className="mt-4">
-                    <p className="text-xs text-slate-300 mb-2">¿A cuál de tu lista corresponde?</p>
-                    <div className="flex flex-wrap gap-1.5">
+                  <div className="mt-4 text-left">
+                    <p className="text-xs text-slate-300 mb-2 text-center">¿A cuál de tu lista corresponde?</p>
+                    <div className="flex flex-wrap gap-1.5 justify-center">
                       {options(step.r).map(it => (
                         <motion.button whileTap={{ scale: 0.92 }} key={it.id} onClick={() => linkTo(step.r, it)}
                           className="flex items-center gap-1.5 pl-1.5 pr-3 py-1.5 rounded-full bg-white/[0.06] ring-1 ring-white/10 text-xs font-bold text-white">
@@ -142,27 +158,26 @@ export default function ReceiptSync({ data, onClose }: { data: { store: string; 
                     <button onClick={() => setChoosing(false)} className="mt-3 w-full h-10 text-sm text-slate-400 font-semibold">Volver</button>
                   </div>
                 )}
-              </div>
-            )}
+              </>)}
 
-            {/* 3) Resumen */}
-            {done && (
-              <div className="mt-4 text-center">
-                <motion.span initial={{ scale: 0 }} animate={{ scale: [0, 1.2, 1] }} className="mx-auto w-16 h-16 rounded-full bg-brand-lime flex items-center justify-center"><Check size={34} strokeWidth={3} className="text-brand-ink" /></motion.span>
-                <h2 id="sync-title" className="text-white text-xl font-extrabold mt-3">¡Lista sincronizada!</h2>
+              {/* 3) Resumen */}
+              {done && (<>
+                <h2 id="sync-title" className="text-white text-xl font-extrabold">¡Tu lista quedó al día!</h2>
                 <div className="grid grid-cols-3 gap-2 mt-4">
-                  {[[auto.length + linked, 'tachados'], [added, 'incorporados'], [pendingNow.length, 'por comprar']].map(([v, l]) => (
-                    <div key={l as string} className="rounded-2xl bg-white/[0.06] ring-1 ring-white/10 py-2.5"><p className="text-white text-xl font-extrabold">{v}</p><p className="text-[10px] text-slate-400">{l}</p></div>
+                  {[[auto.length + linked, 'tachados', 'text-brand-lime'], [added, 'incorporados', 'text-sky-300'], [pendingNow.length, 'por comprar', 'text-orange-300']].map(([v, l, c]) => (
+                    <div key={l as string} className="rounded-2xl bg-white/[0.06] ring-1 ring-white/10 py-2.5"><p className={`text-2xl font-extrabold ${c}`}>{v}</p><p className="text-[10px] text-slate-400">{l}</p></div>
                   ))}
                 </div>
                 {pendingNow.length > 0 && <p className="text-xs text-slate-300 mt-3 flex items-start gap-1.5 text-left"><ListChecks size={14} className="shrink-0 mt-0.5 text-slate-400" /><span><strong className="text-white">Falta comprar:</strong> {pendingNow.slice(0, 6).map(x => x.name).join(', ')}{pendingNow.length > 6 ? '…' : ''}</span></p>}
-                <p className="text-[10px] text-slate-500 mt-2">Lo que sincronizaste, la app lo recordará en la próxima factura.</p>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <button onClick={() => { onClose(); navigate('/mercado'); tick(n => n + 1); }} className="h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white font-bold">Ver mi lista</button>
-                  <motion.button whileTap={{ scale: 0.96 }} onClick={closeMarket} className="h-12 rounded-2xl bg-brand-lime text-brand-ink font-extrabold">Cerrar mercado</motion.button>
+                <div className="mt-5 space-y-2">
+                  <motion.button whileTap={{ scale: 0.96 }} onClick={closeMarket} className="w-full py-3.5 rounded-2xl bg-brand-lime text-brand-ink font-extrabold flex items-center justify-center gap-2"><Check size={19} strokeWidth={3} /> Cerrar y guardar el mercado</motion.button>
+                  <button onClick={() => { onClose(); navigate('/mercado'); tick(n => n + 1); }} className="w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white font-bold">Ver mi lista</button>
                 </div>
-              </div>
-            )}
+                <p className="text-[10px] text-slate-500 mt-3">Lo que sincronizaste, la app lo recordará en la próxima factura.</p>
+              </>)}
+
+              {!done && step?.kind === 'nuevo' && !choosing && <button onClick={next} className="mt-3 text-xs font-bold text-slate-400">Omitir este producto</button>}
+            </div>
           </motion.div>
         </motion.div>
       )}

@@ -43,6 +43,7 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | 🤝 Módulo **Préstamos** (Me deben / Yo debo, abonos, recordar por WhatsApp) | `src/pages/LoansPage.tsx` + `src/services/loansService.ts` |
 | 🗂️ Categorías automáticas del mercado, catálogo para agregar con un toque y cruce factura ↔ lista | `src/services/market/categories.ts` |
 | 🧾⇄🛒 Avisos de sincronización de la factura con la lista | `src/components/market/ReceiptSync.tsx` |
+| 🔔 Aviso de préstamos al abrir la app (pagar / cobrar) | `src/components/loans/LoanReminder.tsx` · avisos con la app cerrada en `src/sw.ts` (checkLoans) |
 | Pantalla **Ajustes** | `src/pages/SettingsPage.tsx` |
 | Escáner de facturas | `src/pages/ReceiptScannerPage.tsx` + `src/services/ocrService.ts` |
 | Diseño de los avisos de arriba (toasts) | `src/components/notifications/ToastCard.tsx` |
