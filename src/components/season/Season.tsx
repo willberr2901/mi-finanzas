@@ -16,7 +16,7 @@ import { useSeason, seasonPopupPending, markSeasonPopupSeen, setSeasonEnabled, t
 
 // ═══ SECCIÓN: Dibujos (propios de la app) ═══
 /** Murciélago con alas que aletean de verdad (cada ala gira desde el hombro). */
-const Bat = ({ size = 46, speed = 0.32 }: { size?: number; speed?: number }) => (
+export const Bat = ({ size = 46, speed = 0.32 }: { size?: number; speed?: number }) => (
   <svg width={size} height={size * 0.62} viewBox="0 0 64 40" aria-hidden="true" overflow="visible"
     style={{ filter: 'drop-shadow(0 0 5px rgba(255,138,31,.75)) drop-shadow(0 0 1px rgba(255,190,120,.9))' }}>
     {/* Ala izquierda */}
@@ -39,7 +39,7 @@ const Bat = ({ size = 46, speed = 0.32 }: { size?: number; speed?: number }) => 
 );
 
 /** Calabaza de Halloween con cara tallada y una velita adentro que titila. */
-const Pumpkin = ({ size = 44, face = 0 }: { size?: number; face?: 0 | 1 }) => (
+export const Pumpkin = ({ size = 44, face = 0 }: { size?: number; face?: 0 | 1 | 2 }) => (
   <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" overflow="visible">
     <defs>
       <radialGradient id={`pk-body-${face}`} cx="50%" cy="40%" r="65%">
@@ -62,7 +62,12 @@ const Pumpkin = ({ size = 44, face = 0 }: { size?: number; face?: 0 | 1 }) => (
     <path d="M24 13.5v31M17 15c-3 4-3 24 0 29M31 15c3 4 3 24 0 29" stroke="#C25E0C" strokeWidth=".9" fill="none" opacity=".7" />
     {/* Cara tallada: luz de vela adentro */}
     <g className="pk-fire season-anim" fill={`url(#pk-fire-${face})`} stroke="#6B2804" strokeWidth=".9" strokeLinejoin="round">
-      {face === 0 ? (<>
+      {face === 2 ? (<>
+        {/* Cara malvada: ojos rasgados y dientes de sierra */}
+        <path d="M11 20.5l9 2.5-6 3.2zM37 20.5l-9 2.5 6 3.2z" />
+        <path d="M22.5 28l1.5-2.6 1.5 2.6z" />
+        <path d="M10 31.5c3 7 25 7 28 0l-3 2-2-2.6-2 3.2-3-3-2 3.4-2-3.4-3 3-2-3.2-2 2.6z" />
+      </>) : face === 0 ? (<>
         <path d="M13 24l4.5-5 4 5z" /><path d="M26.5 24l4-5 4.5 5z" />
         <path d="M22.5 27.5l1.5-2.5 1.5 2.5z" />
         <path d="M11 32c4 6 22 6 26 0l-3 1-1.5 2.5L30 33l-3 1.5-3-1.5-3 1.5-3-1.5-2.5 2.5L14 33z" />

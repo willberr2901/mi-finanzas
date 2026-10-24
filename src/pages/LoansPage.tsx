@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, HandCoins, ArrowDownLeft, ArrowUpRight, MessageCircle, Check, Trash2, Undo2, ChevronDown, CalendarDays } from 'lucide-react';
 import ModuleHeader from '../components/ui/ModuleHeader';
+import { usePageTour } from '../components/tour/Tour';
 import BottomSheet from '../components/ui/BottomSheet';
 import MoneyInput from '../components/ui/MoneyInput';
 import { askConfirm } from '../components/ui/ConfirmDialog';
@@ -36,6 +37,13 @@ export default function LoansPage() {
   const [showClosed, setShowClosed] = useState(false);
   const t = loanTotals(loans);
 
+  usePageTour('prestamos', [
+    { target: 'ln-summary', title: 'Tus cuentas con personas', text: 'Aquí ves cuánto te deben y cuánto debes a amigos y familia. Es aparte de tus pagos fijos y créditos.' },
+    { target: 'ln-tabs', title: 'Me deben · Yo debo', text: '"Me deben" es lo que tú prestaste. "Yo debo" es lo que te prestaron, por ejemplo para el pasaje.' },
+    { target: 'ln-list', title: 'Abonos y recordatorios', text: 'Cada persona con sus préstamos. Toca "Me abonó" o "Abonar" para registrar pagos parciales o saldar todo, y "Recordar" para escribirle por WhatsApp con un mensaje amable.' },
+    { target: 'ln-new', title: 'Anota un préstamo', text: 'Elige si te deben o debes, con quién, cuánto y para qué. Si pones para cuándo, se marca como vencido cuando pase la fecha.' },
+  ]);
+
   const open = loans.filter(l => l.dir === tab && !isClosed(l));
   const closed = loans.filter(l => l.dir === tab && isClosed(l));
   const groups = useMemo(() => byPerson(open), [open]);
@@ -48,7 +56,7 @@ export default function LoansPage() {
       <ModuleHeader module="prestamos" />
 
       {/* Resumen */}
-      <div className="theme-dark relative overflow-hidden rounded-[28px] p-5 bg-gradient-to-br from-[#232C5A] via-[#141B3D] to-[#0B1026] ring-1 ring-lime-300/20">
+      <div data-tour="ln-summary" className="theme-dark relative overflow-hidden rounded-[28px] p-5 bg-gradient-to-br from-[#232C5A] via-[#141B3D] to-[#0B1026] ring-1 ring-lime-300/20">
         <div className="absolute -right-10 -top-12 w-44 h-44 rounded-full bg-lime-300/10 blur-3xl" aria-hidden="true" />
         <div className="relative grid grid-cols-2 gap-3">
           <div>
@@ -67,7 +75,7 @@ export default function LoansPage() {
       </div>
 
       {/* Pestañas */}
-      <div className="grid grid-cols-2 gap-1 bg-white/[0.04] ring-1 ring-white/10 p-1 rounded-2xl mt-4" role="tablist">
+      <div data-tour="ln-tabs" className="grid grid-cols-2 gap-1 bg-white/[0.04] ring-1 ring-white/10 p-1 rounded-2xl mt-4" role="tablist">
         {([['meDeben', 'Me deben'], ['debo', 'Yo debo']] as const).map(([id, label]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`relative py-2.5 rounded-xl text-sm font-bold ${tab === id ? 'text-brand-ink' : 'text-slate-300'}`}>
             {tab === id && <motion.span layoutId="ln-tab" className="absolute inset-0 rounded-xl bg-brand-lime" transition={{ type: 'spring', damping: 26, stiffness: 300 }} />}
@@ -77,7 +85,7 @@ export default function LoansPage() {
       </div>
 
       {/* Lista por persona */}
-      <div className="mt-4 space-y-3">
+      <div data-tour="ln-list" className="mt-4 space-y-3">
         {groups.length === 0 && (
           <div className="text-center py-10">
             <div className="theme-dark w-20 h-20 mx-auto rounded-3xl bg-gradient-to-br from-[#232C5A] to-[#0B1026] ring-1 ring-lime-300/30 flex items-center justify-center"><HandCoins size={36} className="text-brand-lime" /></div>
@@ -144,7 +152,7 @@ export default function LoansPage() {
       </div>
 
       {/* Botón nuevo */}
-      <motion.button whileTap={{ scale: 0.93 }} onClick={() => setAdding(true)}
+      <motion.button data-tour="ln-new" whileTap={{ scale: 0.93 }} onClick={() => setAdding(true)}
         className="fixed right-4 bottom-6 z-40 h-14 pl-5 pr-6 rounded-full bg-brand-lime text-brand-ink font-extrabold flex items-center gap-2 shadow-xl shadow-lime-400/25">
         <Plus size={22} strokeWidth={3} /> Nuevo préstamo
       </motion.button>
