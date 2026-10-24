@@ -37,6 +37,8 @@ import { InstagramMoment } from './components/social/Instagram';
 import FeedbackSheet from './components/feedback/FeedbackSheet';
 import { SeasonDecor, SeasonPopup } from './components/season/Season';
 import HalloweenIntro from './components/season/HalloweenIntro';
+import LoanReminder from './components/loans/LoanReminder';
+import { syncLoansToSW } from './services/loansService';
 import { startStats } from './services/statsService';
 
 // Lazy loading de páginas. Si tras una actualización falla la carga de una página
@@ -107,6 +109,8 @@ function AppContent() {
   const [showIntro, setShowIntro] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Copia mínima de préstamos para los avisos con la app cerrada (src/sw.ts → checkLoans)
+  useEffect(() => { syncLoansToSW(); }, []);
   const { isLocked, isSetup } = useSecurity();
   const location = useLocation();
   // Texto compartido desde otra app (menú Compartir de Android → Mi Finanzas): se lee antes de cualquier redirección.
@@ -204,6 +208,7 @@ function AppContent() {
         <FeedbackSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
         <SeasonDecor />
         <HalloweenIntro ready={!showWelcome && !(isSetup && isLocked)} />
+        <LoanReminder ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
         <SeasonPopup ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
         <UpdateManager />
         <ToastProvider />

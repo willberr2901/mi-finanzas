@@ -7,6 +7,7 @@
  * Si lo cambias: Cambia qué avisos salen y cuándo.
  * ════════════════════════════════════════════════════════════════════
  */
+import { loanAlerts, alertLabel, leftOf, today } from './loansService';
 import { loadBillStatuses, periodOf } from './billsService';
 import { listItems, estimateList, getBudget } from './market/marketStore';
 import { getActivity, saveActivity, type ActivityEntry } from './notificationService';
@@ -66,6 +67,18 @@ export const computeAlerts = async (): Promise<AppAlert[]> => {
       }
     }
   } catch { /* sin datos */ }
+
+  // Préstamos con personas (ver services/loansService.ts)
+  try {
+    for (const a of loanAlerts()) {
+      const l = a.loan, debo = l.dir === 'debo';
+      alerts.push({
+        id: `prest-${a.kind}-${l.id}-${today()}`, level: a.kind === 'vencido' || a.kind === 'hoy' ? 'urgente' : 'aviso', link: `/prestamos?ver=${l.id}`,
+        title: debo ? `Le debes a ${l.person}: ${formatCOP(leftOf(l))}` : `${l.person} te debe ${formatCOP(leftOf(l))}`,
+        message: `${l.reason ? `${l.reason} · ` : ''}${alertLabel(a)}`,
+      });
+    }
+  } catch { /* sin préstamos */ }
 
   return alerts;
 };

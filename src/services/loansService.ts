@@ -29,7 +29,7 @@ export interface Loan {
 const KEY = 'mf_loans_v1';
 const EVENT = 'mf:loans-changed';
 const load = (): Loan[] => { const v = secureStorage.getItem(KEY); return Array.isArray(v) ? v : []; };
-const save = (l: Loan[]) => { secureStorage.setItem(KEY, l); window.dispatchEvent(new Event(EVENT)); };
+const save = (l: Loan[]) => { secureStorage.setItem(KEY, l); window.dispatchEvent(new Event(EVENT)); syncLoansToSW(l); };
 
 export const REASONS = ['Pasaje', 'Almuerzo', 'Mercado', 'Préstamo', 'Servicios', 'Salida', 'Otro'];
 export const today = () => new Date().toLocaleDateString('en-CA');
@@ -79,4 +79,51 @@ export function useLoans() {
     return () => window.removeEventListener(EVENT, on);
   }, []);
   return loans;
+}
+
+// ═══ SECCIÓN: Avisos (dentro de la app y en el celular) ═══
+export type LoanAlertKind = 'vencido' | 'hoy' | 'pronto' | 'cobrar';
+export interface LoanAlert { loan: Loan; kind: LoanAlertKind; days: number }
+const dayDiff = (iso: string) => Math.round((new Date(`${iso}T12:00:00`).getTime() - new Date(`${today()}T12:00:00`).getTime()) / 86400000);
+
+/**
+ * Préstamos que merecen un aviso:
+ *   • con fecha: vencidos, que vencen hoy o en 1-2 días.
+ *   • "Me deben" sin fecha: cuando ya pasaron 15 días o más (para acordarse de cobrar).
+ */
+export const loanAlerts = (loans = load()): LoanAlert[] => loans.filter(l => !isClosed(l)).flatMap((l): LoanAlert[] => {
+  if (l.due) {
+    const d = dayDiff(l.due);
+    if (d < 0) return [{ loan: l, kind: 'vencido', days: d }];
+    if (d === 0) return [{ loan: l, kind: 'hoy', days: 0 }];
+    if (d <= 2) return [{ loan: l, kind: 'pronto', days: d }];
+    return [];
+  }
+  const age = -dayDiff(l.date);
+  return l.dir === 'meDeben' && age >= 15 ? [{ loan: l, kind: 'cobrar', days: age }] : [];
+}).sort((a, b) => a.days - b.days);
+
+/** Texto corto del estado: "Venció hace 3 días", "Vence hoy", "Vence mañana"… */
+export const alertLabel = (a: LoanAlert) =>
+  a.kind === 'vencido' ? `Venció hace ${-a.days} día${a.days === -1 ? '' : 's'}`
+    : a.kind === 'hoy' ? 'Vence hoy'
+    : a.kind === 'pronto' ? (a.days === 1 ? 'Vence mañana' : `Vence en ${a.days} días`)
+    : `Hace ${a.days} días`;
+
+// "Recuérdamelo mañana" (solo en este celular)
+const SNOOZE = 'mf_loan_snooze';
+export const snoozeLoan = (id: string) => { try { const m = JSON.parse(localStorage.getItem(SNOOZE) || '{}'); m[id] = today(); localStorage.setItem(SNOOZE, JSON.stringify(m)); } catch { /* sin almacenamiento */ } };
+export const isSnoozedToday = (id: string) => { try { return JSON.parse(localStorage.getItem(SNOOZE) || '{}')[id] === today(); } catch { return false; } };
+
+/**
+ * Copia mínima para que el service worker pueda avisar con la app cerrada
+ * (quién, cuánto falta, motivo y fecha). Se guarda en la caché local del celular, nunca sale de él.
+ */
+export async function syncLoansToSW(loans = load()) {
+  try {
+    if (!('caches' in window)) return;
+    const open = loans.filter(l => !isClosed(l)).map(l => ({ id: l.id, dir: l.dir, person: l.person, left: leftOf(l), reason: l.reason, date: l.date, due: l.due ?? null }));
+    const cache = await caches.open('mf-meta');
+    await cache.put(new Request('/__mf_loans'), new Response(JSON.stringify(open), { headers: { 'Content-Type': 'application/json' } }));
+  } catch { /* sin caché */ }
 }

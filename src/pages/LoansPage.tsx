@@ -12,6 +12,8 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { enableReminders, remindersSupported, requestBillCheck } from '../services/alertsService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, HandCoins, ArrowDownLeft, ArrowUpRight, MessageCircle, Check, Trash2, Undo2, ChevronDown, CalendarDays } from 'lucide-react';
 import ModuleHeader from '../components/ui/ModuleHeader';
@@ -34,6 +36,16 @@ export default function LoansPage() {
   const [adding, setAdding] = useState(false);
   const [paying, setPaying] = useState<Loan | null>(null);
   const [detail, setDetail] = useState<Loan | null>(null);
+  // Desde un aviso: /prestamos?abonar=<id> abre "Abonar" · /prestamos?ver=<id> abre el detalle
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    const id = params.get('abonar') || params.get('ver');
+    if (!id) return;
+    const l = loans.find(x => x.id === id);
+    if (l) { setTab(l.dir); if (params.get('abonar')) setPaying(l); else setDetail(l); }
+    setParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params]);
   const [showClosed, setShowClosed] = useState(false);
   const t = loanTotals(loans);
 
@@ -180,6 +192,10 @@ function NewLoanSheet({ open, initialDir, onClose, onSaved }: { open: boolean; i
     if (!person.trim()) return notify({ title: dir === 'meDeben' ? '¿Quién te debe?' : '¿A quién le debes?', type: 'info', log: false });
     if (amount <= 0) return notify({ title: '¿Cuánto fue?', type: 'info', log: false });
     addLoan({ dir, person, amount, reason, date, due: due || undefined });
+    // Con fecha: ofrecer los avisos del celular (una sola vez se pide el permiso)
+    if (due && remindersSupported() && Notification.permission === 'default') {
+      enableReminders().then(p => { if (p === 'granted') { notify({ title: 'Te avisaremos 🔔', message: dir === 'debo' ? 'Antes de que se venza tu pago.' : 'Cuando sea hora de cobrar.', type: 'success' }); requestBillCheck(); } });
+    } else if (due) requestBillCheck();
     notify({ title: 'Préstamo guardado', message: dir === 'meDeben' ? `${person.trim()} te debe ${formatCOP(amount)}` : `Le debes ${formatCOP(amount)} a ${person.trim()}`, type: 'success' });
     onSaved(dir); reset(); onClose();
   };

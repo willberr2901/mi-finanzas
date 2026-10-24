@@ -147,20 +147,96 @@ async function checkUpdate(force = false) {
   self.registration.update().catch(() => {});
 }
 
+// ---------- 🤝 Préstamos con personas ----------
+type LoanCopy = { id: string; dir: 'debo' | 'meDeben'; person: string; left: number; reason: string; date: string; due: string | null };
+const isoToday = () => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`; };
+const daysTo = (iso: string) => Math.round((new Date(`${iso}T12:00:00`).getTime() - new Date(`${isoToday()}T12:00:00`).getTime()) / 86400000);
+
+/**
+ * Avisos de préstamos (máximo uno por préstamo al día, hasta 3):
+ *   • "Yo debo"   → 💸 No olvides pagarle a… (con botones Ya le pagué / Mañana).
+ *   • "Me deben"  → 🤝 Hora de cobrarle a… (con botones Recordarle por WhatsApp / Me abonó).
+ * Lee la copia mínima que deja la app en la caché (loansService → syncLoansToSW).
+ */
+async function checkLoans(force = false) {
+  if ((self as any).Notification?.permission !== 'granted') return;
+  const cache = await caches.open('mf-meta');
+  const res = await cache.match(new Request('/__mf_loans'));
+  if (!res) return;
+  let loans: LoanCopy[] = [];
+  try { loans = await res.json(); } catch { return; }
+  const day = isoToday();
+  const snoozeRes = await cache.match(new Request('/__mf_loans_snooze'));
+  let snooze: Record<string, string> = {};
+  try { snooze = snoozeRes ? await snoozeRes.json() : {}; } catch { /* vacío */ }
+  const doneRes = await cache.match(new Request('/__mf_loans_notified'));
+  let done: Record<string, string> = {};
+  try { done = doneRes ? await doneRes.json() : {}; } catch { /* vacío */ }
+
+  const due = loans.map(l => {
+    if (l.due) { const d = daysTo(l.due); return d <= 2 ? { l, d, kind: d < 0 ? 'vencido' : d === 0 ? 'hoy' : 'pronto' } : null; }
+    const age = -daysTo(l.date);
+    return l.dir === 'meDeben' && age >= 15 && age % 7 === 1 ? { l, d: age, kind: 'cobrar' } : null;   // sin fecha: una vez por semana
+  }).filter(Boolean) as { l: LoanCopy; d: number; kind: string }[];
+
+  let shown = 0;
+  for (const { l, d, kind } of due.sort((a, b) => a.d - b.d)) {
+    if (shown >= 3) break;
+    if (!force && (snooze[l.id] === day || done[l.id] === day)) continue;
+    const when = kind === 'vencido' ? `venció hace ${-d} día${d === -1 ? '' : 's'}` : kind === 'hoy' ? 'vence HOY' : kind === 'pronto' ? (d === 1 ? 'vence mañana' : `vence en ${d} días`) : `ya van ${d} días`;
+    const name = l.person.split(' ')[0];
+    const what = l.reason ? ` por ${l.reason.toLowerCase()}` : '';
+    const opts = l.dir === 'debo'
+      ? { title: kind === 'vencido' ? `🔴 Le debes a ${name} y ya se pasó la fecha` : `💸 No olvides pagarle a ${name}`,
+          body: `${fmt(l.left)}${what} · ${when}.\nCumplir te deja a paz y salvo 🙌`,
+          actions: [{ action: 'pagado', title: '✅ Ya le pagué' }, { action: 'luego', title: '⏰ Mañana' }] }
+      : { title: kind === 'vencido' ? `🤝 ${name} se atrasó con lo que te debe` : `🤝 Hora de cobrarle a ${name}`,
+          body: `Te debe ${fmt(l.left)}${what} · ${when}.\nRecuérdale con un mensaje amable.`,
+          actions: [{ action: 'recordar', title: '💬 Recordarle' }, { action: 'abono', title: '✅ Me abonó' }] };
+    const wa = `Hola ${name} 👋 Te escribo para recordarte lo de ${l.reason ? l.reason.toLowerCase() : 'lo que te presté'} (${fmt(l.left)} pendientes). ¡Gracias! 😊`;
+    await self.registration.showNotification(opts.title, {
+      body: opts.body, icon: '/icon-192.png', badge: '/icon-192.png', tag: `mf-prestamo-${l.id}`,
+      actions: opts.actions, vibrate: [180, 80, 180, 80, 320], renotify: true,
+      data: { url: `/prestamos?ver=${l.id}`, loanId: l.id, wa: `https://wa.me/?text=${encodeURIComponent(wa)}` },
+    } as NotificationOptions);
+    done[l.id] = day;
+    shown++;
+  }
+  if (shown) await cache.put(new Request('/__mf_loans_notified'), new Response(JSON.stringify(done)));
+}
+
 // Revisión periódica (Chrome Android con la app instalada; el sistema decide la hora exacta).
 self.addEventListener('periodicsync', (event: any) => {
-  if (event.tag === 'mf-pagos') event.waitUntil(Promise.all([checkBills(), checkDaily(), checkUpdate()]));
+  if (event.tag === 'mf-pagos') event.waitUntil(Promise.all([checkBills(), checkDaily(), checkUpdate(), checkLoans()]));
 });
 
 // La app también puede pedir una revisión (por ejemplo, al abrirla o para probar).
 self.addEventListener('message', (e) => {
-  if (e.data?.type === 'CHECK_BILLS') e.waitUntil(checkBills(!!e.data.force));
+  if (e.data?.type === 'CHECK_BILLS') e.waitUntil(Promise.all([checkBills(!!e.data.force), checkLoans(!!e.data.force)]));
+  if (e.data?.type === 'CHECK_LOANS') e.waitUntil(checkLoans(!!e.data.force));
   if (e.data?.type === 'TEST_UPDATE_NOTICE') e.waitUntil(checkUpdate(true));
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || '/';
+  const data = event.notification.data || {};
+  let url = data.url || '/';
+  // Botones de los avisos de préstamos
+  if (data.loanId) {
+    if (event.action === 'recordar' && data.wa) { event.waitUntil(self.clients.openWindow(data.wa)); return; }
+    if (event.action === 'luego') {
+      event.waitUntil((async () => {
+        const cache = await caches.open('mf-meta');
+        const r = await cache.match(new Request('/__mf_loans_snooze'));
+        let m: Record<string, string> = {};
+        try { m = r ? await r.json() : {}; } catch { /* vacío */ }
+        m[data.loanId] = isoToday();
+        await cache.put(new Request('/__mf_loans_snooze'), new Response(JSON.stringify(m)));
+      })());
+      return;
+    }
+    if (event.action === 'pagado' || event.action === 'abono') url = `/prestamos?abonar=${data.loanId}`;
+  }
   event.waitUntil((async () => {
     const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const existing = all.find(c => 'focus' in c) as WindowClient | undefined;
