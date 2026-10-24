@@ -30,6 +30,7 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | Pantalla **Inicio** | `src/pages/HomePage.tsx` |
 | Pantalla **Mercado** | `src/pages/MarketPage.tsx` + `src/components/market/` |
 | Lógica del mercado (tachar, extras, precios, historial, tiendas) | `src/services/market/marketStore.ts` |
+| 🎃 Entrada de terror de Halloween (calabaza, voz `src/assets/voz-halloween.mp3`) | `src/components/season/HalloweenIntro.tsx` |
 | 🎃🎄 Temas de temporada (fechas, colores, adornos, aviso) | `src/services/season.ts` + `src/components/season/Season.tsx` + colores y animaciones (alas, calabazas, araña) al final de `src/index.css` |
 | 💚 Salud financiera (puntaje y consejos) | `src/services/healthScore.ts` + `src/components/home/HealthCard.tsx` |
 | 🧾 Entender facturas escaneadas (comercio, fecha, productos, total, pago) | `src/services/receipt/receiptParser.ts` (la foto se lee en `src/services/ocrService.ts`) |

@@ -6,11 +6,10 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.16.0';
+export const APP_VERSION = '1.16.1';
 
 export const RELEASE_NOTES: string[] = [
-  'Mercado más rápido 🛒 "Agrega con un toque": tus productos de siempre y lo básico, sin escribir',
-  'Mientras escribes, la app te propone el producto y cada uno se ordena solo por categoría (Panadería, Lácteos, Despensa…)',
-  'Tu factura se sincroniza sola con la lista: tacha lo que compraste y te pregunta lo que no esté claro',
-  'Nuevo módulo Préstamos 🤝 Anota lo que debes y lo que te deben, con abonos y recordatorio por WhatsApp',
+  '🎃 ¿Te atreves…? Nueva entrada de terror al abrir la app, con voz, truenos y una calabaza malvada (solo hasta el 31 de octubre)',
+  'Préstamos ahora tiene su recorrido guiado: toca "Guíame" para aprender a usarlo',
+  'Recuerda: Mercado con "Agrega con un toque", factura sincronizada con tu lista y el módulo Préstamos 🤝',
 ]
