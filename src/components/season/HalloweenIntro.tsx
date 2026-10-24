@@ -10,15 +10,16 @@
  * Fecha de la temporada: services/season.ts · Dibujos: Season.tsx (Bat, Pumpkin).
  * ════════════════════════════════════════════════════════════════════
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import '@fontsource/creepster/latin-400.css';
 import { useSeason } from '../../services/season';
-import { Bat, Pumpkin } from './Season';
+import { Bat } from './Season';
+import vozUrl from '../../assets/voz-halloween.mp3';
 
 const SEEN = 'mf_hw_intro';
-const AUTO_CLOSE_MS = 7000;
+const AUTO_CLOSE_MS = 11000;   // lo que dura la voz + la risa
 
 // Murciélagos que salen del centro hacia la pantalla
 const SWARM = [
@@ -29,27 +30,82 @@ const SWARM = [
 // Ojos que se asoman en la oscuridad
 const EYES = [{ l: '12%', b: '23%', d: 1.4, s: 1 }, { l: '78%', b: '27%', d: 2.1, s: 0.8 }, { l: '30%', b: '15%', d: 2.8, s: 0.7 }, { l: '62%', b: '12%', d: 3.3, s: 0.9 }];
 
+/** Calabaza tenebrosa: oscura, con grietas, ojos rasgados y colmillos; el fuego de adentro se enciende y titila. */
+function ScaryPumpkin({ size = 170 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 120 120" aria-hidden="true" overflow="visible">
+      <defs>
+        <radialGradient id="sp-body" cx="45%" cy="35%" r="70%"><stop offset="0%" stopColor="#C0590E" /><stop offset="55%" stopColor="#6E2606" /><stop offset="100%" stopColor="#1E0702" /></radialGradient>
+        <radialGradient id="sp-fire" cx="50%" cy="60%" r="65%"><stop offset="0%" stopColor="#FFF3A0" /><stop offset="45%" stopColor="#FF8A00" /><stop offset="100%" stopColor="#B00000" /></radialGradient>
+      </defs>
+      {/* Tallo torcido */}
+      <path d="M57 26c-2-9 1-16 9-21l4 3c-6 5-7 10-5 18z" fill="#2B2410" />
+      {/* Gajos */}
+      <ellipse cx="34" cy="68" rx="27" ry="40" fill="url(#sp-body)" />
+      <ellipse cx="86" cy="68" rx="27" ry="40" fill="url(#sp-body)" />
+      <ellipse cx="60" cy="68" rx="30" ry="44" fill="url(#sp-body)" />
+      <path d="M60 25v86M42 28c-8 10-8 70 0 80M78 28c8 10 8 70 0 80" stroke="#1A0601" strokeWidth="1.6" opacity=".7" fill="none" />
+      {/* Grietas */}
+      <path d="M24 44l6 7-3 6 5 5M95 92l-6-5 2-6-5-4" stroke="#140401" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      {/* Cara tallada con fuego */}
+      <g className="sp-fire" fill="url(#sp-fire)" stroke="#120300" strokeWidth="1.5" strokeLinejoin="round">
+        <path d="M28 52l24 8-17 9z" />
+        <path d="M92 52l-24 8 17 9z" />
+        <path d="M55 74l5-8 5 8z" />
+        <path d="M24 82c10 22 62 22 72 0l-7 4-4 9-5-8-5 10-5-9-5 10-5-10-5 9-5-10-4 8-4-9z" />
+      </g>
+    </svg>
+  );
+}
+
 export default function HalloweenIntro({ ready }: { ready: boolean }) {
   const season = useSeason();
   const [show, setShow] = useState(false);
   const [canEnter, setCanEnter] = useState(false);
   const calm = useReducedMotion();
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const [needTap, setNeedTap] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+
+  /** Suena la voz. Si el celular no deja sonar sin tocar, se espera al primer toque. */
+  const playVoice = () => {
+    try {
+      if (!audio.current) { audio.current = new Audio(vozUrl); audio.current.volume = 0.9; }
+      audio.current.currentTime = 0;
+      audio.current.play().then(() => setNeedTap(false)).catch(() => setNeedTap(true));
+    } catch { /* sin sonido */ }
+  };
+  const stopVoice = () => {
+    const a = audio.current;
+    if (!a) return;
+    const fade = setInterval(() => { a.volume = Math.max(0, a.volume - 0.15); if (a.volume <= 0.05) { a.pause(); clearInterval(fade); } }, 60);
+  };
 
   useEffect(() => {
     if (!ready || season?.id !== 'halloween') return;
     try { if (sessionStorage.getItem(SEEN)) return; sessionStorage.setItem(SEEN, '1'); } catch { /* sin almacenamiento */ }
     setShow(true);
+    playVoice();
     const a = setTimeout(() => setCanEnter(true), 2300);
-    const b = setTimeout(() => setShow(false), AUTO_CLOSE_MS);
-    return () => { clearTimeout(a); clearTimeout(b); };
+    timer.current = setTimeout(() => close(), AUTO_CLOSE_MS);
+    return () => { clearTimeout(a); if (timer.current) clearTimeout(timer.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, season]);
+  useEffect(() => { if (hidden) stopVoice(); }, [hidden]);
 
-  const close = () => setShow(false);
+  const close = () => { stopVoice(); setShow(false); setHidden(true); };
+  /** Primer toque cuando el celular no dejó sonar: suena y vuelve a contar el tiempo. */
+  const tapToHear = () => {
+    playVoice();
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => close(), AUTO_CLOSE_MS);
+  };
 
   return createPortal(
     <AnimatePresence>
       {show && (
-        <motion.div role="dialog" aria-modal="true" aria-label="Bienvenida de Halloween" onClick={() => canEnter && close()}
+        <motion.div role="dialog" aria-modal="true" aria-label="Bienvenida de Halloween" onClick={() => (needTap ? tapToHear() : canEnter && close())}
           className="fixed inset-0 z-[210] overflow-hidden select-none"
           style={{ background: 'radial-gradient(ellipse at 70% 18%, #3B1E5E 0%, #170A26 45%, #05020A 100%)' }}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.08, filter: 'blur(6px)' }} transition={{ duration: 0.5 }}>
@@ -104,22 +160,23 @@ export default function HalloweenIntro({ ready }: { ready: boolean }) {
 
             {/* Calabaza malvada + título */}
             <div className="absolute inset-x-0 top-[24%] flex flex-col items-center text-center px-6">
-              <motion.div initial={{ scale: 0, rotate: -30, y: 60 }} animate={{ scale: [0, 1.25, 1], rotate: [-30, 8, 0], y: 0 }} transition={{ delay: 0.5, duration: 0.9, ease: 'backOut' }}
-                style={{ filter: 'drop-shadow(0 0 34px rgba(255,70,10,.85))' }}>
-                <motion.div animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 1.1, repeat: Infinity }}><Pumpkin size={150} face={2} /></motion.div>
+              {/* La calabaza se acerca lentamente, como si viniera hacia ti */}
+              <motion.div initial={{ scale: 0.35, opacity: 0, y: 40 }} animate={{ scale: [0.35, 0.95, 1.12], opacity: [0, 1, 1], y: 0, rotate: [0, -3, 2, 0] }}
+                transition={{ delay: 0.4, duration: 3.6, ease: 'easeOut', rotate: { delay: 1.2, duration: 2.5, repeat: Infinity } }}>
+                <ScaryPumpkin size={170} />
               </motion.div>
               <motion.h1 initial={{ opacity: 0, y: 20, scale: 0.8 }} animate={{ opacity: 1, y: 0, scale: 1, x: [0, -2, 2, -1, 0] }} transition={{ delay: 1.1, duration: 0.6, x: { delay: 1.7, duration: 0.4, repeat: Infinity, repeatDelay: 2.6 } }}
-                className="mt-4 text-[54px] leading-none text-[#FF7A1A]" style={{ fontFamily: 'Creepster, cursive', textShadow: '0 0 18px rgba(255,90,0,.7), 0 4px 0 #3A0E00, 0 10px 30px rgba(0,0,0,.9)', letterSpacing: '0.04em' }}>
+                className="mt-4 text-[54px] leading-none text-[#E8590C]" style={{ fontFamily: 'Creepster, cursive', textShadow: '0 0 10px rgba(200,0,0,.55), 0 4px 0 #2A0000, 0 10px 30px rgba(0,0,0,.95)', letterSpacing: '0.04em' }}>
                 Mi Finanzas
               </motion.h1>
               {/* Gotas que escurren */}
               <div aria-hidden="true" className="relative w-56 h-8 -mt-1">
                 {[18, 52, 96, 140, 186].map((x, n) => (
-                  <motion.span key={x} className="absolute top-0 w-1.5 rounded-b-full bg-[#FF7A1A]" style={{ left: x, boxShadow: '0 0 6px rgba(255,90,0,.6)' }} initial={{ height: 0 }} animate={{ height: [0, 14 + (n % 3) * 8, 14 + (n % 3) * 8] }} transition={{ delay: 1.6 + n * 0.15, duration: 1.4 }} />
+                  <motion.span key={x} className="absolute top-0 w-1.5 rounded-b-full bg-[#9E0B0B]" style={{ left: x }} initial={{ height: 0 }} animate={{ height: [0, 14 + (n % 3) * 8, 14 + (n % 3) * 8] }} transition={{ delay: 1.6 + n * 0.15, duration: 1.4 }} />
                 ))}
               </div>
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: [0, 1, 0.7, 1] }} transition={{ delay: 1.9, duration: 1 }} className="text-[#E9D8FF] text-base font-bold mt-1" style={{ textShadow: '0 2px 10px #000' }}>
-                ¿Te atreves a ver tus gastos? 👻
+                ¿Te atreves… a entrar a Mi Finanzas?
               </motion.p>
               <AnimatePresence>
                 {canEnter && (
@@ -138,6 +195,10 @@ export default function HalloweenIntro({ ready }: { ready: boolean }) {
           {!calm && <motion.div aria-hidden="true" className="absolute inset-0 bg-[#E8DFFF] pointer-events-none" initial={{ opacity: 0 }}
             animate={{ opacity: [0, 0, 0.5, 0, 0.32, 0, 0] }} transition={{ duration: 3.4, times: [0, 0.17, 0.18, 0.2, 0.22, 0.25, 1], repeat: Infinity }} />}
 
+          {needTap && (
+            <motion.button onClick={e => { e.stopPropagation(); tapToHear(); }} initial={{ opacity: 0 }} animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.6, repeat: Infinity }}
+              className="absolute left-4 top-[max(16px,env(safe-area-inset-top))] px-3 py-1.5 rounded-full bg-black/50 text-white text-xs font-bold">🔊 Toca para escuchar</motion.button>
+          )}
           <button onClick={e => { e.stopPropagation(); close(); }} className="absolute right-4 top-[max(16px,env(safe-area-inset-top))] px-3 py-1.5 rounded-full bg-black/40 text-white/70 text-xs font-bold">Saltar</button>
         </motion.div>
       )}
