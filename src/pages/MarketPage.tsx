@@ -437,7 +437,7 @@ export default function MarketPage() {
       {/* Ventana para agregar (abre con el botón flotante) */}
       <BottomSheet open={adding} onClose={() => closeAdd(true)} labelId="mk-add-title"
         title={mode === 'shop' ? '¿Qué echaste al carrito?' : '¿Qué hace falta en la casa?'}
-        subtitle={mode === 'shop' ? 'Si estaba en la lista se tacha solo' : 'Se clasifica solo en su categoría'}
+        subtitle={mode === 'shop' ? 'Si estaba en la lista se tacha solo' : 'Escribe y yo lo organizó por tí'}
         icon={mode === 'shop' ? <ShoppingCart size={20} /> : <ShoppingBasket size={20} />}>
         <div className="flex justify-end -mt-2 mb-2">
           <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setAdding(false); setVoiceOpen(true); }}
