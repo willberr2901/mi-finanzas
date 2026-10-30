@@ -45,6 +45,8 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | 🧾⇄🛒 Avisos de sincronización de la factura con la lista | `src/components/market/ReceiptSync.tsx` |
 | 🔔 Aviso de préstamos al abrir la app (pagar / cobrar) | `src/components/loans/LoanReminder.tsx` · avisos con la app cerrada en `src/sw.ts` (checkLoans) |
 | ✅ Lista de revisión antes de publicar (cada viernes) | `docs/CHECKLIST-PUBLICACION.md` · `npm run revisar` · pruebas de lo esencial en `src/__tests__/esenciales.test.ts` |
+| ✨ Etiquetas NUEVO dentro de los módulos | `src/services/newFeatures.ts` (lista de lo nuevo) · `src/components/ui/NewBadge.tsx` |
+| 📣 Síguenos (Instagram → canal de WhatsApp) | `src/components/social/FollowUs.tsx` |
 | Pantalla **Ajustes** | `src/pages/SettingsPage.tsx` |
 | Escáner de facturas | `src/pages/ReceiptScannerPage.tsx` + `src/services/ocrService.ts` |
 | Diseño de los avisos de arriba (toasts) | `src/components/notifications/ToastCard.tsx` |

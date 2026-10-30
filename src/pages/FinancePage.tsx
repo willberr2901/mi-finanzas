@@ -8,7 +8,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Target, TrendingUp, TrendingDown, Pencil, PiggyBank, FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Target, ArrowLeftRight, TrendingUp, TrendingDown, Pencil, PiggyBank, FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 import MoneyInput from '../components/ui/MoneyInput';
 import { formatCOP, todayISO, parseLocalDate } from '../utils/format';
 import type { Transaction, SavingsGoal } from '../utils/database';
@@ -203,12 +203,23 @@ export default function FinancePage() {
     <div className="pb-24 space-y-6">
       <ModuleHeader module="finanzas" />
 
-      <div data-tour="fin-tabs" className="flex gap-2 bg-slate-900/50 p-1 rounded-xl">
-        {(['transactions', 'goals', 'export'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${activeTab === tab ? 'bg-emerald-500 text-black' : 'text-slate-400 hover:text-white'}`}>
-            {tab === 'transactions' ? '💰 Movimientos' : tab === 'goals' ? '🎯 Metas' : '📤 Reportes'}
-          </button>
-        ))}
+      <div data-tour="fin-tabs" role="tablist" aria-label="Secciones de Finanzas" className="grid grid-cols-3 gap-1.5 p-1.5 rounded-[22px] bg-white/[0.04] ring-1 ring-white/10">
+        {([
+          { id: 'transactions', label: 'Movimientos', sub: 'Lo que entra y sale', Icon: ArrowLeftRight },
+          { id: 'goals', label: 'Metas', sub: 'Tus ahorros', Icon: Target },
+          { id: 'export', label: 'Reportes', sub: 'PDF y Excel', Icon: FileText },
+        ] as const).map(({ id, label, sub, Icon }) => {
+          const on = activeTab === id;
+          return (
+            <button key={id} role="tab" aria-selected={on} onClick={() => setActiveTab(id)}
+              className="relative flex flex-col items-center gap-1 px-1 pt-2.5 pb-2 rounded-[18px] text-center">
+              {on && <motion.span layoutId="fin-tab" className="absolute inset-0 rounded-[18px] bg-brand-lime shadow-lg shadow-lime-400/25" transition={{ type: 'spring', damping: 26, stiffness: 300 }} />}
+              <span className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${on ? 'bg-brand-ink/90 text-brand-lime' : 'bg-white/[0.06] text-slate-300'}`}><Icon size={18} strokeWidth={2.3} /></span>
+              <span className={`relative text-[13px] font-extrabold leading-tight ${on ? 'text-brand-ink' : 'text-white'}`}>{label}</span>
+              <span className={`relative text-[10px] leading-tight ${on ? 'text-brand-ink/70 font-semibold' : 'text-slate-400'}`}>{sub}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ═══ SECCIÓN: Pestaña Movimientos (formulario + lista) ═══ */}
