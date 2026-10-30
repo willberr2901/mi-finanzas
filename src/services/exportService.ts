@@ -16,6 +16,8 @@ import { ownerLabel } from '../utils/prefs';
 import { segmentOf, SEGMENT_INFO, type Segment } from '../utils/categories';
 import { getMarketHistory } from '../utils/marketHistory';
 import { parseLocalDate } from '../utils/format';
+import { periodLabel, currentPeriod } from './reportPeriods';
+export { periodLabel, availablePeriods } from './reportPeriods';
 import { notify } from './notificationService';
 
 // ───────────────────────── Marca ─────────────────────────
@@ -47,27 +49,11 @@ const money = (n: number) => `${n < 0 ? '-' : ''}$${nf.format(Math.round(Math.ab
 const pct = (n: number, d = 0) => `${(Number.isFinite(n) ? n : 0).toFixed(d).replace('.', ',')}%`;
 const shortDate = (d: Date) => `${d.getDate()} ${MONTHS[d.getMonth()].slice(0, 3).toLowerCase()}`;
 
-export const periodLabel = (period: string) => {
-  const [y, m] = period.split('-').map(Number);
-  return `${MONTHS[m - 1]} ${y}`;
-};
 const prevPeriod = (period: string, back = 1) => {
   const [y, m] = period.split('-').map(Number);
   const d = new Date(y, m - 1 - back, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
-const currentPeriod = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-};
-
-/** Meses con movimientos (más el actual), del más reciente al más antiguo. */
-export const availablePeriods = (transactions: Transaction[]): string[] => {
-  const set = new Set<string>([currentPeriod()]);
-  transactions.forEach(t => t.date && set.add(t.date.slice(0, 7)));
-  return [...set].sort().reverse();
-};
-
 // ───────────────────────── Dibujo ─────────────────────────
 const fill = (doc: jsPDF, c: RGB) => doc.setFillColor(c[0], c[1], c[2]);
 const text = (doc: jsPDF, c: RGB) => doc.setTextColor(c[0], c[1], c[2]);

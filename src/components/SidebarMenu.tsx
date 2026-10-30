@@ -19,6 +19,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { MODULES } from '../utils/modules';
 import { APP_VERSION } from '../version';
 import AppLogo from './ui/AppLogo';
+import { moduleHasNew } from '../services/newFeatures';
 
 const GROUPS: { title: string; items: (keyof typeof MODULES)[] }[] = [
   { title: 'Principal', items: ['inicio', 'mercado', 'finanzas', 'pagos', 'prestamos'] },
@@ -65,7 +66,7 @@ export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onCl
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left transition-colors ${active ? 'bg-white/10' : 'hover:bg-white/5'}`}>
                         <span className={`w-9 h-9 rounded-xl bg-gradient-to-br ${m.gradient} flex items-center justify-center shadow-md ${m.glow}`}><Icon size={18} className="text-brand-lime" /></span>
                         <span className="flex-1 min-w-0">
-                          <span className={`block text-sm font-semibold ${active ? m.accent : 'text-white'}`}>{m.label}</span>
+                          <span className={`flex items-center gap-1.5 text-sm font-semibold ${active ? m.accent : 'text-white'}`}>{m.label}{moduleHasNew(k) && <span className="px-1.5 py-px rounded-full bg-brand-lime text-brand-ink text-[9px] font-extrabold tracking-wider">NUEVO</span>}</span>
                           <span className="block text-[11px] text-slate-400 truncate">{m.tagline}</span>
                         </span>
                       </motion.button>

@@ -15,13 +15,14 @@ import type { Transaction, SavingsGoal } from '../utils/database';
 import { notify } from '../services/notificationService';
 import { db, migrateData } from '../utils/database';
 import { format } from 'date-fns';
-import { generateFinancialReport, availablePeriods, periodLabel } from '../services/exportService';
+import { availablePeriods, periodLabel } from '../services/reportPeriods';
 import { triggerLocalRules, type RuleAlert } from '../services/financialIntelligence';
 
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, guessCategory, segmentOf, SEGMENT_INFO } from '../utils/categories';
 import { getPrefs, cycleFor, inCycle } from '../utils/prefs';
 import { usePageTour } from '../components/tour/Tour';
 import ModuleHeader from '../components/ui/ModuleHeader';
+import NewBadge from '../components/ui/NewBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { findMatchingBill, markPaidFromTransaction, createBillFromTransaction, RECURRING_CATEGORIES } from '../services/billsService';
 import { askConfirm } from '../components/ui/ConfirmDialog';
@@ -215,7 +216,7 @@ export default function FinancePage() {
         <>
           {/* Resumen: Ingresos − Gastos = Te queda */}
           <div data-tour="fin-summary" className="card-modern p-4">
-            <p className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Tu mes · {cycle.label}</p>
+            <p className="text-[11px] font-bold tracking-wider text-slate-400 uppercase flex items-center gap-2">Tu mes · {cycle.label} <NewBadge id="fin-tu-mes" /></p>
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mt-3 text-center">
               <div className="min-w-0"><p className="text-[11px] text-slate-400 flex items-center justify-center gap-1"><TrendingUp size={12} className="text-emerald-400" /> Ingresos</p><p className="text-base font-extrabold text-emerald-400 truncate">{formatCOP(cycleIncome)}</p></div>
               <span className="text-slate-500 font-bold" aria-hidden="true">−</span>
@@ -357,7 +358,7 @@ export default function FinancePage() {
         const monthTx = transactions.filter(t => t.date?.startsWith(reportPeriod));
         const inc = monthTx.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
         const exp = monthTx.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
-        const run = async (f: 'pdf' | 'csv') => { setExporting(f); try { await generateFinancialReport(reportPeriod, f); } catch (e) { console.error(e); notify({ title: 'No se pudo generar', message: 'Intenta de nuevo.', type: 'error' }); } finally { setExporting(null); } };
+        const run = async (f: 'pdf' | 'csv') => { setExporting(f); try { const { generateFinancialReport } = await import('../services/exportService'); await generateFinancialReport(reportPeriod, f); } catch (e) { console.error(e); notify({ title: 'No se pudo generar', message: 'Intenta de nuevo.', type: 'error' }); } finally { setExporting(null); } };
         return (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
           <div className="card-modern p-4">
