@@ -44,6 +44,7 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | 🗂️ Categorías automáticas del mercado, catálogo para agregar con un toque y cruce factura ↔ lista | `src/services/market/categories.ts` |
 | 🧾⇄🛒 Avisos de sincronización de la factura con la lista | `src/components/market/ReceiptSync.tsx` |
 | 🔔 Aviso de préstamos al abrir la app (pagar / cobrar) | `src/components/loans/LoanReminder.tsx` · avisos con la app cerrada en `src/sw.ts` (checkLoans) |
+| ✅ Lista de revisión antes de publicar (cada viernes) | `docs/CHECKLIST-PUBLICACION.md` · `npm run revisar` · pruebas de lo esencial en `src/__tests__/esenciales.test.ts` |
 | Pantalla **Ajustes** | `src/pages/SettingsPage.tsx` |
 | Escáner de facturas | `src/pages/ReceiptScannerPage.tsx` + `src/services/ocrService.ts` |
 | Diseño de los avisos de arriba (toasts) | `src/components/notifications/ToastCard.tsx` |

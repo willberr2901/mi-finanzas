@@ -190,6 +190,11 @@ export default function FinancePage() {
     .filter(t => t.type === 'expense' && inCycle(t.date, cycle))
     .reduce((acc, t) => { const seg = segmentOf('expense', t.category) as typeof SEGS[number]; acc[seg] = (acc[seg] || 0) + t.amount; return acc; }, { obligatorio: 0, necesario: 0, gusto: 0, ahorro: 0 } as Record<typeof SEGS[number], number>);
   const monthTotal = SEGS.reduce((s, k) => s + monthSplit[k], 0);
+  // Resumen del mes (ciclo de pago): lo que entró − lo que salió = lo que queda
+  const cycleTx = transactions.filter(t => inCycle(t.date, cycle));
+  const cycleIncome = cycleTx.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
+  const cycleExpense = cycleTx.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
+  const cycleLeft = cycleIncome - cycleExpense;
 
   if (loading) return <div className="flex h-screen items-center justify-center text-emerald-400">Sincronizando datos locales...</div>;
 
@@ -208,6 +213,22 @@ export default function FinancePage() {
       {/* ═══ SECCIÓN: Pestaña Movimientos (formulario + lista) ═══ */}
       {activeTab === 'transactions' && (
         <>
+          {/* Resumen: Ingresos − Gastos = Te queda */}
+          <div data-tour="fin-summary" className="card-modern p-4">
+            <p className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Tu mes · {cycle.label}</p>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mt-3 text-center">
+              <div className="min-w-0"><p className="text-[11px] text-slate-400 flex items-center justify-center gap-1"><TrendingUp size={12} className="text-emerald-400" /> Ingresos</p><p className="text-base font-extrabold text-emerald-400 truncate">{formatCOP(cycleIncome)}</p></div>
+              <span className="text-slate-500 font-bold" aria-hidden="true">−</span>
+              <div className="min-w-0"><p className="text-[11px] text-slate-400 flex items-center justify-center gap-1"><TrendingDown size={12} className="text-red-400" /> Gastos</p><p className="text-base font-extrabold text-red-400 truncate">{formatCOP(cycleExpense)}</p></div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+              <span className="text-sm text-slate-300 font-semibold">{cycleLeft >= 0 ? 'Te queda' : 'Te pasaste por'}</span>
+              <span className={`text-2xl font-extrabold ${cycleLeft >= 0 ? 'text-brand-lime' : 'text-red-400'}`}>{formatCOP(Math.abs(cycleLeft))}</span>
+            </div>
+            {cycleIncome > 0 && <div className="mt-2 h-2 rounded-full bg-slate-800 overflow-hidden" aria-hidden="true"><div className={`h-full rounded-full ${cycleLeft >= 0 ? 'bg-emerald-400' : 'bg-red-400'}`} style={{ width: `${Math.min(100, (cycleExpense / cycleIncome) * 100)}%` }} /></div>}
+            {cycleIncome > 0 && <p className="text-[11px] text-slate-400 mt-1">Has gastado el {Math.round((cycleExpense / cycleIncome) * 100)}% de lo que entró</p>}
+            {cycleIncome === 0 && <p className="text-[11px] text-slate-400 mt-2">Registra tus ingresos del mes (sueldo, recargos…) para ver cuánto te queda.</p>}
+          </div>
           <div data-tour="fin-form" className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
             <div className="grid grid-cols-2 gap-2">
               <input type="date" value={txDate} onChange={e => setTxDate(e.target.value)} className="input-modern" />

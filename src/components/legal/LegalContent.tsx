@@ -24,7 +24,7 @@ export default function LegalContent() {
         <p className="text-emerald-300 font-semibold text-sm">En resumen</p>
         <p className="text-slate-200 text-[13px] mt-1 leading-relaxed">
           Mi Finanzas <strong>no recoge, no lee y no vende datos de nadie</strong>. No hay registro ni cuentas.
-          Tus finanzas se quedan <strong>solo en tu celular</strong>. Si decides crear un <strong>hogar sincronizado</strong>, la lista del mercado viaja
+          Tus finanzas se quedan <strong>solo en tu celular</strong>. Si decides crear un <strong>hogar sincronizado</strong>, la lista del mercado viaja{' '}
           <strong>cifrada de extremo a extremo</strong>: el servidor guarda cajas cerradas que nadie más puede abrir, ni nosotros.
         </p>
       </div>
@@ -34,7 +34,8 @@ export default function LegalContent() {
         <p>Ninguno que te identifique. La app no pide nombre real, correo, teléfono, cédula ni datos bancarios, y no tiene cuentas de usuario.</p>
       </Section>
       <Section title="2. Dónde se guarda lo que registras">
-        <p>Tus movimientos, listas de mercado, pagos, deudas, metas y facturas se guardan en el almacenamiento interno del navegador de tu celular. Nadie más tiene acceso: ni los creadores de la app ni terceros.</p>
+        <p>Tus movimientos, listas de mercado, pagos, deudas, metas y facturas se guardan en el almacenamiento interno del navegador de tu celular. No se envían a ningún servidor: ni los creadores de la app ni terceros pueden verlos.</p>
+        <p>Ojo: dentro del celular esa información se guarda de forma que no se lee a simple vista, pero <strong>no está protegida con contraseña</strong>. Quien tenga tu celular desbloqueado podría abrir la app. Por eso te recomendamos <strong>activar el PIN</strong> de la app y guardar tus <strong>copias de respaldo</strong>, que sí van cifradas con la contraseña que tú eliges.</p>
         <p>El nombre con el que la app te saluda es opcional y también queda solo en tu celular.</p>
       </Section>
       <Section title="3. Fotos de facturas">
@@ -48,7 +49,7 @@ export default function LegalContent() {
         <p>Si eliges dónde hiciste el mercado (D1, la plaza, etc.), ese dato se guarda con tu historial de compras para comparar precios. La imagen de tienda que ves es un dibujo propio de la app, igual para todas; no usamos los logos oficiales de esas marcas, que pertenecen a sus dueños.</p>
       </Section>
       <Section title="3.3 Préstamos con personas">
-        <p>Los préstamos que anotas (a quién le debes o quién te debe, cuánto y sus abonos) se guardan solo en tu celular, cifrados, como el resto de tu información. Si usas "Recordar", la app abre WhatsApp con un mensaje ya escrito: eres tú quien decide enviarlo; Mi Finanzas no envía nada ni conoce a esas personas.</p>
+        <p>Los préstamos que anotas (a quién le debes o quién te debe, cuánto y sus abonos) se guardan solo en tu celular, igual que el resto de tu información (ver punto 2). Si usas "Recordar", la app abre WhatsApp con un mensaje ya escrito: eres tú quien decide enviarlo; Mi Finanzas no envía nada ni conoce a esas personas.</p>
       </Section>
       <Section title="3.4 Cruce de facturas con tu lista">
         <p>Al escanear una factura, la app la compara con tu lista del mercado dentro de tu celular. Las uniones que confirmas (por ejemplo, que "TOSTADAS BIMBO" es tu "Pan tajado") se recuerdan solo en tu celular para cruzar la próxima factura automáticamente.</p>

@@ -6,10 +6,10 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.17.1';
+export const APP_VERSION = '1.17.2';
 
 export const RELEASE_NOTES: string[] = [
-  '🛒 Arreglado: en Mercado, si escribías un producto y tocabas "Listo", no se guardaba. Ahora se guarda siempre ("Guardar y cerrar")',
-  '🗂️ Mejor clasificación automática: plurales como "Tomates" o "Aguacates" ya van en su categoría, y se sumaron más productos',
-  '📱 Arreglado: en celulares más antiguos el mercado, los préstamos y los pagos no se guardaban',
+  '💰 Finanzas ahora te muestra tu mes de un vistazo: Ingresos − Gastos = lo que te queda',
+  '🛒 En Mercado → Agregar: "Escribe y yo lo organizo por ti" (primer cambio hecho por Gato 👩‍💻)',
+  '🔒 Textos de privacidad más claros: qué está cifrado y por qué conviene activar el PIN',
 ]
