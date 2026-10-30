@@ -31,13 +31,10 @@ import { dailySystemReminder } from './services/alertsService';
 import { ConfirmHost } from './components/ui/ConfirmDialog';
 import HouseholdSheet, { handleInvite } from './components/household/HouseholdSheet';
 import { startHouseholdSync } from './services/household/householdSync';
-import InstallAppSheet from './components/pwa/InstallAppSheet';
 import SecurityCenter, { securityIntroSeen } from './components/security/SecurityCenter';
 import { InstagramMoment } from './components/social/Instagram';
-import FeedbackSheet from './components/feedback/FeedbackSheet';
 import { SeasonDecor, SeasonPopup } from './components/season/Season';
-import HalloweenIntro from './components/season/HalloweenIntro';
-import LoanReminder from './components/loans/LoanReminder';
+import { seasonFor } from './services/season';
 import { syncLoansToSW } from './services/loansService';
 import { startStats } from './services/statsService';
 
@@ -48,6 +45,12 @@ const lazyWithRetry = (factory: () => Promise<{ default: React.ComponentType<any
     if (!sessionStorage.getItem('chunkReload')) { sessionStorage.setItem('chunkReload', '1'); window.location.reload(); }
     throw err;
   }));
+// Ventanas que salen de vez en cuando: se descargan solo cuando hacen falta (la app abre más rápido)
+const InstallAppSheet = React.lazy(() => import('./components/pwa/InstallAppSheet'));
+const FeedbackSheet = React.lazy(() => import('./components/feedback/FeedbackSheet'));
+const HalloweenIntro = React.lazy(() => import('./components/season/HalloweenIntro'));
+const LoanReminder = React.lazy(() => import('./components/loans/LoanReminder'));
+const FollowUs = React.lazy(() => import('./components/social/FollowUs'));
 const loaders = {
   home: () => import('./pages/HomePage'),
   market: () => import('./pages/MarketPage'),
@@ -202,14 +205,17 @@ function AppContent() {
         <PasteMovementSheet />
         <HouseholdSheet />
         <ConfirmHost />
-        <InstallAppSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
         <SecurityCenter autoIntro={showIntro} onIntroDone={afterIntro} />
         <InstagramMoment />
-        <FeedbackSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
         <SeasonDecor />
-        <HalloweenIntro ready={!showWelcome && !(isSetup && isLocked)} />
-        <LoanReminder ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
         <SeasonPopup ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
+        <Suspense fallback={null}>
+          <InstallAppSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
+          <FollowUs ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
+          <FeedbackSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
+          {seasonFor() === 'halloween' && <HalloweenIntro ready={!showWelcome && !(isSetup && isLocked)} />}
+          <LoanReminder ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
+        </Suspense>
         <UpdateManager />
         <ToastProvider />
         <AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence>

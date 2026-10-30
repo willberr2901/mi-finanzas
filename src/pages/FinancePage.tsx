@@ -8,20 +8,21 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Target, TrendingUp, TrendingDown, Pencil, PiggyBank, FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Target, ArrowLeftRight, TrendingUp, TrendingDown, Pencil, PiggyBank, FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 import MoneyInput from '../components/ui/MoneyInput';
 import { formatCOP, todayISO, parseLocalDate } from '../utils/format';
 import type { Transaction, SavingsGoal } from '../utils/database';
 import { notify } from '../services/notificationService';
 import { db, migrateData } from '../utils/database';
 import { format } from 'date-fns';
-import { generateFinancialReport, availablePeriods, periodLabel } from '../services/exportService';
+import { availablePeriods, periodLabel } from '../services/reportPeriods';
 import { triggerLocalRules, type RuleAlert } from '../services/financialIntelligence';
 
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, guessCategory, segmentOf, SEGMENT_INFO } from '../utils/categories';
 import { getPrefs, cycleFor, inCycle } from '../utils/prefs';
 import { usePageTour } from '../components/tour/Tour';
 import ModuleHeader from '../components/ui/ModuleHeader';
+import NewBadge from '../components/ui/NewBadge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { findMatchingBill, markPaidFromTransaction, createBillFromTransaction, RECURRING_CATEGORIES } from '../services/billsService';
 import { askConfirm } from '../components/ui/ConfirmDialog';
@@ -190,6 +191,11 @@ export default function FinancePage() {
     .filter(t => t.type === 'expense' && inCycle(t.date, cycle))
     .reduce((acc, t) => { const seg = segmentOf('expense', t.category) as typeof SEGS[number]; acc[seg] = (acc[seg] || 0) + t.amount; return acc; }, { obligatorio: 0, necesario: 0, gusto: 0, ahorro: 0 } as Record<typeof SEGS[number], number>);
   const monthTotal = SEGS.reduce((s, k) => s + monthSplit[k], 0);
+  // Resumen del mes (ciclo de pago): lo que entró − lo que salió = lo que queda
+  const cycleTx = transactions.filter(t => inCycle(t.date, cycle));
+  const cycleIncome = cycleTx.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
+  const cycleExpense = cycleTx.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
+  const cycleLeft = cycleIncome - cycleExpense;
 
   if (loading) return <div className="flex h-screen items-center justify-center text-emerald-400">Sincronizando datos locales...</div>;
 
@@ -197,17 +203,44 @@ export default function FinancePage() {
     <div className="pb-24 space-y-6">
       <ModuleHeader module="finanzas" />
 
-      <div data-tour="fin-tabs" className="flex gap-2 bg-slate-900/50 p-1 rounded-xl">
-        {(['transactions', 'goals', 'export'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${activeTab === tab ? 'bg-emerald-500 text-black' : 'text-slate-400 hover:text-white'}`}>
-            {tab === 'transactions' ? '💰 Movimientos' : tab === 'goals' ? '🎯 Metas' : '📤 Reportes'}
-          </button>
-        ))}
+      <div data-tour="fin-tabs" role="tablist" aria-label="Secciones de Finanzas" className="grid grid-cols-3 gap-1.5 p-1.5 rounded-[22px] bg-white/[0.04] ring-1 ring-white/10">
+        {([
+          { id: 'transactions', label: 'Movimientos', sub: 'Lo que entra y sale', Icon: ArrowLeftRight },
+          { id: 'goals', label: 'Metas', sub: 'Tus ahorros', Icon: Target },
+          { id: 'export', label: 'Reportes', sub: 'PDF y Excel', Icon: FileText },
+        ] as const).map(({ id, label, sub, Icon }) => {
+          const on = activeTab === id;
+          return (
+            <button key={id} role="tab" aria-selected={on} onClick={() => setActiveTab(id)}
+              className="relative flex flex-col items-center gap-1 px-1 pt-2.5 pb-2 rounded-[18px] text-center">
+              {on && <motion.span layoutId="fin-tab" className="absolute inset-0 rounded-[18px] bg-brand-lime shadow-lg shadow-lime-400/25" transition={{ type: 'spring', damping: 26, stiffness: 300 }} />}
+              <span className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${on ? 'bg-brand-ink/90 text-brand-lime' : 'bg-white/[0.06] text-slate-300'}`}><Icon size={18} strokeWidth={2.3} /></span>
+              <span className={`relative text-[13px] font-extrabold leading-tight ${on ? 'text-brand-ink' : 'text-white'}`}>{label}</span>
+              <span className={`relative text-[10px] leading-tight ${on ? 'text-brand-ink/70 font-semibold' : 'text-slate-400'}`}>{sub}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ═══ SECCIÓN: Pestaña Movimientos (formulario + lista) ═══ */}
       {activeTab === 'transactions' && (
         <>
+          {/* Resumen: Ingresos − Gastos = Te queda */}
+          <div data-tour="fin-summary" className="card-modern p-4">
+            <p className="text-[11px] font-bold tracking-wider text-slate-400 uppercase flex items-center gap-2">Tu mes · {cycle.label} <NewBadge id="fin-tu-mes" /></p>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mt-3 text-center">
+              <div className="min-w-0"><p className="text-[11px] text-slate-400 flex items-center justify-center gap-1"><TrendingUp size={12} className="text-emerald-400" /> Ingresos</p><p className="text-base font-extrabold text-emerald-400 truncate">{formatCOP(cycleIncome)}</p></div>
+              <span className="text-slate-500 font-bold" aria-hidden="true">−</span>
+              <div className="min-w-0"><p className="text-[11px] text-slate-400 flex items-center justify-center gap-1"><TrendingDown size={12} className="text-red-400" /> Gastos</p><p className="text-base font-extrabold text-red-400 truncate">{formatCOP(cycleExpense)}</p></div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+              <span className="text-sm text-slate-300 font-semibold">{cycleLeft >= 0 ? 'Te queda' : 'Te pasaste por'}</span>
+              <span className={`text-2xl font-extrabold ${cycleLeft >= 0 ? 'text-brand-lime' : 'text-red-400'}`}>{formatCOP(Math.abs(cycleLeft))}</span>
+            </div>
+            {cycleIncome > 0 && <div className="mt-2 h-2 rounded-full bg-slate-800 overflow-hidden" aria-hidden="true"><div className={`h-full rounded-full ${cycleLeft >= 0 ? 'bg-emerald-400' : 'bg-red-400'}`} style={{ width: `${Math.min(100, (cycleExpense / cycleIncome) * 100)}%` }} /></div>}
+            {cycleIncome > 0 && <p className="text-[11px] text-slate-400 mt-1">Has gastado el {Math.round((cycleExpense / cycleIncome) * 100)}% de lo que entró</p>}
+            {cycleIncome === 0 && <p className="text-[11px] text-slate-400 mt-2">Registra tus ingresos del mes (sueldo, recargos…) para ver cuánto te queda.</p>}
+          </div>
           <div data-tour="fin-form" className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
             <div className="grid grid-cols-2 gap-2">
               <input type="date" value={txDate} onChange={e => setTxDate(e.target.value)} className="input-modern" />
@@ -336,7 +369,7 @@ export default function FinancePage() {
         const monthTx = transactions.filter(t => t.date?.startsWith(reportPeriod));
         const inc = monthTx.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0);
         const exp = monthTx.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
-        const run = async (f: 'pdf' | 'csv') => { setExporting(f); try { await generateFinancialReport(reportPeriod, f); } catch (e) { console.error(e); notify({ title: 'No se pudo generar', message: 'Intenta de nuevo.', type: 'error' }); } finally { setExporting(null); } };
+        const run = async (f: 'pdf' | 'csv') => { setExporting(f); try { const { generateFinancialReport } = await import('../services/exportService'); await generateFinancialReport(reportPeriod, f); } catch (e) { console.error(e); notify({ title: 'No se pudo generar', message: 'Intenta de nuevo.', type: 'error' }); } finally { setExporting(null); } };
         return (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
           <div className="card-modern p-4">
