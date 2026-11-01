@@ -6,12 +6,10 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.18.0';
+export const APP_VERSION = '1.19.0';
 
 export const RELEASE_NOTES: string[] = [
-  '💰 Finanzas renovada: pestañas nuevas y "Tu mes" (Ingresos − Gastos = lo que te queda)',
-  '✨ Ahora verás la etiqueta NUEVO justo donde cambió algo dentro de cada módulo',
-  '⚡ La app abre más liviana: Finanzas carga más rápido y los reportes se descargan solo cuando los pides',
-  '🛒 Mercado → Agregar: "Escribe y yo lo organizo por ti" (primer cambio hecho por Gato 👨‍💻)',
-  '🔒 Textos de privacidad más claros y más protección en el servidor',
+  '🪙 Nuevo: Contar mi alcancía (Finanzas → Metas). Arma montoncitos de 10 monedas y toca ＋, o tómale una foto a las monedas y la app las cuenta',
+  '🎯 El total de la alcancía se guarda directo en tu meta de ahorro',
+  '🔒 La foto se revisa dentro de tu celular: no se envía a ningún lado',
 ]

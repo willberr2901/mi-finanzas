@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 export interface NewFeature { id: string; module: string; since: string; hint: string }
 
 export const NEW_FEATURES: NewFeature[] = [
+  { id: 'fin-alcancia', module: 'finanzas', since: '2026-11-01', hint: 'Cuenta tus monedas por montoncitos de 10 o con una foto' },
   { id: 'fin-tu-mes', module: 'finanzas', since: '2026-10-30', hint: 'Ingresos − Gastos = lo que te queda' },
 ];
 

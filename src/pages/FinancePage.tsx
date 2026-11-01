@@ -23,6 +23,7 @@ import { getPrefs, cycleFor, inCycle } from '../utils/prefs';
 import { usePageTour } from '../components/tour/Tour';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import NewBadge from '../components/ui/NewBadge';
+import PiggyCounter from '../components/goals/PiggyCounter';
 import { motion, AnimatePresence } from 'framer-motion';
 import { findMatchingBill, markPaidFromTransaction, createBillFromTransaction, RECURRING_CATEGORIES } from '../services/billsService';
 import { askConfirm } from '../components/ui/ConfirmDialog';
@@ -36,6 +37,7 @@ export default function FinancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [piggyOpen, setPiggyOpen] = useState(false);
 
   const [txDate, setTxDate] = useState(todayISO());
   const [txType, setTxType] = useState<'income' | 'expense'>('expense');
@@ -202,6 +204,7 @@ export default function FinancePage() {
   return (
     <div className="pb-24 space-y-6">
       <ModuleHeader module="finanzas" />
+      <PiggyCounter open={piggyOpen} onClose={() => setPiggyOpen(false)} goals={goals} onSaved={loadData} />
 
       <div data-tour="fin-tabs" role="tablist" aria-label="Secciones de Finanzas" className="grid grid-cols-3 gap-1.5 p-1.5 rounded-[22px] bg-white/[0.04] ring-1 ring-white/10">
         {([
@@ -315,6 +318,15 @@ export default function FinancePage() {
       {/* ═══ SECCIÓN: Pestaña Metas de ahorro ═══ */}
       {activeTab === 'goals' && (
         <>
+          {/* 🪙 Contar la alcancía (montoncitos de 10 o foto) */}
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setPiggyOpen(true)} data-tour="fin-piggy"
+            className="w-full flex items-center gap-3 p-4 rounded-[22px] text-left bg-gradient-to-br from-[#C6F432]/20 to-transparent ring-1 ring-brand-lime/40">
+            <span className="w-12 h-12 rounded-2xl bg-brand-lime flex items-center justify-center text-2xl shrink-0" aria-hidden="true">🪙</span>
+            <span className="flex-1 min-w-0">
+              <span className="flex items-center gap-2 text-white font-extrabold">Contar mi alcancía <NewBadge id="fin-alcancia" /></span>
+              <span className="block text-xs text-slate-300 mt-0.5">Por montoncitos de 10 o con una foto, y guárdalo en tu meta</span>
+            </span>
+          </motion.button>
           <div className="space-y-3 bg-slate-900/50 p-4 rounded-2xl border border-white/5">
             <input type="text" placeholder="Nombre de la meta" value={goalName} onChange={e => setGoalName(e.target.value)} className="input-modern" />
             <div className="grid grid-cols-2 gap-2">
