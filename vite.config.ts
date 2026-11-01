@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import type { Plugin } from 'vite';
+import { copyFileSync, mkdirSync } from 'node:fs';
 import { APP_VERSION, RELEASE_NOTES, SILENT_UPDATE } from './src/version';
 
 // Publica /version.json con la versión y sus novedades para el aviso de actualización.
@@ -15,10 +16,22 @@ const versionFile = (): Plugin => ({
 // App de pruebas (Render: VITE_APP_ENV=pruebas): otro nombre al instalarla, para no confundirla con la real
 const TEST = process.env.VITE_APP_ENV === 'pruebas';
 
+// La app de pruebas no tiene la regla de Render "todo va a index.html": se copia index.html en cada ruta
+const routeCopies = (): Plugin => ({
+  name: 'route-copies',
+  closeBundle() {
+    if (!TEST) return;
+    for (const r of ['finanzas', 'mercado', 'pagos', 'prestamos', 'escaner', 'ajustes', 'historial-facturas', 'legal', 'reportes', 'hogar']) {
+      mkdirSync(`dist/${r}`, { recursive: true }); copyFileSync('dist/index.html', `dist/${r}/index.html`);
+    }
+  },
+});
+
 export default defineConfig({
   plugins: [
     react(),
     versionFile(),
+    routeCopies(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon.svg', 'favicon-32.png'],
