@@ -133,14 +133,12 @@ export default function PiggyCounter({ open, onClose, goals, onSaved }: { open: 
           <div className="flex-1 text-center"><p className="text-2xl font-extrabold text-white leading-none">{c.stacks}</p><p className="text-[11px] text-slate-400 mt-1">montoncitos de 10</p></div>
           <motion.button whileTap={{ scale: 0.88 }} onClick={() => setC(v, { stacks: c.stacks + 1 })} aria-label={`Agregar un montoncito de ${k.label}`} className="w-12 h-12 rounded-2xl flex items-center justify-center text-brand-ink" style={{ background: ui }}><Plus size={22} strokeWidth={3} /></motion.button>
         </div>
-        <div className="flex items-center justify-between mt-3 text-[13px]">
-          <span className="text-slate-300">Sueltas <span className="text-slate-500">(menos de 10)</span></span>
-          <div className="flex items-center gap-1.5">
-            <button onClick={() => setC(v, { loose: c.loose - 1 })} aria-label="Una suelta menos" className="w-8 h-8 rounded-xl bg-white/[0.08] flex items-center justify-center"><Minus size={14} /></button>
-            <input inputMode="numeric" aria-label={`Monedas sueltas de ${k.label}`} value={c.loose || ''} placeholder="0" onChange={e => setC(v, { loose: Number(e.target.value.replace(/\D/g, '')) || 0 })}
-              className="w-12 h-8 text-center rounded-xl bg-white/5 border border-white/10 text-white font-bold outline-none focus:border-brand-lime" />
-            <button onClick={() => setC(v, { loose: c.loose + 1 })} aria-label="Una suelta más" className="w-8 h-8 rounded-xl bg-white/[0.08] flex items-center justify-center"><Plus size={14} /></button>
-          </div>
+        <p className="mt-3 text-[13px] text-slate-300">¿Un montón de <b className="text-white">menos de 10</b>? Toca cuántas tiene:</p>
+        <div className="grid grid-cols-10 gap-1 mt-1.5" role="group" aria-label={`Montón de menos de 10 de ${k.label}`}>
+          {Array.from({ length: 10 }, (_, n) => (
+            <motion.button key={n} whileTap={{ scale: 0.85 }} onClick={() => setC(v, { loose: n })} aria-pressed={c.loose === n} aria-label={`${n} monedas sueltas`}
+              className={`h-9 rounded-xl text-sm font-extrabold transition-colors ${c.loose === n ? 'text-brand-ink' : 'bg-white/[0.06] text-slate-200'}`} style={c.loose === n ? { background: ui } : undefined}>{n}</motion.button>
+          ))}
         </div>
         <p className="text-[11px] text-slate-500 mt-1.5">{coinsOf(c)} monedas en total</p>
       </div>
