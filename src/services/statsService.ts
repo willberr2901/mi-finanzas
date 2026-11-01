@@ -16,6 +16,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { SYNC_URL, SYNC_KEY } from './household/syncConfig';
+import { IS_TEST } from '../utils/env';
 
 const K = {
   optOut: 'mf_stats_off',
@@ -31,7 +32,7 @@ const set = (k: string, v: string) => { try { localStorage.setItem(k, v); } catc
 /** Código especial para quienes ya tenían la app antes de los enlaces con código. */
 export const LEGACY_REF = 'original';
 
-export const statsEnabled = () => get(K.optOut) !== '1';
+export const statsEnabled = () => !IS_TEST && get(K.optOut) !== '1'; // la app de pruebas no cuenta
 export const setStatsEnabled = (on: boolean) => { if (on) localStorage.removeItem(K.optOut); else set(K.optOut, '1'); };
 
 /** Código aleatorio de este celular para su enlace de invitación (no identifica a la persona). */

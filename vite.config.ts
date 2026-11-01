@@ -12,6 +12,9 @@ const versionFile = (): Plugin => ({
   },
 });
 
+// App de pruebas (Render: VITE_APP_ENV=pruebas): otro nombre al instalarla, para no confundirla con la real
+const TEST = process.env.VITE_APP_ENV === 'pruebas';
+
 export default defineConfig({
   plugins: [
     react(),
@@ -20,8 +23,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'favicon.svg', 'favicon-32.png'],
       manifest: {
-        name: 'Mi Finanzas',
-        short_name: 'Finanzas',
+        name: TEST ? 'Mi Finanzas · Pruebas' : 'Mi Finanzas',
+        short_name: TEST ? 'MF Pruebas' : 'Finanzas',
         description: 'Las finanzas de tu hogar, claras y en orden',
         theme_color: '#0B1026',
         background_color: '#0B1026',

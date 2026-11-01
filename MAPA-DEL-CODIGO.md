@@ -49,6 +49,7 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | 🪙 Contar mi alcancía (montoncitos de 10 y foto) | `src/components/goals/PiggyCounter.tsx` · detección y sumas en `src/services/coinCounter.ts` |
 | 🔎 Buscador de la lista del mercado | `src/pages/MarketPage.tsx` (search / pendingShown) |
 | 🤫 Actualizaciones silenciosas (arreglos pequeños sin ventana) | `SILENT_UPDATE` en `src/version.ts` · `src/components/pwa/UpdateManager.tsx` · `WhatsNew.tsx` · `sw.ts` |
+| 🧪 App de pruebas (mi-finanzas-pruebas.onrender.com, rama `pruebas`) | `src/utils/env.ts` · franja `src/components/ui/TestBanner.tsx` |
 | 📣 Síguenos (Instagram → canal de WhatsApp) | `src/components/social/FollowUs.tsx` |
 | Pantalla **Ajustes** | `src/pages/SettingsPage.tsx` |
 | Escáner de facturas | `src/pages/ReceiptScannerPage.tsx` + `src/services/ocrService.ts` |

@@ -37,6 +37,8 @@ import { SeasonDecor, SeasonPopup } from './components/season/Season';
 import { seasonFor } from './services/season';
 import { syncLoansToSW } from './services/loansService';
 import { startStats } from './services/statsService';
+import TestBanner from './components/ui/TestBanner';
+import { IS_TEST } from './utils/env';
 
 // Lazy loading de páginas. Si tras una actualización falla la carga de una página
 // (quedó la versión vieja en memoria), se recarga una sola vez para traer la nueva.
@@ -212,10 +214,11 @@ function AppContent() {
         <Suspense fallback={null}>
           <InstallAppSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
           <FollowUs ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
-          <FeedbackSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
+          {!IS_TEST && <FeedbackSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />}
           {seasonFor() === 'halloween' && <HalloweenIntro ready={!showWelcome && !(isSetup && isLocked)} />}
           <LoanReminder ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
         </Suspense>
+        <TestBanner />
         <UpdateManager />
         <ToastProvider />
         <AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence>

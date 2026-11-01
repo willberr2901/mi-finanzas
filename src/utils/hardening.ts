@@ -15,7 +15,7 @@
  */
 
 /** Direcciones donde la app es oficial. */
-export const OFFICIAL_HOSTS = ['mi-finanzas.onrender.com', 'localhost', '127.0.0.1'];
+export const OFFICIAL_HOSTS = ['mi-finanzas.onrender.com', 'mi-finanzas-pruebas.onrender.com', 'localhost', '127.0.0.1'];
 const isOfficial = (h: string) => OFFICIAL_HOSTS.includes(h) || /^mi-finanzas[a-z0-9-]*\.vercel\.app$/.test(h);
 
 export const securityStatus = () => ({
