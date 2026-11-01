@@ -130,9 +130,10 @@ async function checkUpdate(force = false) {
   const cache = await caches.open('mf-meta');
   const off = await cache.match(new Request('/__mf_update_notif'));
   if (!force && off && (await off.text()) === 'off') return;
-  let remote: { version?: string; notes?: string[] } = {};
+  let remote: { version?: string; notes?: string[]; silent?: boolean } = {};
   try { remote = await (await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })).json(); } catch { return; }
   if (!remote.version || (!force && !isNewer(remote.version, APP_VERSION))) return;
+  if (remote.silent && !force) return; // arreglo pequeño: se instala solo, sin notificación
   const key = new Request('/__mf_notified_version');
   const prev = await cache.match(key);
   if (!force && prev && (await prev.text()) === remote.version) return;

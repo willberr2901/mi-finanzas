@@ -2,13 +2,13 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import type { Plugin } from 'vite';
-import { APP_VERSION, RELEASE_NOTES } from './src/version';
+import { APP_VERSION, RELEASE_NOTES, SILENT_UPDATE } from './src/version';
 
 // Publica /version.json con la versión y sus novedades para el aviso de actualización.
 const versionFile = (): Plugin => ({
   name: 'version-file',
   generateBundle() {
-    this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: APP_VERSION, notes: RELEASE_NOTES }) });
+    this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: APP_VERSION, notes: RELEASE_NOTES, silent: SILENT_UPDATE }) });
   },
 });
 

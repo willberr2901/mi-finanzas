@@ -11,10 +11,15 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Gift, Check, BellRing } from 'lucide-react';
-import { APP_VERSION, RELEASE_NOTES } from '../../version';
+import { APP_VERSION, RELEASE_NOTES, SILENT_UPDATE } from '../../version';
 import { enableReminders, remindersSupported } from '../../services/alertsService';
 
-export const shouldShowWhatsNew = () => localStorage.getItem('mf_lastSeenVersion') !== APP_VERSION;
+export const shouldShowWhatsNew = () => {
+  if (localStorage.getItem('mf_lastSeenVersion') === APP_VERSION) return false;
+  // Arreglo pequeño (actualización silenciosa): se marca como visto sin mostrar la ventana
+  if (SILENT_UPDATE) { try { localStorage.setItem('mf_lastSeenVersion', APP_VERSION); } catch { /* sin almacenamiento */ } return false; }
+  return true;
+};
 export const markWhatsNewSeen = () => localStorage.setItem('mf_lastSeenVersion', APP_VERSION);
 
 /** Se muestra una sola vez después de cada actualización con las novedades de la versión. */

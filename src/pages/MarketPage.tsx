@@ -19,7 +19,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Check, Pencil, ShoppingBasket, Sparkles, ShoppingCart, ClipboardList, History, Tag, Repeat, X, ListChecks, Users, Mic, Store } from 'lucide-react';
+import { Plus, Check, Pencil, ShoppingBasket, Sparkles, ShoppingCart, ClipboardList, History, Tag, Repeat, X, ListChecks, Users, Mic, Store, Search } from 'lucide-react';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import MoneyInput from '../components/ui/MoneyInput';
 import { usePageTour } from '../components/tour/Tour';
@@ -87,8 +87,13 @@ export default function MarketPage() {
   ]);
 
   // ═══ SECCIÓN: Cálculos ═══
+  const [search, setSearch] = useState('');
+  const sq = norm(search);
+  const matches = (i: ListItem) => !sq || norm(i.name).includes(sq) || norm(i.name).split(' ').some(w => w.startsWith(sq));
   const pending = items.filter(i => !i.checked);
   const inCart = items.filter(i => i.checked);
+  const pendingShown = pending.filter(matches);
+  const inCartShown = inCart.filter(matches);
   const cartTotal = inCart.reduce((s, i) => s + (i.paid || 0) * i.qty, 0);
   const extras = inCart.filter(i => i.extra);
   const extrasTotal = extras.reduce((s, i) => s + (i.paid || 0) * i.qty, 0);
@@ -389,17 +394,33 @@ export default function MarketPage() {
             </div>
           ) : (
             <>
-              {pending.length > 0 && <p className="text-xs font-bold text-slate-400 mb-2 tracking-wide">POR COMPRAR · {pending.length}</p>}
+              {/* 🔎 Buscar en la lista */}
+              {items.length >= 5 && (
+                <div className="relative mb-4">
+                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Buscar en tu lista (${items.length} productos)`} aria-label="Buscar en tu lista"
+                    enterKeyHint="search" autoComplete="off"
+                    className="w-full h-12 pl-11 pr-10 rounded-2xl bg-white/5 border border-white/10 text-white text-[15px] outline-none focus:border-brand-lime transition-colors" />
+                  {search && <button onClick={() => setSearch('')} aria-label="Borrar búsqueda" className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400"><X size={16} /></button>}
+                </div>
+              )}
+              {sq && !pendingShown.length && !inCartShown.length && (
+                <div className="text-center py-6 rounded-2xl bg-white/[0.03] ring-1 ring-white/10 mb-4">
+                  <p className="text-sm text-slate-300">No tienes <b className="text-white">"{search.trim()}"</b> en la lista</p>
+                  <button onClick={() => { quickAdd(search.trim().replace(/^./, c => c.toUpperCase())); setSearch(''); }} className="mt-3 px-4 py-2 rounded-xl bg-brand-lime text-brand-ink text-sm font-extrabold inline-flex items-center gap-1.5"><Plus size={16} strokeWidth={3} /> Agregarlo</button>
+                </div>
+              )}
+              {pendingShown.length > 0 && <p className="text-xs font-bold text-slate-400 mb-2 tracking-wide">POR COMPRAR · {sq ? `${pendingShown.length} de ${pending.length}` : pending.length}</p>}
               <div className="space-y-4">
-                {groupByCategory(pending).map(g => (
+                {groupByCategory(pendingShown).map(g => (
                   <div key={g.cat.id}>
                     <p className="flex items-center gap-2 text-[11px] font-bold text-slate-300 mb-1.5"><CategoryIcon id={g.cat.id} size={13} boxed />{g.cat.label}<span className="text-slate-500">· {g.items.length}</span></p>
                     <ul className="space-y-2"><AnimatePresence initial={false}>{g.items.map(row)}</AnimatePresence></ul>
                   </div>
                 ))}
               </div>
-              {inCart.length > 0 && <p className="text-xs font-bold text-brand-lime mt-5 mb-2 tracking-wide flex items-center gap-1"><Check size={13} /> EN EL CARRITO · {inCart.length}</p>}
-              <ul className="space-y-2"><AnimatePresence initial={false}>{inCart.map(row)}</AnimatePresence></ul>
+              {inCartShown.length > 0 && <p className="text-xs font-bold text-brand-lime mt-5 mb-2 tracking-wide flex items-center gap-1"><Check size={13} /> EN EL CARRITO · {sq ? `${inCartShown.length} de ${inCart.length}` : inCart.length}</p>}
+              <ul className="space-y-2"><AnimatePresence initial={false}>{inCartShown.map(row)}</AnimatePresence></ul>
               <p className="text-center text-[10px] text-slate-500 mt-3">Desliza un producto a la izquierda para quitarlo</p>
             </>
           )}

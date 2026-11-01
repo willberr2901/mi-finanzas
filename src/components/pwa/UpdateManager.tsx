@@ -3,6 +3,8 @@
  * ⬆️ AVISO "HAY UNA ACTUALIZACIÓN"
  * ────────────────────────────────────────────────────────────────────
  * Qué hace: Revisa /version.json y, si hay versión nueva, muestra el aviso para actualizar.
+ *           Si la versión es "silenciosa" (SILENT_UPDATE en src/version.ts), NO muestra nada:
+ *           la instala sola cuando la persona sale de la app, y al volver ya está al día.
  * Dónde se ve: Cuando publicas una versión nueva (src/version.ts).
  * Si lo cambias: Si se rompe, la gente se queda con la versión vieja.
  * ════════════════════════════════════════════════════════════════════
@@ -12,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Check, RefreshCw } from 'lucide-react';
 import { APP_VERSION } from '../../version';
 
-interface RemoteVersion { version: string; notes: string[] }
+interface RemoteVersion { version: string; notes: string[]; silent?: boolean }
 
 const CHECK_EVERY_MS = 30 * 60 * 1000; // busca versión nueva cada 30 min y al volver a la app
 
@@ -28,17 +30,31 @@ export default function UpdateManager() {
   const [remote, setRemote] = useState<RemoteVersion | null>(null);
   const regRef = useRef<ServiceWorkerRegistration | null>(null);
   const hadController = useRef(typeof navigator !== 'undefined' && !!navigator.serviceWorker?.controller);
+  const silentRef = useRef(false);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
     let interval: number | undefined;
 
     const announce = () => {
+      if (silentRef.current) return;
       fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
         .then(r => (r.ok ? r.json() : null))
-        .then((v: RemoteVersion | null) => { if (v && v.version !== APP_VERSION) setRemote(v); })
-        .catch(() => {})
-        .finally(() => setShow(true));
+        .then((v: RemoteVersion | null) => {
+          if (v?.silent && v.version !== APP_VERSION) {
+            // Arreglo pequeño: sin ventana. Se instala al salir de la app (o ya, si está en segundo plano).
+            silentRef.current = true;
+            if (document.visibilityState === 'hidden') installSilently();
+            return;
+          }
+          if (v && v.version !== APP_VERSION) setRemote(v);
+          setShow(true);
+        })
+        .catch(() => setShow(true));
+    };
+    const installSilently = () => {
+      const waiting = regRef.current?.waiting;
+      if (waiting) waiting.postMessage({ type: 'SKIP_WAITING' });
     };
 
     const watch = (reg: ServiceWorkerRegistration) => {
@@ -59,8 +75,16 @@ export default function UpdateManager() {
       interval = window.setInterval(() => reg.update().catch(() => {}), CHECK_EVERY_MS);
     });
 
-    const onControllerChange = () => { if (hadController.current) announce(); };
-    const onVisible = () => { if (document.visibilityState === 'visible') regRef.current?.update().catch(() => {}); };
+    const onControllerChange = () => {
+      if (!hadController.current) return;
+      // Versión silenciosa ya instalada: recarga sin avisar (solo si la app no está a la vista)
+      if (silentRef.current) { if (document.visibilityState === 'hidden') window.location.reload(); return; }
+      announce();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') regRef.current?.update().catch(() => {});
+      else if (silentRef.current) installSilently();
+    };
     navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
     document.addEventListener('visibilitychange', onVisible);
 

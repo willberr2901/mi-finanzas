@@ -6,10 +6,16 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.19.0';
+export const APP_VERSION = '1.19.1';
+
+/**
+ * Actualización silenciosa: true para arreglos pequeños (un buscador, un texto, un error).
+ * La app se actualiza sola la próxima vez que se abre, SIN la ventana de "Nueva versión",
+ * sin la ventana de novedades y sin notificación. Para funciones nuevas grandes, déjalo en false.
+ */
+export const SILENT_UPDATE = true;
 
 export const RELEASE_NOTES: string[] = [
-  '🪙 Nuevo: Contar mi alcancía (Finanzas → Metas). Arma montoncitos de 10 monedas y toca ＋, o tómale una foto a las monedas y la app las cuenta',
-  '🎯 El total de la alcancía se guarda directo en tu meta de ahorro',
-  '🔒 La foto se revisa dentro de tu celular: no se envía a ningún lado',
+  '🔎 Nuevo buscador en tu lista del mercado: escribe y encuentra el producto al instante',
+  '⚡ Desde ahora los arreglos pequeños se instalan solos, sin interrumpirte',
 ]

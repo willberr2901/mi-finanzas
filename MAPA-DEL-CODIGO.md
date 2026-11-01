@@ -47,6 +47,8 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | ✅ Lista de revisión antes de publicar (cada viernes) | `docs/CHECKLIST-PUBLICACION.md` · `npm run revisar` · pruebas de lo esencial en `src/__tests__/esenciales.test.ts` |
 | ✨ Etiquetas NUEVO dentro de los módulos | `src/services/newFeatures.ts` (lista de lo nuevo) · `src/components/ui/NewBadge.tsx` |
 | 🪙 Contar mi alcancía (montoncitos de 10 y foto) | `src/components/goals/PiggyCounter.tsx` · detección y sumas en `src/services/coinCounter.ts` |
+| 🔎 Buscador de la lista del mercado | `src/pages/MarketPage.tsx` (search / pendingShown) |
+| 🤫 Actualizaciones silenciosas (arreglos pequeños sin ventana) | `SILENT_UPDATE` en `src/version.ts` · `src/components/pwa/UpdateManager.tsx` · `WhatsNew.tsx` · `sw.ts` |
 | 📣 Síguenos (Instagram → canal de WhatsApp) | `src/components/social/FollowUs.tsx` |
 | Pantalla **Ajustes** | `src/pages/SettingsPage.tsx` |
 | Escáner de facturas | `src/pages/ReceiptScannerPage.tsx` + `src/services/ocrService.ts` |
