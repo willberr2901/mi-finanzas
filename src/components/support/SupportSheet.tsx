@@ -17,6 +17,7 @@ import { formatCOP } from '../../utils/format';
 import MoneyInput from '../ui/MoneyInput';
 import { notify } from '../../services/notificationService';
 import { openInstagram } from '../social/Instagram';
+import { IS_TEST } from '../../utils/env';
 import { SUPPORT_KEY, SUPPORT_QR, SUPPORT_AMOUNTS, MIN_SUPPORT, readSupport, shouldOfferSupport, countOpen, markAsked, markDismissed, markSupported, claimPromptSlot } from '../../services/supportService';
 
 type Step = 'choose' | 'pay' | 'thanks';
@@ -40,11 +41,13 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
   }, []);
   // De vez en cuando, sola (nunca junto a otra ventana)
   useEffect(() => {
-    if (!ready || !shouldOfferSupport(readSupport())) return;
+    // En la app de pruebas sale en cada apertura para poder revisarla
+    if (!ready || !(IS_TEST || shouldOfferSupport(readSupport()))) return;
     let busy = false;
     const t1 = setTimeout(() => { if (document.querySelector('[role="dialog"]')) busy = true; }, 2500);
     const t2 = setTimeout(() => {
-      if (busy || document.querySelector('[role="dialog"]') || !claimPromptSlot()) return;
+      if (!IS_TEST && (busy || document.querySelector('[role="dialog"]') || !claimPromptSlot())) return;
+      if (IS_TEST && document.querySelector('[role="dialog"]')) return;
       markAsked(); show(true);
     }, 8000);
     return () => { clearTimeout(t1); clearTimeout(t2); };
@@ -67,17 +70,18 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
   return createPortal(
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-[150] bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
+        <motion.div className="fixed inset-0 z-[150] bg-black/75 backdrop-blur-sm flex items-center justify-center p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
           <motion.div role="dialog" aria-modal="true" aria-labelledby="support-title" onClick={e => e.stopPropagation()}
-            initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }} transition={{ type: 'spring', damping: 22, stiffness: 260 }}
+            initial={{ y: -60, scale: 0.9, opacity: 0, rotate: -2 }} animate={{ y: 0, scale: 1, opacity: 1, rotate: 0 }} exit={{ y: 40, opacity: 0 }} transition={{ type: 'spring', damping: 17, stiffness: 240 }}
             className="theme-dark relative w-full max-w-sm max-h-[92vh] overflow-y-auto rounded-[30px] bg-[#121938] border border-white/10 shadow-2xl shadow-black/60">
 
             {step === 'choose' && (<>
-              <div className="relative px-5 pt-4 pb-9 bg-gradient-to-br from-amber-200 via-orange-300 to-pink-300">
-                <div className="flex items-center justify-between"><p className="text-[11px] font-extrabold tracking-widest text-[#2A0A1F]">☕ APÓYANOS</p>
+              <div className="relative px-5 pt-4 pb-10 bg-gradient-to-br from-amber-200 via-orange-300 to-pink-300">
+                <div aria-hidden="true" className="absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+                <div className="flex items-center justify-between"><p className="relative text-[11px] font-extrabold tracking-widest text-[#2A0A1F]">💚 APOYA A MI FINANZAS</p>
                   <button onClick={close} aria-label="Cerrar" className="p-1 text-[#2A0A1F]/70"><X size={18} /></button></div>
               </div>
-              <div className="-mt-8 flex justify-center"><div className="w-16 h-16 rounded-full bg-[#121938] ring-4 ring-orange-300 flex items-center justify-center text-3xl">💚</div></div>
+              <div className="relative z-10 -mt-9 flex justify-center"><motion.div initial={{ rotateY: 180, scale: 0.6 }} animate={{ rotateY: 0, scale: 1 }} transition={{ delay: 0.15, duration: 0.6 }} className="w-[76px] h-[76px] rounded-full p-[4px]" style={{ background: 'conic-gradient(#FDBA74, #F9A8D4, #C6F432, #FDBA74)' }}><div className="w-full h-full rounded-full bg-[#121938] flex items-center justify-center text-3xl">☕</div></motion.div></div>
               <div className="px-5 pb-5 pt-2 text-center">
                 <h2 id="support-title" className="text-white text-xl font-extrabold leading-tight">Mi Finanzas es gratis<br /><span className="text-brand-lime">y lo seguirá siendo</span></h2>
                 <p className="text-[13px] text-slate-300 mt-2">Si te ayuda, puedes apoyarnos con lo que quieras, desde $100. Nos ayuda a seguir mejorándola sin anuncios y sin pedir tus datos.</p>
