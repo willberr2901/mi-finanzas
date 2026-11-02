@@ -94,7 +94,7 @@ export default function ReceiptSync({ data, onClose }: { data: { store: string; 
             className="theme-dark relative w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-[30px] bg-[#121938] border border-white/10 shadow-2xl shadow-black/60">
             {/* Franja de color */}
             <div className={`relative px-5 pt-4 pb-10 bg-gradient-to-br ${head.grad}`}>
-              <div aria-hidden="true" className="absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/25 blur-2xl" />
+              <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/25 blur-2xl" />
               <div className="relative flex items-center justify-between gap-2">
                 <p className="text-[11px] font-extrabold tracking-widest text-[#0B1026]">{head.label}</p>
                 <button onClick={onClose} aria-label="Cerrar" className="p-1 text-[#0B1026]/70"><X size={18} /></button>

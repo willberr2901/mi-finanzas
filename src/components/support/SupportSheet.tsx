@@ -77,8 +77,8 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
 
             {step === 'choose' && (<>
               <div className="relative px-5 pt-4 pb-10 bg-gradient-to-br from-amber-200 via-orange-300 to-pink-300">
-                <div aria-hidden="true" className="absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
-                <div className="flex items-center justify-between"><p className="relative text-[11px] font-extrabold tracking-widest text-[#2A0A1F]">💚 APOYA A MI FINANZAS</p>
+                <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
+                <div className="relative z-10 flex items-center justify-between"><p className="relative text-[11px] font-extrabold tracking-widest text-[#2A0A1F]">💚 APOYA A MI FINANZAS</p>
                   <button onClick={close} aria-label="Cerrar" className="p-1 text-[#2A0A1F]/70"><X size={18} /></button></div>
               </div>
               <div className="relative z-10 -mt-9 flex justify-center"><motion.div initial={{ rotateY: 180, scale: 0.6 }} animate={{ rotateY: 0, scale: 1 }} transition={{ delay: 0.15, duration: 0.6 }} className="w-[76px] h-[76px] rounded-full p-[4px]" style={{ background: 'conic-gradient(#FDBA74, #F9A8D4, #C6F432, #FDBA74)' }}><div className="w-full h-full rounded-full bg-[#121938] flex items-center justify-center text-3xl">☕</div></motion.div></div>

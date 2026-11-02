@@ -94,7 +94,7 @@ export default function FollowUs({ ready }: { ready: boolean }) {
             initial={{ y: -60, scale: 0.9, opacity: 0, rotate: -2 }} animate={{ y: 0, scale: 1, opacity: 1, rotate: 0 }} exit={{ y: 40, opacity: 0 }} transition={{ type: 'spring', damping: 17, stiffness: 240 }}
             className="theme-dark relative w-full max-w-sm overflow-hidden rounded-[30px] bg-[#121938] border border-white/10 shadow-2xl shadow-black/60">
             <div className={`relative px-5 pt-4 pb-10 bg-gradient-to-br ${d.strip}`}>
-              <div aria-hidden="true" className="absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/25 blur-2xl" />
+              <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/25 blur-2xl" />
               <div className="relative flex items-center justify-between gap-2">
                 <p className="text-[11px] font-extrabold tracking-widest text-[#0B1026]">{d.label}</p>
                 <button onClick={() => setOpen(false)} aria-label="Cerrar" className="p-1 text-[#0B1026]/70"><X size={18} /></button>

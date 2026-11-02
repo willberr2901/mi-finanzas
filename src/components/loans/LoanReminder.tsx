@@ -81,7 +81,7 @@ export default function LoanReminder({ ready }: { ready: boolean }) {
             className="theme-dark relative w-full max-w-sm overflow-hidden rounded-[30px] bg-[#121938] border border-white/10 shadow-2xl shadow-black/60">
             {/* Franja de color */}
             <div className={`relative px-5 pt-4 pb-10 ${debo ? 'bg-gradient-to-br from-amber-300 via-orange-400 to-orange-600' : 'bg-gradient-to-br from-lime-200 via-lime-300 to-emerald-500'}`}>
-              <div aria-hidden="true" className="absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/25 blur-2xl" />
+              <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/25 blur-2xl" />
               <div className="relative flex items-center justify-between gap-2">
                 <p className="text-[11px] font-extrabold tracking-widest text-[#1A1200]">{debo ? '💸 TIENES UN PAGO PENDIENTE' : '🤝 TE DEBEN PLATA'}</p>
                 <button onClick={close} aria-label="Cerrar" className="p-1 text-[#1A1200]/70"><X size={18} /></button>
