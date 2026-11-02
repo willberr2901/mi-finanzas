@@ -14,7 +14,12 @@
 import { useEffect, useState } from 'react';
 import { deriveKeys, newHouseholdKey, seal, open, boxName, type HouseholdKeys } from './householdCrypto';
 import { SYNC_URL, SYNC_KEY, SYNC_REALTIME_KEY } from './syncConfig';
-import { onLocalChange, allKeys, getDoc, applyRemote, myName, type RemoteChange } from '../market/marketStore';
+import { onLocalChange, allKeys as marketKeys, getDoc as marketDoc, applyRemote, myName, type RemoteChange } from '../market/marketStore';
+import { onDebtChange, isDebtKey, getDebtDoc, allDebtKeys, applyDebtRemote } from './debtSync';
+
+// Mercado + deudas compartidas viajan por el mismo canal cifrado
+const allKeys = () => [...marketKeys(), ...allDebtKeys()];
+const getDoc = (k: string) => (isDebtKey(k) ? getDebtDoc(k) : marketDoc(k));
 import { notify, logActivity } from '../notificationService';
 import { formatCOP } from '../../utils/format';
 
@@ -127,8 +132,11 @@ export const pull = () => {
           docs.push({ key: data.k, value: data.v }); who.push(data.n || 'Alguien del hogar');
         }
         // Aplica por persona para poder decir "Chumpi agregó…"
+        // Deudas compartidas del hogar (ofertas, deudas y pagos)
+        const debtDocs = docs.filter(d => isDebtKey(d.key));
+        if (debtDocs.length) await applyDebtRemote(debtDocs);
         const groups = new Map<string, { key: string; value: unknown }[]>();
-        docs.forEach((d, i) => { const g = groups.get(who[i]) ?? []; g.push(d); groups.set(who[i], g); });
+        docs.forEach((d, i) => { if (isDebtKey(d.key)) return; const g = groups.get(who[i]) ?? []; g.push(d); groups.set(who[i], g); });
         for (const [n, g] of groups) { const c = applyRemote(g); if (c.length) byName.set(n, [...(byName.get(n) ?? []), ...c]); }
         if (rows.length < 1000) break;
       }
@@ -196,6 +204,7 @@ export const startHouseholdSync = async () => {
   if (started) return;
   started = true;
   onLocalChange(queue);
+  onDebtChange(queue);
   window.addEventListener('online', () => { push(); pull(); });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') { push(); pull(); }

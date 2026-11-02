@@ -52,14 +52,23 @@ export const getPrefs = (): Prefs => {
   } catch { return { ...DEFAULTS }; }
 };
 
-/** Copia mínima para el service worker (no puede leer localStorage). */
+/** Copia mínima para el service worker (no puede leer localStorage):
+ *  recordatorio, día de pago, presupuestos, plan de Kai (sueldo y días) y qué avisar. */
 const syncToWorker = async (p: Prefs) => {
   try {
     if (!('caches' in window)) return;
+    const read = (k: string) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
+    const plan = read('mf_budget_plan');
     const cache = await caches.open('mf-meta');
-    await cache.put(new Request('/__mf_prefs'), new Response(JSON.stringify({ reminder: p.reminder, payDay: p.payDay, budgets: p.budgets })));
+    await cache.put(new Request('/__mf_prefs'), new Response(JSON.stringify({
+      reminder: p.reminder, payDay: p.payDay, budgets: p.budgets,
+      plan: plan ? { income: plan.income, payDays: plan.payDays, freq: plan.freq } : null,
+      notif: read('mf_notif'),
+    })));
   } catch { /* sin almacenamiento disponible */ }
 };
+/** Vuelve a pasar la copia al service worker (cuando cambia el plan de Kai o los avisos). */
+export const syncWorkerMeta = () => syncToWorker(getPrefs());
 
 export const setPrefs = (patch: Partial<Prefs>) => {
   const next = { ...getPrefs(), ...patch };

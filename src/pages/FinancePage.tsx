@@ -33,7 +33,7 @@ const categoriesFor = (t: 'income' | 'expense'): readonly string[] => (t === 'in
 
 export default function FinancePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'transactions' | 'goals' | 'export'>(() => (searchParams.get('tab') === 'metas' ? 'goals' : 'transactions'));
+  const [activeTab, setActiveTab] = useState<'transactions' | 'goals' | 'export'>(() => (searchParams.get('tab') === 'metas' ? 'goals' : searchParams.get('tab') === 'reportes' ? 'export' : 'transactions'));
   const [reportPeriod, setReportPeriod] = useState(() => todayISO().slice(0, 7));
   const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);

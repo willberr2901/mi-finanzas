@@ -87,14 +87,14 @@ export const notify = ({
 export const clearAllNotifications = () => { toast.dismiss(); };
 
 // ═══ SECCIÓN: Historial de actividad (campana → Historial) ═══
-export interface ActivityEntry { id: string; title: string; message: string; link: string; at: number; kind: 'hogar' | 'alerta' }
+export interface ActivityEntry { id: string; title: string; message: string; link: string; at: number; kind: 'hogar' | 'alerta' | 'kai'; cat?: string; emoji?: string }
 const LOG_KEY = 'mf_notifLog';
 export const getActivity = (): ActivityEntry[] => { try { return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); } catch { return []; } };
 export const saveActivity = (list: ActivityEntry[]) => {
   try { localStorage.setItem(LOG_KEY, JSON.stringify(list.slice(0, 120))); } catch { /* sin espacio */ }
   window.dispatchEvent(new Event('mf:alerts-changed'));
 };
-export const logActivity = (e: { title: string; message: string; link: string }) =>
+export const logActivity = (e: { title: string; message: string; link: string; kind?: ActivityEntry['kind']; emoji?: string }) =>
   saveActivity([{ id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, at: Date.now(), kind: 'hogar', ...e }, ...getActivity()]);
 
 // ═══ SECCIÓN: Atajos usados por varios módulos ═══

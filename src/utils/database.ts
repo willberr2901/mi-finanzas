@@ -49,6 +49,9 @@ export interface Bill {
   totalInstallments?: number; // deudas: número de cuotas
   paidInstallments?: number;  // deudas: cuotas ya pagadas
   active: boolean;
+  /** Deuda sincronizada con el hogar (services/household/debtSync.ts) y quién la compartió. */
+  shared?: boolean;
+  sharedBy?: string;
   createdAt: number;
 }
 
@@ -61,6 +64,8 @@ export interface BillPayment {
   paidAt: number;
   /** Quién pagó (para dividir los pagos compartidos del hogar). */
   paidBy?: 'yo' | 'pareja';
+  /** Nombre de quien pagó desde otro celular del hogar (deudas sincronizadas). */
+  paidByName?: string;
 }
 
 export const db = new Dexie('MiFinanzasDB') as Dexie & {

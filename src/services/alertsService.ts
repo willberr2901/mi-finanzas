@@ -8,20 +8,28 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { loanAlerts, alertLabel, leftOf, today } from './loansService';
-import { loadBillStatuses, periodOf } from './billsService';
+import { loadBillStatuses, periodOf, payBill } from './billsService';
+import { paydayPending, registerSalary } from './quickActions';
+import { haptic } from '../utils/haptics';
 import { listItems, estimateList, getBudget } from './market/marketStore';
-import { getActivity, saveActivity, type ActivityEntry } from './notificationService';
+import { getActivity, saveActivity, notify, type ActivityEntry } from './notificationService';
 import { useEffect, useState } from 'react';
 import { formatCOP } from '../utils/format';
 import { db } from '../utils/database';
 import { getPrefs, cycleFor, inCycle } from '../utils/prefs';
 
+export type AlertCat = 'pagos' | 'presupuesto' | 'kai' | 'hogar' | 'otros';
+/** Botón dentro del aviso. run: 'salary:<monto>' registra el sueldo · 'pay:<billId>' marca el pago · 'go:<ruta>' abre una pantalla. */
+export interface AlertAction { label: string; run: string; primary?: boolean }
 export interface AppAlert {
   id: string;
   level: 'urgente' | 'aviso' | 'info';
   title: string;
   message: string;
   link: string;
+  cat?: AlertCat;
+  emoji?: string;
+  actions?: AlertAction[];
 }
 
 /** Calcula los avisos del momento a partir de los datos guardados en el celular. */
@@ -32,7 +40,7 @@ export const computeAlerts = async (): Promise<AppAlert[]> => {
   try {
     for (const s of await loadBillStatuses()) {
       if (s.paid) continue;
-      const base = { link: '/pagos' };
+      const base = { link: '/pagos', cat: 'pagos' as const, emoji: '📅', actions: [{ label: 'Ya lo pagué', run: `pay:${s.bill.id}`, primary: true }, { label: 'Ver pago', run: 'go:/pagos' }] };
       if (s.state === 'vencido') alerts.push({ ...base, id: `venc-${s.bill.id}-${period}`, level: 'urgente', title: `${s.bill.name} está vencido`, message: `Vencía el día ${s.dueDate.getDate()} · ${formatCOP(s.bill.amount)}. Si ya lo pagaste, márcalo.` });
       else if (s.state === 'hoy') alerts.push({ ...base, id: `hoy-${s.bill.id}-${period}`, level: 'urgente', title: `Hoy vence ${s.bill.name}`, message: `${formatCOP(s.bill.amount)} · no lo dejes pasar.` });
       else if (s.state === 'pronto') alerts.push({ ...base, id: `pronto-${s.bill.id}-${period}`, level: 'aviso', title: `${s.bill.name} vence ${s.daysLeft === 1 ? 'mañana' : `en ${s.daysLeft} días`}`, message: `${formatCOP(s.bill.amount)} · día ${s.dueDate.getDate()}.` });
@@ -45,8 +53,8 @@ export const computeAlerts = async (): Promise<AppAlert[]> => {
   if (items.length && budget > 0) {
     const cart = items.filter(i => i.checked).reduce((s, i) => s + (i.paid || 0) * i.qty, 0);
     const est = estimateList(items).total;
-    if (cart > budget) alerts.push({ id: `merc-exc-${period}`, level: 'urgente', title: 'Te pasaste del presupuesto del mercado', message: `Llevas ${formatCOP(cart)} en el carrito y el presupuesto es ${formatCOP(budget)}.`, link: '/mercado' });
-    else if (est > budget) alerts.push({ id: `merc-est-${period}`, level: 'aviso', title: 'Tu lista supera el presupuesto', message: `Costaría aprox. ${formatCOP(est)} y el presupuesto es ${formatCOP(budget)}.`, link: '/mercado' });
+    if (cart > budget) alerts.push({ cat: 'presupuesto', emoji: '🛒', id: `merc-exc-${period}`, level: 'urgente', title: 'Te pasaste del presupuesto del mercado', message: `Llevas ${formatCOP(cart)} en el carrito y el presupuesto es ${formatCOP(budget)}.`, link: '/mercado' });
+    else if (est > budget) alerts.push({ cat: 'presupuesto', emoji: '🛒', id: `merc-est-${period}`, level: 'aviso', title: 'Tu lista supera el presupuesto', message: `Costaría aprox. ${formatCOP(est)} y el presupuesto es ${formatCOP(budget)}.`, link: '/mercado' });
   }
 
   // Presupuestos por categoría (dentro del ciclo de pago)
@@ -62,8 +70,8 @@ export const computeAlerts = async (): Promise<AppAlert[]> => {
       for (const [cat, limit] of limits) {
         const v = spent.get(cat) ?? 0;
         const pct = Math.round((v / limit) * 100);
-        if (pct >= 100) alerts.push({ id: `pres-100-${cat}-${c.startISO}`, level: 'urgente', title: `Te pasaste en ${cat}`, message: `Llevas ${formatCOP(v)} de ${formatCOP(limit)} (${pct}%).`, link: '/' });
-        else if (pct >= 80) alerts.push({ id: `pres-80-${cat}-${c.startISO}`, level: 'aviso', title: `${cat} al ${pct}% del presupuesto`, message: `Te quedan ${formatCOP(limit - v)} hasta tu próximo pago.`, link: '/' });
+        if (pct >= 100) alerts.push({ cat: 'presupuesto', emoji: '🎯', id: `pres-100-${cat}-${c.startISO}`, level: 'urgente', title: `Te pasaste en ${cat}`, message: `Llevas ${formatCOP(v)} de ${formatCOP(limit)} (${pct}%).`, link: '/analisis' });
+        else if (pct >= 80) alerts.push({ cat: 'presupuesto', emoji: '🎯', id: `pres-80-${cat}-${c.startISO}`, level: 'aviso', title: `${cat} al ${pct}% del presupuesto`, message: `Te quedan ${formatCOP(limit - v)} hasta tu próximo pago.`, link: '/analisis' });
       }
     }
   } catch { /* sin datos */ }
@@ -73,14 +81,53 @@ export const computeAlerts = async (): Promise<AppAlert[]> => {
     for (const a of loanAlerts()) {
       const l = a.loan, debo = l.dir === 'debo';
       alerts.push({
-        id: `prest-${a.kind}-${l.id}-${today()}`, level: a.kind === 'vencido' || a.kind === 'hoy' ? 'urgente' : 'aviso', link: `/prestamos?ver=${l.id}`,
+        cat: 'pagos', emoji: '🤝', id: `prest-${a.kind}-${l.id}-${today()}`, level: a.kind === 'vencido' || a.kind === 'hoy' ? 'urgente' : 'aviso', link: `/prestamos?ver=${l.id}`,
         title: debo ? `Le debes a ${l.person}: ${formatCOP(leftOf(l))}` : `${l.person} te debe ${formatCOP(leftOf(l))}`,
         message: `${l.reason ? `${l.reason} · ` : ''}${alertLabel(a)}`,
       });
     }
   } catch { /* sin préstamos */ }
 
+  // 💚 Día de pago (plan de Kai) y 📊 resumen semanal (domingos)
+  try {
+    const tx = await db.transactions.toArray();
+    const amount = paydayPending(tx);
+    if (amount) alerts.unshift({ cat: 'kai', emoji: '💚', id: `sueldo-${today()}`, level: 'aviso', title: `Hoy te pagan ${formatCOP(amount)}`, message: '¿Ya te llegó? Regístralo con un toque y tus anillos quedan al día.', link: '/',
+      actions: [{ label: 'Registrar ingreso', run: `salary:${amount}`, primary: true }, { label: 'Aún no', run: 'dismiss' }] });
+    const now = new Date();
+    if (now.getDay() === 0 || now.getDay() === 1) {
+      const d0 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (now.getDay() === 0 ? 0 : 1));
+      const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const from = new Date(d0); from.setDate(from.getDate() - 6);
+      const pFrom = new Date(from); pFrom.setDate(pFrom.getDate() - 7);
+      const sumBetween = (a: Date, b: Date) => tx.filter(x => x.type === 'expense' && x.date >= iso(a) && x.date <= iso(b)).reduce((s, x) => s + x.amount, 0);
+      const week = sumBetween(from, d0), prevEnd = new Date(from); prevEnd.setDate(prevEnd.getDate() - 1);
+      const before = sumBetween(pFrom, prevEnd);
+      if (week > 0) {
+        const diff = before > 0 ? Math.round(((week - before) / before) * 100) : null;
+        alerts.push({ cat: 'kai', emoji: '📊', id: `semana-${iso(d0)}`, level: 'info', title: `Tu semana: gastaste ${formatCOP(week)}`,
+          message: diff === null ? 'Así cerraste la semana. ¡Sigue anotando!' : diff <= 0 ? `${Math.abs(diff)}% menos que la anterior 👏` : `${diff}% más que la anterior. Revisa los gustos 👀`, link: '/analisis' });
+      }
+    }
+  } catch { /* sin datos */ }
+
   return alerts;
+};
+
+/** Ejecuta el botón de un aviso. Devuelve true si se hizo algo. */
+export const runAlertAction = async (run: string, navigate: (to: string) => void): Promise<boolean> => {
+  if (run.startsWith('salary:')) { await registerSalary(Number(run.slice(7))); refreshAlerts(); return true; }
+  if (run.startsWith('pay:')) {
+    const bill = await db.bills.get(run.slice(4));
+    if (!bill) return false;
+    await payBill(bill, bill.amount);
+    window.dispatchEvent(new Event('mf:data-changed'));
+    haptic('success');
+    notify({ title: `${bill.name} pagado ✅`, message: `${formatCOP(bill.amount)} · quedó anotado como gasto`, type: 'success' });
+    return true;
+  }
+  if (run.startsWith('go:')) { navigate(run.slice(3)); return true; }
+  return run === 'dismiss';
 };
 
 // ═══ SECCIÓN: Leídos (se guardan solo en este celular) ═══
@@ -95,12 +142,12 @@ export const markRead = (ids: string[]) => {
 };
 
 // ═══ SECCIÓN: Historial (alertas + actividad del hogar) ═══
-export type LoggedAlert = ActivityEntry & { level?: AppAlert['level'] };
+export type LoggedAlert = ActivityEntry & { level?: AppAlert['level']; cat?: AlertCat; emoji?: string };
 export const getLog = (): LoggedAlert[] => getActivity() as LoggedAlert[];
 export const logAlerts = (alerts: AppAlert[]) => {
   const log = getActivity();
   const known = new Set(log.map(l => l.id));
-  const fresh = alerts.filter(a => !known.has(a.id)).map(a => ({ ...a, at: Date.now(), kind: 'alerta' as const }));
+  const fresh = alerts.filter(a => !known.has(a.id)).map(({ actions: _a, ...a }) => ({ ...a, at: Date.now(), kind: 'alerta' as const }));
   if (fresh.length) saveActivity([...fresh, ...log]);
 };
 export const clearLog = () => saveActivity([]);

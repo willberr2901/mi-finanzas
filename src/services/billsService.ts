@@ -7,6 +7,8 @@
  * Si lo cambias: Afecta los avisos y los totales de pagos.
  * ════════════════════════════════════════════════════════════════════
  */
+import { logActivity } from './notificationService';
+import { sharePayment } from './household/debtSync';
 import { db, type Bill, type BillPayment } from '../utils/database';
 import { todayISO } from '../utils/format';
 
@@ -47,6 +49,7 @@ export const loadBillStatuses = async (ref = new Date()): Promise<BillStatus[]> 
 };
 
 /** Marca el pago del mes: lo guarda, lo registra como gasto en Finanzas y avanza la cuota si es deuda. */
+const cop = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`;
 export const payBill = async (bill: Bill, amount: number, ref = new Date(), paidBy?: 'yo' | 'pareja') => {
   const installment = bill.kind === 'deuda' ? (bill.paidInstallments ?? 0) + 1 : undefined;
   await db.transaction('rw', db.billPayments, db.transactions, db.bills, async () => {
@@ -65,6 +68,12 @@ export const payBill = async (bill: Bill, amount: number, ref = new Date(), paid
       await db.bills.update(bill.id, { paidInstallments: installment, active: !done });
     }
   });
+  // 🔄 Deuda compartida con el hogar: el otro celular la ve pagada
+  if (bill.shared) sharePayment(bill, periodOf(ref), amount);
+  // 🤖 Kai celebra cuando terminas una deuda (y propone pasar esa cuota al ahorro)
+  if (bill.kind === 'deuda' && bill.totalInstallments && installment! >= bill.totalInstallments) {
+    logActivity({ kind: 'kai', emoji: '🎉', title: `Kai: terminaste de pagar ${bill.name} 🎉`, message: `Liberaste ${cop(bill.amount)}/mes. ¿Los pasamos a tu ahorro?`, link: '/finanzas?tab=metas' });
+  }
 };
 
 /** Deshace el pago del mes (por si se marcó por error). No borra el gasto ya registrado. */

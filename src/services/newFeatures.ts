@@ -16,6 +16,8 @@ export interface NewFeature { id: string; module: string; since: string; hint: s
 
 export const NEW_FEATURES: NewFeature[] = [
   { id: 'home-kai', module: 'inicio', since: '2026-11-02', hint: 'Kai, tu asistente: arma tu presupuesto con sueldo, deudas y ahorro' },
+  { id: 'aj-deudas-hogar', module: 'ajustes', since: '2026-11-02', hint: 'Sincroniza tus deudas con tu hogar' },
+  { id: 'aj-avisos', module: 'ajustes', since: '2026-11-02', hint: 'Elige qué te avisamos y a qué hora' },
   { id: 'aj-kai', module: 'ajustes', since: '2026-11-02', hint: 'Calcula tus presupuestos en un toque' },
   { id: 'home-resumen', module: 'inicio', since: '2026-11-02', hint: 'Tu mes en una historia: cuánto ahorraste, qué subió y qué bajó' },
   { id: 'home-respaldo', module: 'inicio', since: '2026-11-02', hint: 'Te recordamos guardar una copia cifrada de tus datos' },

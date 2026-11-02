@@ -71,3 +71,14 @@ describe('Días de pago', () => {
     expect(cyclePayDay([30, 15])).toBe(15);
   });
 });
+
+describe('Día de pago (avisos y Para hoy)', () => {
+  test('sabe si hoy es día de pago y cuánto llega en una quincena', async () => {
+    const { isPayday, salaryPerPay } = await import('../services/quickActions');
+    const plan = { income: 2_800_000, freq: 'quincenal' as const, payDays: [15, 30], savingsPct: 10, mode: 'ahorro' as const, createdAt: 1 };
+    expect(isPayday(plan, new Date(2026, 10, 15))).toBe(true);
+    expect(isPayday(plan, new Date(2026, 1, 28))).toBe(true);   // febrero: el 30 cae el 28
+    expect(isPayday(plan, new Date(2026, 10, 16))).toBe(false);
+    expect(salaryPerPay(plan)).toBe(1_400_000);
+  });
+});

@@ -7,11 +7,13 @@
  * Si lo cambias: La lógica de estados (vencido, hoy, pronto) está en services/billsService.ts.
  * ════════════════════════════════════════════════════════════════════
  */
+import { getHousehold } from '../services/household/householdSync';
+import { incomingOffers, hideSyncCard, syncCardHidden, debtSyncEvent } from '../services/household/debtSync';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ownerLabel } from '../utils/prefs';
 import SharedSettlementCard from '../components/bills/SharedSettlementCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, ChevronLeft, ChevronRight, CalendarDays, Pencil, Trash2, Undo2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, CalendarDays, Pencil, Trash2, Undo2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { db, type Bill, type Owner } from '../utils/database';
 import { loadBillStatuses, payBill, unpayBill, describeDue, periodOf, googleCalendarLink, buildICS, type BillStatus } from '../services/billsService';
 import { formatCOP, todayISO } from '../utils/format';
@@ -64,6 +66,13 @@ export default function BillsPage() {
   }, [ref]);
 
   useEffect(() => { reload(); }, [reload]);
+  // Llegó un pago o una deuda del hogar: refresca sin volver a avisar
+  useEffect(() => {
+    const soft = async () => { setStatuses(await loadBillStatuses(refDate)); setDebts(await db.bills.where('kind').equals('deuda').toArray()); };
+    window.addEventListener(debtSyncEvent, soft);
+    return () => window.removeEventListener(debtSyncEvent, soft);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref]);
 
   const visible = useMemo(() => statuses.filter(s => owner === 'todos' || s.bill.owner === owner), [statuses, owner]);
   const total = visible.reduce((s, x) => s + (x.payment?.amount ?? x.bill.amount), 0);
@@ -143,6 +152,11 @@ export default function BillsPage() {
           <span className={STATE_STYLE[s.state].text}>{describeDue(s)}</span> · {ownerLabel(s.bill.owner)}
           {s.bill.kind === 'tarjeta' ? ' · Tarjeta' : ''}{s.bill.kind === 'deuda' && s.bill.totalInstallments ? ` · cuota ${(s.bill.paidInstallments ?? 0) + (s.paid ? 0 : 1)}/${s.bill.totalInstallments}` : ''}
         </p>
+        {(s.bill.shared || s.payment?.paidByName) && (
+          <span className={`inline-block mt-1 text-[10px] font-extrabold rounded-full px-2 py-0.5 ${s.payment?.paidByName ? 'bg-lime-300/15 text-lime-300' : 'bg-emerald-300/15 text-emerald-300'}`}>
+            {s.payment?.paidByName ? `✅ Pagó ${s.payment.paidByName} · ${new Date(s.payment.paidAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}` : `🔄 Compartida${s.bill.sharedBy && s.bill.sharedBy !== ownerLabel('yo') ? ` por ${s.bill.sharedBy}` : ''}`}
+          </span>
+        )}
       </div>
       <div className="text-right">
         <p className="text-white font-bold text-sm">{formatCOP(s.payment?.amount ?? s.bill.amount)}</p>
@@ -249,6 +263,17 @@ export default function BillsPage() {
             <span className="block text-[11px] text-slate-400">Todos tus pagos, cada mes, con aviso un día antes y el mismo día. Así no se te pasa ninguno aunque no abras la app.</span>
           </span>
         </button>
+      )}
+
+      {/* 🔄 Deudas del hogar: si alguien dijo "ahora no", aquí queda el botón para sincronizar */}
+      {getHousehold() && !syncCardHidden() && (statuses.some(s => (s.bill.kind === 'deuda' || s.bill.kind === 'tarjeta') && !s.bill.shared) || incomingOffers(true).length > 0) && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative flex items-center gap-3 rounded-[24px] p-4 bg-gradient-to-br from-teal-900/70 to-surface ring-1 ring-emerald-300/40">
+          <button onClick={() => { hideSyncCard(); reload(); }} aria-label="Ocultar" className="absolute top-2 right-2 p-1 text-slate-400"><X size={14} /></button>
+          <span className="w-12 h-12 rounded-[16px] bg-emerald-300 flex items-center justify-center text-2xl shrink-0" aria-hidden="true">🔄</span>
+          <span className="flex-1 min-w-0 pr-3"><span className="block text-white font-extrabold text-[15px]">{incomingOffers(true).length ? `${incomingOffers(true)[0].from} quiere compartir deudas` : 'Sincroniza tus deudas'}</span>
+            <span className="block text-[12px] text-slate-300">Comparte cuotas y pagos con {getHousehold()!.name}</span></span>
+          <button onClick={() => window.dispatchEvent(new Event('mf:open-debt-sync'))} className="shrink-0 rounded-xl bg-emerald-300 text-[#05231A] text-[12.5px] font-extrabold px-3 py-2">Sincronizar</button>
+        </motion.div>
       )}
 
       {/* ¿Ya lo pagaste? */}

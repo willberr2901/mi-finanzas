@@ -23,6 +23,7 @@ import WelcomeExperience from './components/welcome/WelcomeExperience';
 import SidebarMenu from './components/SidebarMenu';
 import { AppMenuContext } from './components/ui/ModuleHeader';
 import QuickAdd from './components/QuickAdd';
+import HomeSkeleton from './components/home/HomeSkeleton';
 import ShareAppSheet from './components/share/ShareAppSheet';
 import PasteMovementSheet, { openPasteMovement } from './components/quick/PasteMovementSheet';
 import { checkDailyReminderInApp } from './services/dailyReminder';
@@ -58,6 +59,7 @@ const FollowUs = React.lazy(() => import('./components/social/FollowUs'));
 const SupportSheet = React.lazy(() => import('./components/support/SupportSheet'));
 const BudgetAssistant = React.lazy(() => import('./components/assistant/BudgetAssistant'));
 const BudgetCalc = React.lazy(() => import('./components/assistant/BudgetCalc'));
+const DebtSyncHost = React.lazy(() => import('./components/household/DebtSyncSheet'));
 const loaders = {
   home: () => import('./pages/HomePage'),
   market: () => import('./pages/MarketPage'),
@@ -69,6 +71,7 @@ const loaders = {
   legal: () => import('./pages/LegalPage'),
   reports: () => import('./pages/ReportsPage'),
   loans: () => import('./pages/LoansPage'),
+  analysis: () => import('./pages/AnalysisPage'),
 };
 const HomePage = lazyWithRetry(loaders.home);
 const MarketPage = lazyWithRetry(loaders.market);
@@ -80,6 +83,7 @@ const BillsPage = lazyWithRetry(loaders.bills);
 const LegalPage = lazyWithRetry(loaders.legal);
 const ReportsPage = lazyWithRetry(loaders.reports);
 const LoansPage = lazyWithRetry(loaders.loans);
+const AnalysisPage = lazyWithRetry(loaders.analysis);
 
 /** Deja todas las pantallas cargadas en segundo plano: así abrir Ajustes u otro módulo
  *  es instantáneo y no depende de archivos que una actualización pudo reemplazar. */
@@ -119,6 +123,12 @@ function AppContent() {
   const [showIntro, setShowIntro] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   useEffect(() => { const on = () => setShowWhatsNew(true); window.addEventListener('mf:open-whatsnew', on); return () => window.removeEventListener('mf:open-whatsnew', on); }, []);
+  // Cuando se registra algo desde un botón de una notificación, el service worker avisa para refrescar la pantalla
+  useEffect(() => {
+    const on = (e: MessageEvent) => { if (e.data?.type === 'MF_DATA_CHANGED') window.dispatchEvent(new Event('mf:data-changed')); };
+    navigator.serviceWorker?.addEventListener('message', on);
+    return () => navigator.serviceWorker?.removeEventListener('message', on);
+  }, []);
   const [menuOpen, setMenuOpen] = useState(false);
   // Copia mínima de préstamos para los avisos con la app cerrada (src/sw.ts → checkLoans)
   useEffect(() => { syncLoansToSW(); }, []);
@@ -188,7 +198,7 @@ function AppContent() {
           {/* Solo animación de entrada: la de salida (AnimatePresence mode="wait") podía quedarse
               trabada y dejar la pantalla en blanco al abrir Ajustes desde el menú. */}
           <motion.div key={`${location.pathname}-${maskTick}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }}>
-              <Suspense fallback={<div className="h-40 flex items-center justify-center text-slate-500">Cargando…</div>}>
+              <Suspense fallback={location.pathname === '/' ? <HomeSkeleton /> : <div className="h-40 flex items-center justify-center text-slate-500">Cargando…</div>}>
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/finanzas" element={<FinancePage />} />
@@ -200,6 +210,7 @@ function AppContent() {
                   <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
                   <Route path="/legal" element={<LegalPage />} />
                   <Route path="/reportes" element={<ReportsPage />} />
+                  <Route path="/analisis" element={<AnalysisPage />} />
                   <Route path="/hogar" element={<Navigate to="/mercado" replace />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
@@ -226,6 +237,7 @@ function AppContent() {
           <LoanReminder ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
           <BudgetAssistant />
           <BudgetCalc />
+          <DebtSyncHost ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
         </Suspense>
         <TestBanner />
         <UpdateManager />

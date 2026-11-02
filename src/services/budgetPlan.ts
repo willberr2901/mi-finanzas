@@ -20,7 +20,7 @@
  */
 import type { Transaction } from '../utils/database';
 import { segmentOf } from '../utils/categories';
-import { cycleFor, inCycle } from '../utils/prefs';
+import { cycleFor, inCycle, syncWorkerMeta } from '../utils/prefs';
 
 export type PayFreq = 'mensual' | 'quincenal';
 export interface BudgetPlan {
@@ -153,6 +153,7 @@ const PLAN_KEY = 'mf_budget_plan';
 export const getPlan = (): BudgetPlan | null => { try { const p = JSON.parse(localStorage.getItem(PLAN_KEY) || 'null'); return p && p.income > 0 ? p : null; } catch { return null; } };
 export const savePlan = (p: BudgetPlan) => {
   try { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); } catch { /* sin almacenamiento */ }
+  syncWorkerMeta();
   window.dispatchEvent(new Event('mf:prefs-changed'));
 };
 export const openAssistant = () => window.dispatchEvent(new Event('mf:open-assistant'));

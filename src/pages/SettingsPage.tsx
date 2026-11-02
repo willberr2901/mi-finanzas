@@ -13,9 +13,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, ShieldCheck, Database, LifeBuoy, Info, ChevronRight, Fingerprint, Lock, KeyRound, Download, Upload, Trash2, CalendarDays,
   Sparkles, X, Check, Delete, Users, Wallet, PiggyBank, AlarmClock, Palette, Moon, Sun, MonitorSmartphone, Heart, Wand2, CalendarPlus, Pencil,
-  Home, BarChart3, Instagram, MessageSquareHeart, Gift, Radio, Bot,
+  Home, BarChart3, Instagram, MessageSquareHeart, Gift, Radio, Bot, Settings2,
 } from 'lucide-react';
 import NewBadge from '../components/ui/NewBadge';
+import Kai from '../components/assistant/Kai';
+import { useKaiColor, setKaiColor, type KaiColor } from '../services/kaiPrefs';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import MoneyInput from '../components/ui/MoneyInput';
 import { getPlan, openAssistant, openBudgetCalc } from '../services/budgetPlan';
@@ -128,6 +130,7 @@ export default function SettingsPage() {
   const [nStatus, setNStatus] = useState<Awaited<ReturnType<typeof noticeStatus>> | null>(null);
   useEffect(() => { noticeStatus().then(setNStatus).catch(() => {}); }, [perm]);
   const [sheet, setSheet] = useState<SheetId>(null);
+  const kaiColor = useKaiColor();
   const [pinStep, setPinStep] = useState<'first' | 'confirm'>('first');
   const [pin1, setPin1] = useState(''); const [pin2, setPin2] = useState('');
   const [pass, setPass] = useState(''); const [pass2, setPass2] = useState('');
@@ -319,6 +322,7 @@ export default function SettingsPage() {
 
         <Section icon={Users} title="Tu hogar">
           <Row icon={Home} title={household ? `Hogar sincronizado · ${household.name}` : 'Hogar sincronizado'} desc={household ? 'La lista del mercado se comparte en vivo y cifrada' : 'Comparte la lista del mercado con tu familia, en vivo y cifrada'} onClick={openHousehold} right={<ChevronRight size={16} className="text-slate-600" />} />
+          {household && <Row icon={Wallet} title={<>Deudas del hogar <NewBadge id="aj-deudas-hogar" /></>} desc="Comparte cuotas y pagos con tu hogar (la otra persona aprueba)" onClick={() => window.dispatchEvent(new Event('mf:open-debt-sync'))} />}
           <Row icon={Users} title="Nombres del hogar" desc={partnerName ? `${meName} y ${partnerName} · se usan en Pagos y reportes` : 'Cambia "Yo" y "Mi pareja" por sus nombres'} onClick={() => openSheet('names')} />
         </Section>
 
@@ -329,6 +333,7 @@ export default function SettingsPage() {
         </Section>
 
         <Section icon={Bell} title="Recordatorios">
+          <Row icon={Settings2} title={<>¿Qué te avisamos? <NewBadge id="aj-avisos" /></>} desc="Día de pago, pagos, gastos del día, presupuestos, resumen semanal y horas de silencio" onClick={() => window.dispatchEvent(new Event('mf:open-notif-settings'))} />
           <Row icon={Bell} title={perm === 'granted' ? 'Avisos de pagos: activados' : 'Avisos de pagos en el celular'}
             desc={perm === 'granted' ? 'Te avisamos 2 días antes, el día del pago y si algo se vence.' : perm === 'denied' ? 'Bloqueados. Actívalos en Ajustes del celular → Apps → Chrome → Notificaciones.' : 'Actívalos para que no se te pase ninguna fecha de pago.'}
             right={perm === 'granted' ? <span className="text-brand-lime text-xs font-bold">ACTIVOS</span> : perm === 'default' ? <button onClick={async () => setPerm(await enableReminders())} className="px-3 py-1.5 rounded-xl bg-brand-lime text-brand-ink text-xs font-bold">Activar</button> : undefined} />
@@ -351,6 +356,18 @@ export default function SettingsPage() {
         </Section>
 
         <Section icon={Palette} title="Apariencia">
+          <div className="px-4 pt-4">
+            <p className="text-sm font-medium text-white">Color de Kai</p>
+            <p className="text-[11px] text-slate-400">También lo cambias dejando presionado a Kai en Inicio.</p>
+            <div className="grid grid-cols-2 gap-2 mt-2.5" role="radiogroup" aria-label="Color de Kai">
+              {(['blanco', 'negro'] as KaiColor[]).map(c => (
+                <button key={c} role="radio" aria-checked={kaiColor === c} onClick={() => setKaiColor(c)}
+                  className={`flex items-center gap-2 rounded-2xl p-2 ring-2 transition-all ${kaiColor === c ? 'ring-brand-lime bg-white/[0.06]' : 'ring-white/10'}`}>
+                  <Kai size={44} still color={c} mood="feliz" /><span className="text-sm font-bold text-white">{c === 'blanco' ? '⚪ Blanco' : '⚫ Negro'}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="p-4">
             <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Tema">
               {THEMES.map(t => {

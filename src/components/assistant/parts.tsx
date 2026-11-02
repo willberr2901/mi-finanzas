@@ -2,7 +2,7 @@
  * Piezas compartidas del asistente Kai y la calculadora de presupuesto:
  * pantalla completa, burbuja de chat, lista editable de presupuestos.
  */
-import { useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -16,8 +16,25 @@ export const CAT_EMOJI: Record<string, string> = {
   'Alimentación': '🍔', Entretenimiento: '🎬', Otros: '✨',
 };
 
+/** ¿Se está escribiendo en un campo? Kai se hace mini y se queda quieto (el teclado sale fluido). */
+const TypingCtx = createContext(false);
+export const useTyping = () => useContext(TypingCtx);
+
 /** Pantalla completa con barra de pasos, X y botón fijo abajo. */
 export function Shell({ label, step, steps, onClose, children, footer }: { label: string; step: number; steps: number; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
+  const [typing, setTyping] = useState(false);
+  const blurTimer = useRef<number>();
+  const isField = (el: EventTarget | null) => el instanceof HTMLElement && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && (el as HTMLInputElement).type !== 'range';
+  const onFocus = (e: React.FocusEvent) => {
+    if (!isField(e.target)) return;
+    window.clearTimeout(blurTimer.current);
+    setTyping(true);
+    const el = e.target as HTMLElement;
+    // Cuando el teclado termina de subir, deja el campo a la vista
+    window.setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 280);
+  };
+  const onBlur = (e: React.FocusEvent) => { if (isField(e.target)) blurTimer.current = window.setTimeout(() => setTyping(false), 150); };
+  useEffect(() => () => window.clearTimeout(blurTimer.current), []);
   useEffect(() => {
     const prev = document.body.style.overflow; document.body.style.overflow = 'hidden';
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -37,7 +54,9 @@ export function Shell({ label, step, steps, onClose, children, footer }: { label
         </div>
         <p className="text-[11px] font-extrabold tracking-[.14em] text-slate-400 mt-3">{label.toUpperCase()}</p>
       </div>
-      <div className="relative z-10 flex-1 overflow-y-auto px-5 pb-6">{children}</div>
+      <div className="relative z-10 flex-1 overflow-y-auto overscroll-contain px-5 pb-6" onFocus={onFocus} onBlur={onBlur}>
+        <TypingCtx.Provider value={typing}>{children}</TypingCtx.Provider>
+      </div>
       {footer && <div className="relative z-10 px-5 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] bg-gradient-to-t from-[#0B1026] via-[#0B1026] to-transparent">{footer}</div>}
     </motion.div>,
     document.body,
@@ -46,6 +65,14 @@ export function Shell({ label, step, steps, onClose, children, footer }: { label
 
 /** Kai grande arriba con su mensaje. */
 export function KaiSays({ mood, children, size = 128 }: { mood: KaiMood; children: ReactNode; size?: number }) {
+  const typing = useTyping();
+  // Escribiendo: Kai mini al lado del mensaje, sin animar
+  if (typing) return (
+    <div className="flex items-start gap-2.5">
+      <Kai mood={mood} size={44} still className="shrink-0" />
+      <div className="flex-1 rounded-[4px_16px_16px_16px] bg-[#1B2350] ring-1 ring-white/10 px-3 py-2 text-[13px] leading-snug text-slate-100">{children}</div>
+    </div>
+  );
   return (
     <div className="flex flex-col items-center">
       <Kai mood={mood} size={size} />

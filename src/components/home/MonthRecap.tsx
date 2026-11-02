@@ -130,8 +130,17 @@ function Story({ r, label, onClose }: { r: Recap; label: string; onClose: () => 
   );
 }
 
-/** Tarjeta de Inicio (solo los primeros 10 días del mes, si hay datos del mes anterior). */
-export default function MonthRecapCard({ tx }: { tx: Transaction[] }) {
+/** ¿Hay resumen del mes que terminó para mostrar? (primeros 10 días del ciclo) */
+export const recapAvailable = (tx: Transaction[]) => {
+  const payDay = getPrefs().payDay; const now = new Date();
+  const cur = cycleFor(now, payDay), prev = cycleFor(now, payDay, -1), prev2 = cycleFor(now, payDay, -2);
+  const r = buildRecap(tx.filter(t => inCycle(t.date, prev)), tx.filter(t => inCycle(t.date, prev2)), prev.days);
+  return !!r && cycleProgress(cur, now).day <= 10;
+};
+
+/** Tarjeta de Inicio (solo los primeros 10 días del mes, si hay datos del mes anterior).
+ *  compact = fila de "Para hoy" en el Inicio nuevo. */
+export default function MonthRecapCard({ tx, compact = false }: { tx: Transaction[]; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const payDay = getPrefs().payDay;
   const now = new Date();
@@ -139,6 +148,20 @@ export default function MonthRecapCard({ tx }: { tx: Transaction[] }) {
   const r = buildRecap(tx.filter(t => inCycle(t.date, prev)), tx.filter(t => inCycle(t.date, prev2)), prev.days);
   const { day } = cycleProgress(cur, now);
   if (!r || day > 10) return null;
+  if (compact) {
+    const close = () => { markRecapSeen(prev.startISO); setOpen(false); };
+    return (
+      <>
+        <button onClick={() => { haptic(); setOpen(true); }} className="w-full flex items-center gap-3 rounded-[20px] bg-surface border border-white/5 p-3 text-left">
+          <span className="w-10 h-10 rounded-[13px] bg-brand-lime/15 flex items-center justify-center shrink-0"><BarChart3 size={19} className="text-brand-lime" /></span>
+          <span className="flex-1 min-w-0"><span className="block text-white font-bold text-[13.5px] truncate">Tu resumen de {prev.label}</span>
+            <span className="block text-[11.5px] text-slate-400 truncate">{r.saved >= 0 ? `Ahorraste ${formatCOP(r.saved)}` : `Gastaste ${formatCOP(-r.saved)} de más`} · tócalo</span></span>
+          <ChevronRight size={18} className="text-slate-500 shrink-0" />
+        </button>
+        {createPortal(<AnimatePresence>{open && <Story r={r} label={prev.label} onClose={close} />}</AnimatePresence>, document.body)}
+      </>
+    );
+  }
   const seen = recapSeen(prev.startISO);
   const close = () => { markRecapSeen(prev.startISO); setOpen(false); };
 

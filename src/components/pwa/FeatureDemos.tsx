@@ -123,5 +123,44 @@ export function DemoKai() {
   );
 }
 
-export const DEMOS = { kai: DemoKai, recap: DemoRecap, rings: DemoRings, haptics: DemoHaptics, backup: DemoBackup, support: DemoSupport } as const;
+/** 🔔 Aviso con botón: llega la notificación y se toca "Sí, registrar". */
+export function DemoNotif() {
+  return (
+    <div className="h-[200px] flex flex-col items-center justify-center gap-2">
+      <motion.div className="w-[250px] rounded-[18px] bg-white/95 text-[#0B1026] p-3 shadow-xl" animate={{ y: [-40, 0, 0, 0], opacity: [0, 1, 1, 0] }} transition={{ duration: 3.4, times: [0, 0.15, 0.85, 1], repeat: Infinity }}>
+        <p className="text-[10px] font-extrabold text-slate-500">MI FINANZAS · ahora</p>
+        <p className="text-[13px] font-extrabold mt-0.5">💚 ¡Hoy te pagan!</p>
+        <p className="text-[11px] text-slate-600">¿Ya te llegaron los $1.400.000?</p>
+        <div className="flex gap-1.5 mt-2">
+          <motion.span className="flex-1 text-center text-[11px] font-extrabold rounded-lg py-1.5 bg-[#0B1026] text-[#C6F432]" animate={{ scale: [1, 1, 0.9, 1] }} transition={{ duration: 3.4, times: [0, 0.45, 0.5, 0.55], repeat: Infinity }}>✅ Sí, registrar</motion.span>
+          <span className="flex-1 text-center text-[11px] font-extrabold rounded-lg py-1.5 bg-black/5">⏰ Más tarde</span>
+        </div>
+      </motion.div>
+      <motion.p className="text-[12px] font-extrabold text-brand-lime" animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration: 3.4, times: [0, 0.5, 0.6, 0.9, 1], repeat: Infinity }}>✅ Sueldo registrado · anillos al día</motion.p>
+    </div>
+  );
+}
+
+/** 🔄 Deudas del hogar: dos celulares que se pasan la deuda. */
+export function DemoDebts() {
+  const P = ({ n, c }: { n: string; c: string }) => (
+    <div className="w-[92px] h-[150px] rounded-[20px] bg-[#0B1026] ring-4 ring-[#1A2140] p-2 flex flex-col gap-1.5">
+      <p className="text-[9px] font-extrabold" style={{ color: c }}>{n}</p>
+      <div className="rounded-lg bg-white/[0.07] p-1.5"><p className="text-[9px] font-bold text-white">🏦 Crédito</p><p className="text-[8px] text-slate-400">$420.000</p></div>
+      <div className="rounded-lg bg-white/[0.07] p-1.5"><p className="text-[9px] font-bold text-white">💳 Tarjeta</p><p className="text-[8px] text-slate-400">$250.000</p></div>
+    </div>
+  );
+  return (
+    <div className="h-[200px] flex items-center justify-center gap-3">
+      <P n="GATO" c="#C6F432" />
+      <div className="relative w-16 h-8">
+        <motion.span className="absolute top-0 text-xl" animate={{ left: ['0%', '70%'], opacity: [0, 1, 1, 0] }} transition={{ duration: 1.8, repeat: Infinity }}>🔒</motion.span>
+        <motion.span className="absolute bottom-0 text-sm font-extrabold text-emerald-300" animate={{ opacity: [0, 1, 0] }} transition={{ duration: 1.8, repeat: Infinity }}>✅ pagó</motion.span>
+      </div>
+      <P n="SU PAREJA" c="#F9A8D4" />
+    </div>
+  );
+}
+
+export const DEMOS = { kai: DemoKai, notif: DemoNotif, debts: DemoDebts, recap: DemoRecap, rings: DemoRings, haptics: DemoHaptics, backup: DemoBackup, support: DemoSupport } as const;
 export type DemoId = keyof typeof DEMOS;

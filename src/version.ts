@@ -17,10 +17,9 @@ export const APP_VERSION = '1.20.0';
 export const SILENT_UPDATE = false;
 
 export const RELEASE_NOTES: string[] = [
-  '🤖 Conoce a Kai: arma tu presupuesto con tu sueldo, deudas y ahorro',
-  '🎯 Nuevo Inicio: tu mes en anillos y cuánto puedes gastar por día (también en PDF y Excel)',
-  '📊 Tu resumen del mes en una historia: cuánto ahorraste, qué subió y qué bajó',
-  '📳 Vibración suave al guardar',
-  '💾 Recordatorio para guardar tu copia cifrada',
-  '☕ Apóyanos: aporte voluntario por Bre-B desde $100 (la app sigue gratis)',
+  '🤖 Conoce a Kai: arma tu presupuesto con tu sueldo, deudas y ahorro (blanco o negro)',
+  '🏠 Nuevo Inicio en una pantalla: anillos, 8 íconos y “Para hoy”',
+  '🔔 Avisos con botones: registra tu sueldo, marca pagos y anota gastos desde la notificación',
+  '🔄 Deudas sincronizadas con tu hogar (la otra persona aprueba)',
+  '📊 Resumen del mes en historia · 💾 recordatorio de copia · ☕ Apóyanos',
 ]
