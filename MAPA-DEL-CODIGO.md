@@ -52,6 +52,9 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | 🧪 App de pruebas (mi-finanzas-pruebas.onrender.com, rama `pruebas`) | `src/utils/env.ts` · franja `src/components/ui/TestBanner.tsx` |
 | ☕ Apóyanos (aportes voluntarios por Bre-B, llave y QR) | `src/components/support/SupportSheet.tsx` · reglas en `src/services/supportService.ts` |
 | 📊 Resumen del mes (historia) | `src/components/home/MonthRecap.tsx` · cálculos `src/services/monthRecap.ts` |
+| 🤖 Kai, asistente de presupuesto (sueldo, deudas, ahorro, plan para liberar deuda) | `src/components/assistant/BudgetAssistant.tsx` · robot `Kai.tsx` · cálculos `src/services/budgetPlan.ts` |
+| 🧮 Calculadora de presupuesto (promedio −10%, 50·30·20, a mano) | `src/components/assistant/BudgetCalc.tsx` |
+| 🎯 Anillos del mes en PDF y Excel | `ringsFor` en `src/services/exportService.ts` · colores y barras en `src/utils/xlsx.ts` |
 | 🎬 Novedades en video interactivo | `src/components/pwa/WhatsNewStory.tsx` · animaciones `FeatureDemos.tsx` · contenido `src/services/releaseStories.ts` |
 | 🎯 Anillos de presupuestos · 💾 recordatorio de respaldo · 📳 vibración | `BudgetsCard.tsx` · `BackupReminder.tsx` · `src/utils/haptics.ts` |
 | 📣 Síguenos (Instagram → canal de WhatsApp) | `src/components/social/FollowUs.tsx` |

@@ -7,6 +7,7 @@
  * "Probarlo" lleva directo a la función. Contenido: services/releaseStories.ts
  * ════════════════════════════════════════════════════════════════════
  */
+import { openAssistant } from '../../services/budgetPlan';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -37,7 +38,7 @@ export default function WhatsNewStory({ onClose }: { onClose: () => void }) {
   const tryIt = () => {
     const to = s.cta?.to; if (!to) return;
     onClose();
-    if (to === '#apoyar') setTimeout(openSupport, 250); else navigate(to);
+    if (to === '#apoyar') setTimeout(openSupport, 250); else if (to === '#kai') setTimeout(openAssistant, 250); else navigate(to);
   };
 
   return (

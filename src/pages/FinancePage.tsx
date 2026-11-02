@@ -8,6 +8,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Trash2, Target, ArrowLeftRight, TrendingUp, TrendingDown, Pencil, PiggyBank, FileText, FileSpreadsheet, Loader2 } from 'lucide-react';
 import MoneyInput from '../components/ui/MoneyInput';
 import { formatCOP, todayISO, parseLocalDate } from '../utils/format';
@@ -31,13 +32,16 @@ import { askConfirm } from '../components/ui/ConfirmDialog';
 const categoriesFor = (t: 'income' | 'expense'): readonly string[] => (t === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES);
 
 export default function FinancePage() {
-  const [activeTab, setActiveTab] = useState<'transactions' | 'goals' | 'export'>('transactions');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'transactions' | 'goals' | 'export'>(() => (searchParams.get('tab') === 'metas' ? 'goals' : 'transactions'));
   const [reportPeriod, setReportPeriod] = useState(() => todayISO().slice(0, 7));
   const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [piggyOpen, setPiggyOpen] = useState(false);
+  const [piggyOpen, setPiggyOpen] = useState(() => searchParams.get('alcancia') === '1');
+  // Enlaces directos desde Inicio (Alcancía): se limpian para que no se repitan al volver
+  useEffect(() => { if (searchParams.has('tab') || searchParams.has('alcancia')) setSearchParams({}, { replace: true }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [txDate, setTxDate] = useState(todayISO());
   const [txType, setTxType] = useState<'income' | 'expense'>('expense');

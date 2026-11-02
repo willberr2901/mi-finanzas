@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import { PiggyBank, ChevronRight, AlertTriangle, CheckCircle2, Flame } from 'lucide-react';
 import type { Transaction } from '../../utils/database';
 import { formatCOP } from '../../utils/format';
+import { openBudgetCalc } from '../../services/budgetPlan';
 
 export type BudgetLevel = 'ok' | 'warn' | 'over';
 export const budgetLevel = (pct: number): BudgetLevel => (pct >= 100 ? 'over' : pct >= 80 ? 'warn' : 'ok');
@@ -34,8 +35,8 @@ export default function BudgetsCard({ expenses, budgets, daysLeft }: Props) {
           <span className="w-10 h-10 shrink-0 rounded-2xl bg-brand-lime/15 ring-1 ring-brand-lime/30 flex items-center justify-center"><PiggyBank size={20} className="text-brand-lime" /></span>
           <div className="flex-1">
             <p className="text-white font-bold text-[15px]">Ponle límite a tus gastos</p>
-            <p className="text-xs text-slate-400 mt-0.5">Define cuánto quieres gastar en mercado, salidas o transporte y te avisamos antes de pasarte.</p>
-            <Link to="/ajustes?s=presupuestos" className="mt-3 inline-flex items-center gap-1 rounded-xl bg-brand-lime text-brand-ink text-xs font-bold px-3 py-2">Crear mis presupuestos <ChevronRight size={14} /></Link>
+            <p className="text-xs text-slate-400 mt-0.5">Lo calculo con lo que gastas o con la regla 50·30·20, y te aviso antes de pasarte.</p>
+            <button onClick={openBudgetCalc} className="mt-3 inline-flex items-center gap-1 rounded-xl bg-brand-lime text-brand-ink text-xs font-bold px-3 py-2">Calcular mis presupuestos <ChevronRight size={14} /></button>
           </div>
         </div>
       </motion.div>

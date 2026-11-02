@@ -13,10 +13,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, ShieldCheck, Database, LifeBuoy, Info, ChevronRight, Fingerprint, Lock, KeyRound, Download, Upload, Trash2, CalendarDays,
   Sparkles, X, Check, Delete, Users, Wallet, PiggyBank, AlarmClock, Palette, Moon, Sun, MonitorSmartphone, Heart, Wand2, CalendarPlus, Pencil,
-  Home, BarChart3, Instagram, MessageSquareHeart, Gift, Radio,
+  Home, BarChart3, Instagram, MessageSquareHeart, Gift, Radio, Bot,
 } from 'lucide-react';
+import NewBadge from '../components/ui/NewBadge';
 import ModuleHeader from '../components/ui/ModuleHeader';
 import MoneyInput from '../components/ui/MoneyInput';
+import { getPlan, openAssistant, openBudgetCalc } from '../services/budgetPlan';
 import { useSecurity, biometricSupported } from '../contexts/SecurityContext';
 import { enableReminders, sendTestNotification, updateNoticesOn, setUpdateNotices, testUpdateNotice, noticeStatus } from '../services/alertsService';
 import { activateDailyReminder, dailyGoogleCalendarLink, downloadDailyICS } from '../services/dailyReminder';
@@ -52,13 +54,13 @@ const Section = ({ icon: Icon, title, children, id }: { icon: any; title: string
   </motion.section>
 );
 
-const Row = ({ icon: Icon, title, desc, right, onClick, danger }: { icon?: any; title: string; desc?: ReactNode; right?: ReactNode; onClick?: () => void; danger?: boolean }) => {
+const Row = ({ icon: Icon, title, desc, right, onClick, danger }: { icon?: any; title: ReactNode; desc?: ReactNode; right?: ReactNode; onClick?: () => void; danger?: boolean }) => {
   const C: any = onClick ? 'button' : 'div';
   return (
     <C onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3.5 text-left ${onClick ? 'active:bg-white/5' : ''}`}>
       {Icon && <Icon size={18} className={danger ? 'text-red-400 shrink-0' : 'text-slate-400 shrink-0'} />}
       <span className="flex-1 min-w-0">
-        <span className={`block text-sm font-medium ${danger ? 'text-red-300' : 'text-white'}`}>{title}</span>
+        <span className={`flex items-center gap-2 text-sm font-medium ${danger ? 'text-red-300' : 'text-white'}`}>{title}</span>
         {desc && <span className="block text-[11px] text-slate-400 mt-0.5 leading-relaxed">{desc}</span>}
       </span>
       {right ?? (onClick ? <ChevronRight size={16} className="text-slate-600 shrink-0" /> : null)}
@@ -195,14 +197,6 @@ export default function SettingsPage() {
     closeSheet();
   };
 
-  const suggestBudgets = () => {
-    if (!avgPrev.size) { notify({ title: 'Aún no hay suficientes datos', message: 'Cuando tengas un ciclo completo de gastos podremos sugerirte límites.', type: 'info' }); return; }
-    const next: Record<string, number> = { ...draftBudgets };
-    avgPrev.forEach((v, k) => { if (v > 0) next[k] = Math.ceil(v / 10000) * 10000; });
-    setDraftBudgets(next);
-    notify({ title: 'Sugerencia lista', message: 'Basada en lo que gastaste en tus últimos ciclos. Ajústala a tu gusto.', type: 'success' });
-  };
-
   const saveBudgets = () => {
     const clean = Object.fromEntries(Object.entries(draftBudgets).filter(([, v]) => v > 0));
     setPrefs({ budgets: clean });
@@ -329,6 +323,7 @@ export default function SettingsPage() {
         </Section>
 
         <Section icon={Wallet} title="Tu dinero" id="dinero">
+          <Row icon={Bot} title={<>Asistente de presupuesto · Kai <NewBadge id="aj-kai" /></>} desc={getPlan() ? 'Tu plan: sueldo, deudas y ahorro. Toca para ajustarlo.' : 'Arma tu presupuesto en 3 pasos: sueldo, deudas y ahorro'} onClick={openAssistant} />
           <Row icon={CalendarDays} title="Día de pago" desc={prefs.payDay === 1 ? 'Mes calendario (del 1 al último día)' : `Tu ciclo va del ${cycle.label}`} onClick={() => openSheet('payday')} />
           <Row icon={PiggyBank} title="Presupuestos por categoría" desc={activeBudgets.length ? `${activeBudgets.length} categorías · ${formatCOP(activeBudgets.reduce((a, v) => a + v, 0))} por ciclo` : 'Pon un límite y te avisamos al 80% y al 100%'} onClick={() => openSheet('budgets')} />
         </Section>
@@ -473,7 +468,7 @@ export default function SettingsPage() {
                   <p className="text-[11px] text-slate-400">Total presupuestado</p>
                   <p className="text-brand-lime font-extrabold text-lg">{formatCOP(draftTotal)}</p>
                 </div>
-                <button onClick={suggestBudgets} className="h-full px-3.5 py-3 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white text-xs font-bold flex flex-col items-center gap-1"><Wand2 size={16} className="text-brand-lime" />Sugerir</button>
+                <button onClick={() => { closeSheet(); openBudgetCalc(); }} className="h-full px-3.5 py-3 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white text-xs font-bold flex flex-col items-center gap-1"><Wand2 size={16} className="text-brand-lime" />Calcular</button>
               </div>
             </div>
             <div className="space-y-2.5">

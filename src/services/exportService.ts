@@ -12,7 +12,8 @@ import autoTable from 'jspdf-autotable';
 import { db, type Transaction, type Bill, type BillPayment, type SavingsGoal } from '../utils/database';
 import { downloadXlsx, type Sheet } from '../utils/xlsx';
 import { statusFor, type BillStatus } from './billsService';
-import { ownerLabel } from '../utils/prefs';
+import { ownerLabel, getPrefs } from '../utils/prefs';
+import { getPlan, splitIncome } from './budgetPlan';
 import { segmentOf, SEGMENT_INFO, type Segment } from '../utils/categories';
 import { getMarketHistory } from '../utils/marketHistory';
 import { parseLocalDate } from '../utils/format';
@@ -129,6 +130,54 @@ const deltaText = (now: number, before: number, lowerIsBetter: boolean): { label
 };
 
 // ───────────────────────── Reporte ─────────────────────────
+
+// ═══ SECCIÓN: Anillos del mes (los mismos de Inicio) ═══
+/** Datos de los anillos y presupuestos de un mes, iguales a los que se ven en la app. */
+export const ringsFor = (period: string, txs: Transaction[], statuses: BillStatus[]) => {
+  const plan = getPlan();
+  const t = totalsOf(txs);
+  const base = Math.max(t.income, plan?.income ?? 0);
+  const [py, pm] = period.split('-').map(Number);
+  const daysIn = new Date(py, pm, 0).getDate();
+  const isCurrent = period === currentPeriod();
+  const monthPct = isCurrent ? (new Date().getDate() / daysIn) * 100 : 100;
+  const saved = txs.filter(x => x.type === 'expense' && segmentOf('expense', x.category) === 'ahorro').reduce((a, x) => a + x.amount, 0);
+  const target = plan ? Math.round((plan.income * plan.savingsPct) / 100) : Math.round(base * 0.1);
+  const debtSt = statuses.filter(s => s.bill.kind === 'deuda' || s.bill.kind === 'tarjeta');
+  const debtDue = debtSt.reduce((a, s) => a + (s.payment?.amount ?? s.bill.amount), 0);
+  const debtPaid = debtSt.filter(s => s.paid).reduce((a, s) => a + (s.payment?.amount ?? 0), 0);
+  const third = plan?.mode === 'deuda'
+    ? { label: 'Deudas pagadas', value: debtPaid, goal: debtDue, pct: debtDue ? (debtPaid / debtDue) * 100 : 0, color: [236, 72, 153] as RGB }
+    : { label: 'Ahorro', value: saved, goal: target, pct: target ? (saved / target) * 100 : 0, color: [236, 72, 153] as RGB };
+  const rings = [
+    { label: 'Gastado del sueldo', value: t.expense, goal: base, pct: base ? (t.expense / base) * 100 : 0, color: (base && t.expense > base ? RED : LIME_DARK) as RGB },
+    { label: 'Días del mes', value: isCurrent ? new Date().getDate() : daysIn, goal: daysIn, pct: monthPct, color: [14, 165, 233] as RGB },
+    third,
+  ];
+  const spentBy = new Map<string, number>();
+  txs.filter(x => x.type === 'expense').forEach(x => spentBy.set(x.category, (spentBy.get(x.category) ?? 0) + x.amount));
+  const budgets = Object.entries(getPrefs().budgets).filter(([, v]) => v > 0).map(([cat, limit]) => {
+    const spent = spentBy.get(cat) ?? 0;
+    return { cat, limit, spent, left: limit - spent, pct: (spent / limit) * 100 };
+  }).sort((a, b) => b.pct - a.pct);
+  const debtsMonthly = statuses.filter(s => s.bill.kind === 'deuda' || s.bill.kind === 'tarjeta').reduce((a, s) => a + s.bill.amount, 0);
+  const split = plan ? splitIncome(plan.income, debtsMonthly, plan.savingsPct) : null;
+  return { plan, base, rings, budgets, split };
+};
+
+/** Arco de un anillo en el PDF (jsPDF no trae arcos: se dibuja con segmentos cortos). */
+const arc = (doc: jsPDF, cx: number, cy: number, r: number, frac: number, color: RGB, w: number) => {
+  stroke(doc, LINE); doc.setLineWidth(w); doc.circle(cx, cy, r, 'S');
+  const f = Math.max(0, Math.min(1, frac));
+  if (f <= 0) return;
+  stroke(doc, color); doc.setLineWidth(w); (doc as any).setLineCap?.('round');
+  const n = Math.max(6, Math.round(72 * f));
+  const pts: [number, number][] = [];
+  for (let i = 0; i <= n; i++) { const a = -Math.PI / 2 + (2 * Math.PI * f * i) / n; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+  doc.lines(pts.slice(1).map((p, i) => [p[0] - pts[i][0], p[1] - pts[i][1]]), pts[0][0], pts[0][1]);
+  (doc as any).setLineCap?.('butt');
+};
+
 export const generateFinancialReport = async (period: string, format: 'pdf' | 'csv') => {
   const [allTx, goals, bills, payments] = await Promise.all([
     db.transactions.toArray(), db.goals.toArray(), db.bills.toArray(), db.billPayments.toArray(),
@@ -189,6 +238,73 @@ export const generateFinancialReport = async (period: string, format: 'pdf' | 'c
     doc.text(doc.splitTextToSize(k.sub, cardW - 7), x + 4, y + 21);
   });
   y += 36;
+
+  // ── Tu mes en anillos (igual que en Inicio) ──
+  const R = ringsFor(period, txs, statuses);
+  if (R.base > 0 || R.budgets.length) {
+    y = ensureSpace(doc, y, 62);
+    y = sectionTitle(doc, y, 'Tu mes en anillos', R.plan ? `Plan de Kai: ${R.plan.mode === 'deuda' ? 'liberar deuda primero' : `ahorrar ${R.plan.savingsPct}% del sueldo`}` : 'Gastado, días del mes y ahorro');
+    fill(doc, NAVY); doc.roundedRect(M, y, W - 2 * M, 46, 4, 4, 'F');
+    const cx = M + 24, cy = y + 23;
+    [18, 13.2, 8.4].forEach((r) => { stroke(doc, [38, 47, 92]); doc.setLineWidth(3.6); doc.circle(cx, cy, r, 'S'); });
+    R.rings.forEach((rg, i) => {
+      const r = [18, 13.2, 8.4][i]; const col: RGB = i === 0 ? (rg.pct > 100 ? [251, 113, 133] : LIME) : i === 1 ? [125, 211, 252] : [249, 168, 212];
+      const f = Math.max(0, Math.min(1, rg.pct / 100));
+      if (f > 0) { stroke(doc, col); doc.setLineWidth(3.6); (doc as any).setLineCap?.('round'); const n = Math.max(6, Math.round(72 * f)); const pts: [number, number][] = []; for (let k = 0; k <= n; k++) { const a = -Math.PI / 2 + (2 * Math.PI * f * k) / n; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } doc.lines(pts.slice(1).map((p, k) => [p[0] - pts[k][0], p[1] - pts[k][1]]), pts[0][0], pts[0][1]); (doc as any).setLineCap?.('butt'); }
+    });
+    let lx = M + 52; const ly = y + 9;
+    R.rings.forEach((rg, i) => {
+      const col: RGB = i === 0 ? LIME : i === 1 ? [125, 211, 252] : [249, 168, 212];
+      const yy = ly + i * 10.5;
+      fill(doc, col); doc.circle(lx + 1.5, yy - 1.2, 1.5, 'F');
+      text(doc, [205, 210, 225]); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.text(rg.label, lx + 5, yy);
+      text(doc, [255, 255, 255]); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+      doc.text(`${pct(rg.pct)}`, lx + 52, yy, { align: 'right' });
+      text(doc, [174, 180, 202]); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+      doc.text(i === 1 ? `día ${rg.value} de ${rg.goal}` : `${money(rg.value)} de ${money(rg.goal)}`, lx + 5, yy + 4);
+    });
+    // reparto del sueldo (plan de Kai)
+    const sx = M + 116, sw = W - M - 6 - sx;
+    text(doc, [174, 180, 202]); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.text(R.split ? 'Así se reparte tu sueldo (plan)' : 'Tu sueldo este mes', sx, y + 9);
+    if (R.split && R.plan) {
+      const parts: [string, number, RGB][] = [['Deudas', R.split.deudas, [253, 164, 175]], ['Necesidades', R.split.necesidades, [125, 211, 252]], ['Gustos', R.split.gustos, [196, 163, 217]], ['Ahorro', R.split.ahorro, LIME]];
+      let bx = sx;
+      parts.forEach(([, v, c]) => { const w = (v / Math.max(1, R.plan!.income)) * sw; if (w > 0) { fill(doc, c); doc.rect(bx, y + 12, w, 4, 'F'); bx += w; } });
+      parts.forEach(([l, v, c], i) => {
+        const yy = y + 22 + i * 5.4; fill(doc, c); doc.circle(sx + 1.2, yy - 1, 1.2, 'F');
+        text(doc, [205, 210, 225]); doc.setFontSize(7.5); doc.text(`${l} ${pct((v / Math.max(1, R.plan!.income)) * 100)}`, sx + 4, yy);
+        text(doc, [255, 255, 255]); doc.setFont('helvetica', 'bold'); doc.text(money(v), sx + sw, yy, { align: 'right' }); doc.setFont('helvetica', 'normal');
+      });
+    } else {
+      text(doc, [255, 255, 255]); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(money(R.base), sx, y + 18);
+      text(doc, [174, 180, 202]); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.text(doc.splitTextToSize('Arma tu plan con Kai (Inicio) para ver aquí cómo se reparte tu sueldo.', sw), sx, y + 24);
+    }
+    y += 52;
+    // anillos por presupuesto
+    if (R.budgets.length) {
+      y = ensureSpace(doc, y, 34);
+      text(doc, INK); doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.text('Presupuestos por categoría', M, y); y += 4;
+      const per = 6, cw = (W - 2 * M) / per;
+      R.budgets.forEach((b, i) => {
+        if (i > 0 && i % per === 0) { y += 30; y = ensureSpace(doc, y, 30); }
+        const col = i % per, x = M + col * cw, ccx = x + cw / 2, ccy = y + 10;
+        const c: RGB = b.pct >= 100 ? RED : b.pct >= 80 ? AMBER : LIME_DARK;
+        arc(doc, ccx, ccy, 7.5, b.pct / 100, c, 2.4);
+        text(doc, b.pct >= 80 ? c : INK); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text(`${Math.round(b.pct)}%`, ccx, ccy + 1.2, { align: 'center' });
+        text(doc, INK); doc.setFontSize(7.8); doc.text(b.cat.length > 13 ? b.cat.slice(0, 12) + '.' : b.cat, ccx, y + 22, { align: 'center' });
+        text(doc, b.left < 0 ? RED : MUTED); doc.setFont('helvetica', 'normal'); doc.setFontSize(6.8); doc.text(b.left < 0 ? `+${money(-b.left)}` : `quedan ${money(b.left)}`, ccx, y + 25.5, { align: 'center' });
+      });
+      y += 32;
+    }
+    // consejo
+    const over = R.budgets.filter(b => b.pct >= 100);
+    const tip = over.length ? `Te pasaste en ${over.map(o => o.cat).join(', ')}. El próximo mes revisa esos gastos primero.`
+      : R.rings[0].pct > R.rings[1].pct + 10 ? 'Vas gastando más rápido de lo que avanza el mes. Frena un poco los gustos.'
+      : 'Vas dentro de tu plan. ¡Sigue así!';
+    fill(doc, [238, 252, 198]); doc.roundedRect(M, y - 2, W - 2 * M, 9, 2, 2, 'F');
+    text(doc, LIME_DARK); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text(`Consejo de Kai: ${tip}`, M + 3, y + 3.6);
+    y += 14;
+  }
 
   // ── ¿En qué se fue la plata? (segmentos) ──
   const expenses = txs.filter(x => x.type === 'expense');
@@ -437,6 +553,23 @@ const exportXlsx = (period: string, txs: Transaction[], statuses: BillStatus[], 
       totals: ['Total', null, null, 'Balance', Math.round(t.income - t.expense)],
     },
   ];
+  // Anillos y presupuestos con los mismos colores de la app (formato condicional real)
+  const R = ringsFor(period, txs, statuses);
+  if (R.base > 0) sheets.push({
+    name: 'Tu mes en anillos', title: `Tu mes en anillos · ${label}`,
+    note: R.plan ? `Plan de Kai: ${R.plan.mode === 'deuda' ? 'liberar deuda primero' : `ahorrar ${R.plan.savingsPct}% del sueldo`}. Verde = vas bien · ámbar = cerca · rojo = te pasaste.` : 'Verde = vas bien · ámbar = cerca · rojo = te pasaste.',
+    columns: [{ header: 'Anillo', width: 24 }, { header: 'Lleva', type: 'money', width: 16 }, { header: 'Meta', type: 'money', width: 16 }, { header: '% ', type: 'percent', width: 10 }, { header: 'Avance', type: 'bar', width: 26 }],
+    rows: R.rings.map((r, i) => i === 1 ? [r.label, null, null, r.pct / 100, Math.min(1, r.pct / 100)] : [r.label, Math.round(r.value), Math.round(r.goal), r.pct / 100, Math.min(1, r.pct / 100)]),
+    cond: [{ col: 4, kind: 'bar' }],
+  });
+  if (R.budgets.length) sheets.push({
+    name: 'Presupuestos', title: `Presupuestos por categoría · ${label}`,
+    note: 'Los colores y las barras se recalculan solos si cambias un valor.',
+    columns: [{ header: 'Categoría', width: 20 }, { header: 'Presupuesto', type: 'money', width: 16 }, { header: 'Gastado', type: 'money', width: 16 }, { header: 'Queda', type: 'moneySigned', width: 16 }, { header: '% usado', type: 'percent', width: 11 }, { header: 'Avance', type: 'bar', width: 26 }],
+    rows: R.budgets.map(b => [b.cat, Math.round(b.limit), Math.round(b.spent), { f: 'B{r}-C{r}', v: Math.round(b.left) }, { f: 'IF(B{r}>0,C{r}/B{r},0)', v: b.pct / 100 }, { f: 'MIN(1,E{r})', v: Math.min(1, b.pct / 100) }]),
+    totals: (() => { const L = R.budgets.reduce((a, b) => a + b.limit, 0), S = R.budgets.reduce((a, b) => a + b.spent, 0); return ['Total', Math.round(L), Math.round(S), Math.round(L - S), L ? S / L : 0, null]; })(),
+    cond: [{ col: 4, kind: 'level' }, { col: 5, kind: 'bar' }],
+  });
   if (statuses.length) sheets.push({
     name: 'Pagos', title: `Pagos fijos, tarjetas y deudas · ${label}`,
     columns: [{ header: 'Pago', width: 26 }, { header: 'Tipo', width: 12 }, { header: 'Día de pago', type: 'number', width: 11 }, { header: 'Responsable', width: 14 }, { header: 'Valor', type: 'money', width: 16 }, { header: 'Estado', width: 12 }],

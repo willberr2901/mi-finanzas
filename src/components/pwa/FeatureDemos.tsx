@@ -4,7 +4,9 @@
  * así no pesan nada y se ven nítidas en cualquier celular.
  * Para una novedad nueva: agrega aquí su demo y úsala en services/releaseStories.ts.
  */
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Kai, { type KaiMood } from '../assistant/Kai';
 import { Heart, ShieldCheck, Smartphone, FileLock2, Coffee } from 'lucide-react';
 
 const loop = { repeat: Infinity, repeatDelay: 0.8 };
@@ -103,5 +105,23 @@ export function DemoSupport() {
   );
 }
 
-export const DEMOS = { recap: DemoRecap, rings: DemoRings, haptics: DemoHaptics, backup: DemoBackup, support: DemoSupport } as const;
+
+/** 🤖 Kai: cambia de cara y dice lo que hace en cada paso. */
+export function DemoKai() {
+  const steps: [KaiMood, string][] = [['feliz', '¡Hola! Soy Kai 👋'], ['pensando', '¿Cuánto te entra y cuándo te pagan?'], ['normal', 'Ahorrar 10% = $280.000 al mes'], ['calma', 'No te preocupes 💚 primero liberamos deuda'], ['celebra', '¡Plan listo!']];
+  const [i, setI] = useState(0);
+  useEffect(() => { const t = setInterval(() => setI(x => (x + 1) % steps.length), 1700); return () => clearInterval(t); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div className="flex flex-col items-center">
+      <Kai mood={steps[i][0]} size={150} />
+      <div className="h-12 -mt-2 flex items-start">
+        <AnimatePresence mode="wait">
+          <motion.p key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="px-4 py-2 rounded-[4px_16px_16px_16px] bg-[#1B2350] ring-1 ring-white/10 text-white text-[13px] font-semibold">{steps[i][1]}</motion.p>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+export const DEMOS = { kai: DemoKai, recap: DemoRecap, rings: DemoRings, haptics: DemoHaptics, backup: DemoBackup, support: DemoSupport } as const;
 export type DemoId = keyof typeof DEMOS;

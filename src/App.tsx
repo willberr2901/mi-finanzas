@@ -56,6 +56,8 @@ const HalloweenIntro = React.lazy(() => import('./components/season/HalloweenInt
 const LoanReminder = React.lazy(() => import('./components/loans/LoanReminder'));
 const FollowUs = React.lazy(() => import('./components/social/FollowUs'));
 const SupportSheet = React.lazy(() => import('./components/support/SupportSheet'));
+const BudgetAssistant = React.lazy(() => import('./components/assistant/BudgetAssistant'));
+const BudgetCalc = React.lazy(() => import('./components/assistant/BudgetCalc'));
 const loaders = {
   home: () => import('./pages/HomePage'),
   market: () => import('./pages/MarketPage'),
@@ -222,6 +224,8 @@ function AppContent() {
           {seasonFor() === 'halloween' && <HalloweenIntro ready={!showWelcome && !(isSetup && isLocked)} />}
           <SupportSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
           <LoanReminder ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
+          <BudgetAssistant />
+          <BudgetCalc />
         </Suspense>
         <TestBanner />
         <UpdateManager />
