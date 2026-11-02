@@ -50,6 +50,7 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | 🔎 Buscador de la lista del mercado | `src/pages/MarketPage.tsx` (search / pendingShown) |
 | 🤫 Actualizaciones silenciosas (arreglos pequeños sin ventana) | `SILENT_UPDATE` en `src/version.ts` · `src/components/pwa/UpdateManager.tsx` · `WhatsNew.tsx` · `sw.ts` |
 | 🧪 App de pruebas (mi-finanzas-pruebas.onrender.com, rama `pruebas`) | `src/utils/env.ts` · franja `src/components/ui/TestBanner.tsx` |
+| ☕ Apóyanos (aportes voluntarios por Bre-B, llave y QR) | `src/components/support/SupportSheet.tsx` · reglas en `src/services/supportService.ts` |
 | 📣 Síguenos (Instagram → canal de WhatsApp) | `src/components/social/FollowUs.tsx` |
 | Pantalla **Ajustes** | `src/pages/SettingsPage.tsx` |
 | Escáner de facturas | `src/pages/ReceiptScannerPage.tsx` + `src/services/ocrService.ts` |

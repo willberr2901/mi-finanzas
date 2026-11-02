@@ -53,6 +53,7 @@ const FeedbackSheet = React.lazy(() => import('./components/feedback/FeedbackShe
 const HalloweenIntro = React.lazy(() => import('./components/season/HalloweenIntro'));
 const LoanReminder = React.lazy(() => import('./components/loans/LoanReminder'));
 const FollowUs = React.lazy(() => import('./components/social/FollowUs'));
+const SupportSheet = React.lazy(() => import('./components/support/SupportSheet'));
 const loaders = {
   home: () => import('./pages/HomePage'),
   market: () => import('./pages/MarketPage'),
@@ -216,6 +217,7 @@ function AppContent() {
           <FollowUs ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
           {!IS_TEST && <FeedbackSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />}
           {seasonFor() === 'halloween' && <HalloweenIntro ready={!showWelcome && !(isSetup && isLocked)} />}
+          <SupportSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
           <LoanReminder ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
         </Suspense>
         <TestBanner />

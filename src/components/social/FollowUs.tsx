@@ -21,6 +21,7 @@ import { Instagram, MessageCircle, X, ArrowRight } from 'lucide-react';
 import { INSTAGRAM_URL, INSTAGRAM_USER } from './Instagram';
 import { WHATSAPP_CHANNEL_URL } from './WhatsAppChannel';
 import { notify } from '../../services/notificationService';
+import { claimPromptSlot } from '../../services/supportService';
 
 const KEY = 'mf_follow';
 const OPENS = 'mf_opens';
@@ -66,7 +67,7 @@ export default function FollowUs({ ready }: { ready: boolean }) {
     let busy = false;
     const t1 = setTimeout(() => { if (document.querySelector('[role="dialog"]')) busy = true; }, 2500);
     const t2 = setTimeout(() => {
-      if (busy || document.querySelector('[role="dialog"]')) return;
+      if (busy || document.querySelector('[role="dialog"]') || !claimPromptSlot()) return;
       setQueue(steps); setI(0); setOpen(true);
       write({ ...s, asks: s.asks + 1, next: Date.now() + 14 * 86400000 });
     }, 6000);
