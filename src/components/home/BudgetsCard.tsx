@@ -88,25 +88,30 @@ export default function BudgetsCard({ expenses, budgets, daysLeft }: Props) {
         </div>
       </div>
 
-      <div className="mt-3 space-y-3">
+      {/* Anillos por categoría (se llenan al abrir) */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
         {rows.map((r, i) => {
           const st = STYLE[r.level];
+          const c = 2 * Math.PI * 26;
           const perDay = daysLeft > 0 && r.left > 0 ? r.left / (daysLeft + 1) : 0;
           return (
-            <div key={r.cat}>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-sm text-white font-semibold truncate">{r.cat}</span>
-                <span className="text-[11px] text-slate-400 shrink-0"><span className="text-white font-bold">{formatCOP(r.spent)}</span> / {formatCOP(r.limit)}</span>
+            <motion.div key={r.cat} initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 + i * 0.06 }}
+              className="rounded-2xl bg-white/[0.04] ring-1 ring-white/5 p-2.5 flex flex-col items-center text-center">
+              <div className="relative w-[68px] h-[68px]">
+                <svg viewBox="0 0 60 60" className="w-full h-full -rotate-90" aria-hidden="true">
+                  <circle cx="30" cy="30" r="26" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="6" />
+                  <motion.circle cx="30" cy="30" r="26" fill="none" strokeWidth="6" strokeLinecap="round" strokeDasharray={c}
+                    className={r.level === 'over' ? 'stroke-rose-400' : r.level === 'warn' ? 'stroke-amber-400' : 'stroke-brand-lime'}
+                    initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: c * (1 - Math.min(100, r.pct) / 100) }} transition={{ duration: 1.1, delay: 0.2 + i * 0.08, ease: 'easeOut' }} />
+                </svg>
+                <span className={`absolute inset-0 flex items-center justify-center text-[14px] font-extrabold ${r.level === 'ok' ? 'text-white' : st.chip}`}>{Math.round(r.pct)}%</span>
               </div>
-              <div className="h-2 rounded-full bg-white/[0.07] overflow-hidden mt-1.5">
-                <motion.div className={`h-full rounded-full ${st.bar}`} initial={{ width: 0 }} animate={{ width: `${Math.min(100, r.pct)}%` }} transition={{ duration: 0.9, delay: 0.15 + i * 0.07 }} />
-              </div>
-              <p className={`text-[11px] mt-1 ${st.text}`}>
-                {r.level === 'over' ? `Te pasaste ${formatCOP(-r.left)}`
-                  : r.level === 'warn' ? `Llevas ${Math.round(r.pct)}% · te quedan ${formatCOP(r.left)}`
-                  : `Te quedan ${formatCOP(r.left)}${perDay ? ` · unos ${formatCOP(perDay)} por día` : ''}`}
+              <p className="text-[12px] text-white font-bold mt-1.5 w-full truncate">{r.cat}</p>
+              <p className={`text-[10.5px] leading-tight mt-0.5 ${st.text}`}>
+                {r.level === 'over' ? `+${formatCOP(-r.left)}` : `Quedan ${formatCOP(r.left)}`}
               </p>
-            </div>
+              {perDay > 0 && r.level === 'ok' && <p className="text-[9.5px] text-slate-500 leading-tight">{formatCOP(perDay)}/día</p>}
+            </motion.div>
           );
         })}
       </div>

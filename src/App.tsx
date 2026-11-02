@@ -12,6 +12,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { motion, AnimatePresence } from 'framer-motion';
 import UpdateManager from './components/pwa/UpdateManager';
 import WhatsNew, { shouldShowWhatsNew, markWhatsNewSeen } from './components/pwa/WhatsNew';
+import WhatsNewStory from './components/pwa/WhatsNewStory';
+import { RELEASE_STORY } from './services/releaseStories';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
 import ToastProvider from './components/ToastProvider';
@@ -114,6 +116,7 @@ function AppContent() {
   const [showTerms, setShowTerms] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
+  useEffect(() => { const on = () => setShowWhatsNew(true); window.addEventListener('mf:open-whatsnew', on); return () => window.removeEventListener('mf:open-whatsnew', on); }, []);
   const [menuOpen, setMenuOpen] = useState(false);
   // Copia mínima de préstamos para los avisos con la app cerrada (src/sw.ts → checkLoans)
   useEffect(() => { syncLoansToSW(); }, []);
@@ -225,7 +228,9 @@ function AppContent() {
         <ToastProvider />
         <AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence>
         {showTerms && <TermsModal onAccept={afterTerms} />}
-        <AnimatePresence>{showWhatsNew && <WhatsNew onClose={() => setShowWhatsNew(false)} />}</AnimatePresence>
+        <AnimatePresence>{showWhatsNew && (RELEASE_STORY.length
+          ? <WhatsNewStory onClose={() => { markWhatsNewSeen(); setShowWhatsNew(false); }} />
+          : <WhatsNew onClose={() => setShowWhatsNew(false)} />)}</AnimatePresence>
       </div>
      </TourProvider>
     </AppMenuContext.Provider>

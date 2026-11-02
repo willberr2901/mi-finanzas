@@ -142,6 +142,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const s = params.get('s');
     if (s === 'presupuestos') openSheet('budgets');
+    if (s === 'respaldo') setSheet('export');
     if (s) { params.delete('s'); setParams(params, { replace: true }); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

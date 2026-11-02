@@ -31,7 +31,12 @@ export const exportBackup = async (password: string) => {
   a.download = `mi-finanzas-respaldo-${new Date().toISOString().slice(0, 10)}.mfbackup`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  try { localStorage.setItem('mf_last_backup', String(Date.now())); } catch { /* sin almacenamiento */ }
 };
+/** Días desde el último respaldo (null = nunca). */
+export const daysSinceBackup = () => { try { const t = Number(localStorage.getItem('mf_last_backup')); return t ? Math.floor((Date.now() - t) / 86400000) : null; } catch { return null; } };
+export const snoozeBackupReminder = () => { try { localStorage.setItem('mf_backup_snooze', String(Date.now())); } catch { /* */ } };
+export const backupSnoozed = () => { try { return Date.now() - Number(localStorage.getItem('mf_backup_snooze') || 0) < 14 * 86400000; } catch { return false; } };
 
 export const importBackup = async (file: File, password: string) => {
   // 🛡️ Un respaldo real pesa pocos MB: si es enorme, no es nuestro (evita que un archivo malicioso bloquee la app).

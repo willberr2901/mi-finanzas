@@ -112,6 +112,11 @@ export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onCl
                 <span className="flex-1 min-w-0"><span className="block text-sm font-bold text-white">Danos tu opinión</span><span className="block text-[11px] text-slate-400">¿Qué te gusta y qué mejorarías?</span></span>
                 <ChevronRight size={16} className="text-slate-400" />
               </button>
+              <button onClick={() => { onClose(); setTimeout(() => window.dispatchEvent(new Event('mf:open-whatsnew')), 180); }} className="w-full flex items-center gap-3 p-3 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 text-left active:scale-[0.98]">
+                <span className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-lg" aria-hidden="true">🎬</span>
+                <span className="flex-1 min-w-0"><span className="block text-sm font-bold text-white">Novedades</span><span className="block text-[11px] text-slate-400">Mira lo nuevo de la versión {APP_VERSION}</span></span>
+                <ChevronRight size={16} className="text-slate-400" />
+              </button>
               <button onClick={() => { onClose(); setTimeout(openSupport, 180); }} className="w-full flex items-center gap-3 p-3 rounded-2xl bg-gradient-to-r from-orange-300/15 to-transparent ring-1 ring-orange-300/30 text-left active:scale-[0.98]">
                 <span className="w-9 h-9 rounded-xl bg-orange-300 flex items-center justify-center text-lg" aria-hidden="true">☕</span>
                 <span className="flex-1 min-w-0"><span className="flex items-center gap-1.5 text-sm font-bold text-white">Apóyanos{isAlly() && <span className="px-1.5 py-px rounded-full bg-brand-lime text-brand-ink text-[9px] font-extrabold">💚 ALIADO</span>}</span><span className="block text-[11px] text-slate-400">Un aporte voluntario por Bre-B, desde $100</span></span>

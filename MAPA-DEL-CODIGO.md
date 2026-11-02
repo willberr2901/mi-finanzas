@@ -51,6 +51,9 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | 🤫 Actualizaciones silenciosas (arreglos pequeños sin ventana) | `SILENT_UPDATE` en `src/version.ts` · `src/components/pwa/UpdateManager.tsx` · `WhatsNew.tsx` · `sw.ts` |
 | 🧪 App de pruebas (mi-finanzas-pruebas.onrender.com, rama `pruebas`) | `src/utils/env.ts` · franja `src/components/ui/TestBanner.tsx` |
 | ☕ Apóyanos (aportes voluntarios por Bre-B, llave y QR) | `src/components/support/SupportSheet.tsx` · reglas en `src/services/supportService.ts` |
+| 📊 Resumen del mes (historia) | `src/components/home/MonthRecap.tsx` · cálculos `src/services/monthRecap.ts` |
+| 🎬 Novedades en video interactivo | `src/components/pwa/WhatsNewStory.tsx` · animaciones `FeatureDemos.tsx` · contenido `src/services/releaseStories.ts` |
+| 🎯 Anillos de presupuestos · 💾 recordatorio de respaldo · 📳 vibración | `BudgetsCard.tsx` · `BackupReminder.tsx` · `src/utils/haptics.ts` |
 | 📣 Síguenos (Instagram → canal de WhatsApp) | `src/components/social/FollowUs.tsx` |
 | Pantalla **Ajustes** | `src/pages/SettingsPage.tsx` |
 | Escáner de facturas | `src/pages/ReceiptScannerPage.tsx` + `src/services/ocrService.ts` |

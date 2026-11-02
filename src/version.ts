@@ -17,6 +17,8 @@ export const APP_VERSION = '1.20.0';
 export const SILENT_UPDATE = false;
 
 export const RELEASE_NOTES: string[] = [
-  '☕ Nuevo: Apóyanos. Si la app te ayuda, puedes hacer un aporte voluntario por Bre-B desde $100 (menú ☰)',
-  '💚 Mi Finanzas sigue siendo gratis, sin anuncios y sin pedir tus datos',
+  '📊 Tu resumen del mes en una historia: cuánto ahorraste, qué subió y qué bajó',
+  '🎯 Presupuestos con anillos que se llenan · 📳 vibración suave al guardar',
+  '💾 Recordatorio para guardar tu copia cifrada',
+  '☕ Apóyanos: aporte voluntario por Bre-B desde $100 (la app sigue gratis)',
 ]

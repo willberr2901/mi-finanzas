@@ -26,6 +26,8 @@ import CountUp from '../components/ui/CountUp';
 import { usePageTour } from '../components/tour/Tour';
 import { usePrefs, cycleFor, inCycle, cycleProgress } from '../utils/prefs';
 import BudgetsCard from '../components/home/BudgetsCard';
+import MonthRecapCard from '../components/home/MonthRecap';
+import BackupReminder from '../components/home/BackupReminder';
 import { amountsHidden, setAmountsHidden } from '../utils/privacyMask';
 
 const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -216,6 +218,10 @@ export default function HomePage() {
             </div>
           ))}
         </motion.div>
+
+        {/* Resumen del mes que terminó (primeros 10 días) y recordatorio de respaldo */}
+        <MonthRecapCard tx={tx} />
+        <BackupReminder txCount={tx.length} />
 
         {/* Presupuestos por categoría */}
         <BudgetsCard expenses={s.cur.filter(t => t.type === 'expense')} budgets={prefs.budgets} daysLeft={daysLeft} />

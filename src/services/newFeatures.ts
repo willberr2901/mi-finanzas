@@ -15,6 +15,8 @@ import { useEffect, useState } from 'react';
 export interface NewFeature { id: string; module: string; since: string; hint: string }
 
 export const NEW_FEATURES: NewFeature[] = [
+  { id: 'home-resumen', module: 'inicio', since: '2026-11-02', hint: 'Tu mes en una historia: cuánto ahorraste, qué subió y qué bajó' },
+  { id: 'home-respaldo', module: 'inicio', since: '2026-11-02', hint: 'Te recordamos guardar una copia cifrada de tus datos' },
   { id: 'fin-alcancia', module: 'finanzas', since: '2026-11-01', hint: 'Cuenta tus monedas por montoncitos de 10 o con una foto' },
   { id: 'fin-tu-mes', module: 'finanzas', since: '2026-10-30', hint: 'Ingresos − Gastos = lo que te queda' },
 ];

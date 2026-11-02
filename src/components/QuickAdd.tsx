@@ -21,6 +21,7 @@ import { guessCategory, segmentOf, SEGMENT_INFO } from '../utils/categories';
 import { formatCOP, todayISO } from '../utils/format';
 import { notify } from '../services/notificationService';
 import { findMatchingBill, markPaidFromTransaction } from '../services/billsService';
+import { haptic } from '../utils/haptics';
 
 /** Botón flotante "+": registra rápido un gasto o ingreso, o salta a Mercado / Pagos, desde cualquier pantalla. */
 export default function QuickAdd({ hidden }: { hidden?: boolean }) {
@@ -46,6 +47,7 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
     if (!mode || !amount || !desc.trim()) return notify({ title: 'Escribe el valor y qué fue', type: 'info' });
     const tx = { id: crypto.randomUUID(), date: todayISO(), type: mode, amount, category, description: desc.trim(), createdAt: Date.now() };
     await db.transactions.add(tx);
+    haptic('success');
     if (mode === 'expense') {
       const bill = await findMatchingBill(tx.description, category);
       if (bill && await markPaidFromTransaction(bill, amount, new Date())) notify({ title: `${bill.name} quedó pagado`, message: 'Lo marcamos en Pagos.', type: 'info' });

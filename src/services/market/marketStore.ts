@@ -13,6 +13,7 @@
 import { useEffect, useState } from 'react';
 import { secureStorage } from '../../utils/security';
 import { ownerLabel } from '../../utils/prefs';
+import { haptic } from '../../utils/haptics';
 
 // ═══ SECCIÓN: Tipos ═══
 export type Unit = 'und' | 'lb' | 'kg' | 'l' | 'paq';
@@ -318,6 +319,7 @@ export const updateItem = (id: string, patch: Partial<Omit<ListItem, 'id' | 'rev
 export const checkItem = (id: string, paid?: number, qty?: number, unit?: Unit) => {
   const it = state.items[id];
   if (!it) return;
+  haptic();
   updateItem(id, { checked: true, paid: paid ?? it.paid, qty: qty ?? it.qty, unit: unit ?? it.unit, checkedBy: myName() });
 };
 export const uncheckItem = (id: string) => updateItem(id, { checked: false, checkedBy: undefined });

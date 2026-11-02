@@ -21,6 +21,7 @@ import { formatCOP } from '../../utils/format';
 import { db, type SavingsGoal } from '../../utils/database';
 import { notify } from '../../services/notificationService';
 import MoneyInput from '../ui/MoneyInput';
+import { haptic } from '../../utils/haptics';
 
 const DRAFT = 'mf_alcancia';
 const COLOR: Record<CoinValue, { ring: string; core: string; ui: string }> = {
@@ -67,8 +68,10 @@ export default function PiggyCounter({ open, onClose, goals, onSaved }: { open: 
   useEffect(() => { if (open && !goalId && goals[0]) setGoalId(goals[0].id); }, [open, goals, goalId]);
 
   const t = totals(counts, bills);
-  const setC = (v: CoinValue, patch: Partial<{ stacks: number; loose: number }>) =>
+  const setC = (v: CoinValue, patch: Partial<{ stacks: number; loose: number }>) => {
+    haptic();
     setCounts(c => ({ ...c, [v]: { stacks: Math.max(0, patch.stacks ?? c[v].stacks), loose: Math.max(0, Math.min(999, patch.loose ?? c[v].loose)) } }));
+  };
 
   // ═══ SECCIÓN: Foto → monedas ═══
   const onFile = async (f?: File) => {
