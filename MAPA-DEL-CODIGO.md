@@ -59,6 +59,8 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | 🤖 Kai flotando y su color | `src/components/assistant/FloatingKai.tsx` · `src/services/kaiPrefs.ts` |
 | ✨ Menú de módulos animado (pantalla completa, datos vivos) | `src/components/SidebarMenu.tsx` |
 | ⭐ Calificación con estrellas en momentos felices | `src/services/ratingService.ts` · `src/components/feedback/RatingSheet.tsx` |
+| 🪙 Alcancía nueva (frasco, contar, ¡a guardar!) | `src/components/goals/PiggyCounter.tsx` (lógica en `src/services/coinCounter.ts`) |
+| 📊 Contadores anónimos de uso (productos y gastos, solo el número) | `countUsage` en `src/services/statsService.ts` · función `stats_count` en Supabase |
 | 🧮 Calculadora de presupuesto (promedio −10%, 50·30·20, a mano) | `src/components/assistant/BudgetCalc.tsx` |
 | 🎯 Anillos del mes en PDF y Excel | `ringsFor` en `src/services/exportService.ts` · colores y barras en `src/utils/xlsx.ts` |
 | 🎬 Novedades en video interactivo | `src/components/pwa/WhatsNewStory.tsx` · animaciones `FeatureDemos.tsx` · contenido `src/services/releaseStories.ts` |

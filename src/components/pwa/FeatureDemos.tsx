@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Kai, { type KaiMood } from '../assistant/Kai';
+import { Jar } from '../goals/PiggyCounter';
 import { Heart, ShieldCheck, Smartphone, FileLock2, Coffee } from 'lucide-react';
 
 const loop = { repeat: Infinity, repeatDelay: 0.8 };
@@ -162,5 +163,30 @@ export function DemoDebts() {
   );
 }
 
-export const DEMOS = { kai: DemoKai, notif: DemoNotif, debts: DemoDebts, recap: DemoRecap, rings: DemoRings, haptics: DemoHaptics, backup: DemoBackup, support: DemoSupport } as const;
+/** 🪙 Alcancía: el frasco se llena y el total sube. */
+export function DemoPiggy() {
+  return (
+    <div className="h-[230px] flex flex-col items-center justify-center scale-[0.78] -my-6">
+      <Jar level={0.8} />
+      <motion.p className="text-[30px] font-extrabold text-brand-lime -mt-1" animate={{ opacity: [0, 1] }} transition={{ delay: 1 }}>$50.250</motion.p>
+    </div>
+  );
+}
+
+/** ⭐ Estrellas que se llenan una por una. */
+export function DemoStars() {
+  return (
+    <div className="h-[200px] flex flex-col items-center justify-center gap-3">
+      <div className="flex gap-1.5">
+        {[0, 1, 2, 3, 4].map(i => (
+          <motion.span key={i} className="text-[40px]" animate={{ scale: [0.6, 1.3, 1], opacity: [0.25, 1, 1] }} transition={{ delay: 0.3 + i * 0.25, duration: 0.5, repeat: Infinity, repeatDelay: 2.4 }}>⭐</motion.span>
+        ))}
+      </div>
+      <p className="text-[14px] font-bold text-yellow-300">¡Me encanta! 😍</p>
+      <p className="text-[12px] text-slate-400">☕ y si quieres, apóyanos por Bre-B</p>
+    </div>
+  );
+}
+
+export const DEMOS = { kai: DemoKai, piggy: DemoPiggy, stars: DemoStars, notif: DemoNotif, debts: DemoDebts, recap: DemoRecap, rings: DemoRings, haptics: DemoHaptics, backup: DemoBackup, support: DemoSupport } as const;
 export type DemoId = keyof typeof DEMOS;

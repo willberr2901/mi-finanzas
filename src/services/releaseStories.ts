@@ -19,5 +19,6 @@ export const RELEASE_STORY: StorySlide[] = [
   { demo: 'notif', tag: '🔔 AVISOS QUE REGISTRAN', title: 'Anota desde la notificación', text: 'El día de pago registras tu sueldo con un toque, “Ya lo pagué” marca tus cuotas y cada noche te pregunta si gastaste algo. Tú eliges qué y a qué hora.', cta: { label: 'Elegir mis avisos', to: '/ajustes' } },
   { demo: 'debts', tag: '🔄 DEUDAS DEL HOGAR', title: 'Comparte tus cuotas', text: 'Sincroniza tus deudas con tu hogar: la otra persona aprueba y, cuando alguien paga, el otro lo ve al instante. Todo cifrado.', cta: { label: 'Ir a Pagos', to: '/pagos' } },
   { demo: 'rings', tag: '✨ MÓDULOS', title: 'Un menú con vida', text: 'Toca ☰ y cada módulo te cuenta cómo va: cuánto te queda, qué falta por pagar y qué falta por comprar.', cta: { label: 'Abrir módulos', to: '/' } },
-  { demo: 'recap', tag: '📊 TU MES', title: 'Tu mes, en una historia', text: 'Los primeros días de cada mes verás cuánto ahorraste, qué subió, qué bajó y un consejo.', cta: { label: 'Ver en Inicio', to: '/' } },
+  { demo: 'piggy', tag: '🪙 ALCANCÍA NUEVA', title: 'Cuenta tus monedas', text: 'Un frasco que se llena, monedas con su valor y, al guardar, a qué equivale lo que juntaste (mercados, pasajes).', cta: { label: 'Contar mi alcancía', to: '/finanzas?tab=metas&alcancia=1' } },
+  { demo: 'stars', tag: '⭐ TU OPINIÓN', title: 'Califícanos y apóyanos', text: 'Danos unas estrellas cuando quieras desde el menú. Y si la app te ayuda, puedes apoyarla por Bre-B desde $100. Sigue siendo gratis.', cta: { label: 'Calificar', to: '#calificar' } },
 ];

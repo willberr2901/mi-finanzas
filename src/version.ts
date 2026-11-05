@@ -23,5 +23,6 @@ export const RELEASE_NOTES: string[] = [
   '🔄 Deudas sincronizadas con tu hogar (la otra persona aprueba)',
   '✨ Menú de módulos animado, con datos al día en cada tarjeta',
   '⭐ Califica la app con unas estrellas (solo en buenos momentos, sin insistir)',
+  '🪙 Alcancía nueva: frasco que se llena, monedas con su valor y a qué equivale lo que juntaste',
   '📊 Resumen del mes en historia · 💾 recordatorio de copia · ☕ Apóyanos',
 ]

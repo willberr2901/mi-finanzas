@@ -6,6 +6,10 @@
  *   · first_open → la primera vez que se abre la app en ese celular
  *   · install    → cuando la agregan a la pantalla de inicio
  *   · active     → máximo una vez al día, si la usan
+ * Y dos contadores de uso (solo el NÚMERO, máximo una vez al día):
+ *   · items  → cuántos productos se agregaron al mercado
+ *   · gastos → cuántos gastos se registraron (sin montos ni categorías)
+ *   Se suman en el celular y se envían juntos al día siguiente (función stats_count).
  * Qué se envía: SOLO el tipo de evento, la plataforma (android/ios/computador),
  *   si está instalada o en el navegador, y el código del enlace con el que llegó
  *   (si llegó por un enlace compartido). NADA de nombres, correos, teléfonos,
@@ -71,6 +75,31 @@ const ping = async (kind: 'first_open' | 'install' | 'active') => {
   } catch { return false; }
 };
 
+// ═══ SECCIÓN: Contadores de uso (solo cuántos, nunca qué ni cuánto dinero) ═══
+const USAGE = 'mf_usage';
+type UsageKind = 'items' | 'gastos';
+const readUsage = (): { day: string; items: number; gastos: number } => { try { return { day: today(), items: 0, gastos: 0, ...JSON.parse(get(USAGE) || '{}') }; } catch { return { day: today(), items: 0, gastos: 0 }; } };
+/** +1 al contador del día (en el celular). Se envía al servidor al día siguiente. */
+export const countUsage = (kind: UsageKind) => {
+  if (!statsEnabled()) return;
+  const u = readUsage(); u[kind] += 1; set(USAGE, JSON.stringify(u));
+};
+const flushUsage = async () => {
+  const u = readUsage();
+  if (u.day === today()) return;                      // el día aún no termina
+  for (const kind of ['items', 'gastos'] as UsageKind[]) {
+    if (!u[kind]) continue;
+    try {
+      await fetch(`${SYNC_URL}/rest/v1/rpc/stats_count`, {
+        method: 'POST', keepalive: true, credentials: 'omit', referrerPolicy: 'no-referrer',
+        headers: { apikey: SYNC_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_kind: kind, p_n: Math.min(500, u[kind]), p_platform: platform(), p_mode: isStandalone() ? 'app' : 'web' }),
+      });
+    } catch { /* sin conexión: se pierde ese día, no pasa nada */ }
+  }
+  set(USAGE, JSON.stringify({ day: today(), items: 0, gastos: 0 }));
+};
+
 /** Se llama al abrir la app (App.tsx). */
 export const startStats = () => {
   // ¿Llegó por un enlace compartido? (?r=código). Se guarda y se limpia de la dirección.
@@ -88,6 +117,7 @@ export const startStats = () => {
     if (!get(K.firstOpen) && await ping('first_open')) set(K.firstOpen, '1');
     if (isStandalone() && !get(K.installed) && await ping('install')) set(K.installed, '1');
     if (get(K.lastActive) !== today() && await ping('active')) set(K.lastActive, today());
+    await flushUsage();
   };
   setTimeout(run, 4000);   // después de cargar, sin estorbar
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') run(); });

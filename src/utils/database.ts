@@ -88,6 +88,9 @@ db.version(2).stores({
   billPayments: 'id, billId, period, [billId+period]'
 });
 
+// 📊 Contador anónimo de gastos registrados (solo +1; ni monto ni categoría). Ver statsService.
+db.transactions.hook('creating', (_pk, obj) => { if (obj.type === 'expense') import('../services/statsService').then(m => m.countUsage('gastos')).catch(() => {}); });
+
 export const migrateData = async () => {
   try {
     const existing = await db.settings.get('global');

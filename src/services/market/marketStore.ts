@@ -10,6 +10,7 @@
  * Si lo cambias: revisa MarketPage.tsx y householdSync.ts.
  * ════════════════════════════════════════════════════════════════════
  */
+import { countUsage } from '../statsService';
 import { useEffect, useState } from 'react';
 import { secureStorage } from '../../utils/security';
 import { ownerLabel } from '../../utils/prefs';
@@ -296,6 +297,7 @@ const itemKey = (id: string) => `i:${id}`;
 const tripKey = (id: string) => `t:${id}`;
 
 export const addItem = (data: { name: string; qty?: number; unit?: Unit; checked?: boolean; paid?: number; extra?: boolean }) => {
+  countUsage('items');
   const now = Date.now();
   const id = crypto.randomUUID();
   const me = myName();
