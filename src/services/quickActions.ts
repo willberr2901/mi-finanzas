@@ -10,6 +10,7 @@ import { getPlan, type BudgetPlan } from './budgetPlan';
 import { haptic } from '../utils/haptics';
 import { notify } from './notificationService';
 import { formatCOP } from '../utils/format';
+import { happyMoment } from './ratingService';
 
 /** ¿Hoy es día de pago según el plan de Kai? (en meses cortos cuenta el último día) */
 export const isPayday = (plan: BudgetPlan | null, ref = new Date()) => {
@@ -35,6 +36,7 @@ export const registerSalary = async (amount: number) => {
   window.dispatchEvent(new Event('mf:data-changed'));
   haptic('success');
   notify({ title: 'Sueldo registrado 💚', message: `${formatCOP(amount)} · tus anillos ya se actualizaron`, type: 'success' });
+  happyMoment('sueldo');
 };
 
 export const openQuickAdd = (mode: 'expense' | 'income') => window.dispatchEvent(new CustomEvent('mf:quick-add', { detail: mode }));

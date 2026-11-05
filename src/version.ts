@@ -21,5 +21,7 @@ export const RELEASE_NOTES: string[] = [
   '🏠 Nuevo Inicio en una pantalla: anillos, 8 íconos y “Para hoy”',
   '🔔 Avisos con botones: registra tu sueldo, marca pagos y anota gastos desde la notificación',
   '🔄 Deudas sincronizadas con tu hogar (la otra persona aprueba)',
+  '✨ Menú de módulos animado, con datos al día en cada tarjeta',
+  '⭐ Califica la app con unas estrellas (solo en buenos momentos, sin insistir)',
   '📊 Resumen del mes en historia · 💾 recordatorio de copia · ☕ Apóyanos',
 ]

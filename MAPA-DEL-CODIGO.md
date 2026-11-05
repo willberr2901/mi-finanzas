@@ -57,6 +57,8 @@ Busca la palabra **SECCIÓN** (Ctrl+F) para saltar entre ellas.
 | 🔔 Avisos con botones y "¿Qué te avisamos?" | `src/sw.ts` (checkPayday, checkBills, checkDaily, checkBudgetsAndWeek) · `src/components/notifications/NotificationBell.tsx` · `NotifSettings.tsx` · `src/services/notifPrefs.ts` |
 | 🏠 Inicio en 4 bloques + esqueleto · Análisis del mes | `src/pages/HomePage.tsx` · `src/pages/AnalysisPage.tsx` · cuentas `src/services/useMonthData.ts` · `HomeSkeleton.tsx` |
 | 🤖 Kai flotando y su color | `src/components/assistant/FloatingKai.tsx` · `src/services/kaiPrefs.ts` |
+| ✨ Menú de módulos animado (pantalla completa, datos vivos) | `src/components/SidebarMenu.tsx` |
+| ⭐ Calificación con estrellas en momentos felices | `src/services/ratingService.ts` · `src/components/feedback/RatingSheet.tsx` |
 | 🧮 Calculadora de presupuesto (promedio −10%, 50·30·20, a mano) | `src/components/assistant/BudgetCalc.tsx` |
 | 🎯 Anillos del mes en PDF y Excel | `ringsFor` en `src/services/exportService.ts` · colores y barras en `src/utils/xlsx.ts` |
 | 🎬 Novedades en video interactivo | `src/components/pwa/WhatsNewStory.tsx` · animaciones `FeatureDemos.tsx` · contenido `src/services/releaseStories.ts` |

@@ -29,6 +29,7 @@ import {
 } from '../../services/budgetPlan';
 import { Shell, KaiSays, Bubble, BudgetRows, monthYear } from './parts';
 import Kai from './Kai';
+import { happyMoment } from '../../services/ratingService';
 
 interface DebtDraft { key: string; name: string; emoji: string; balance: number; cuota: number; billId?: string; kind?: Bill['kind']; paid?: number }
 const CHIPS: { name: string; emoji: string }[] = [
@@ -294,7 +295,7 @@ function Wizard({ onClose }: { onClose: () => void }) {
   // ── ¡Listo! ──
   return (
     <Shell label="¡Plan listo!" step={4} steps={4} onClose={onClose}
-      footer={<motion.button whileTap={{ scale: 0.97 }} onClick={() => { onClose(); navigate('/'); }} className="w-full h-14 rounded-2xl bg-brand-lime text-brand-ink font-extrabold text-[16px]">Ver mis anillos</motion.button>}>
+      footer={<motion.button whileTap={{ scale: 0.97 }} onClick={() => { onClose(); navigate('/'); happyMoment('plan'); }} className="w-full h-14 rounded-2xl bg-brand-lime text-brand-ink font-extrabold text-[16px]">Ver mis anillos</motion.button>}>
       <div className="pt-4"><KaiSays mood="celebra" size={170}><b>¡Listo{name ? `, ${name}` : ''}!</b> Tu plan quedó guardado. Desde hoy tus anillos de Inicio siguen este plan y te aviso si te acercas a un límite.</KaiSays></div>
       <div className="grid grid-cols-2 gap-2.5 mt-4">
         {[

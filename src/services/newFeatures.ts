@@ -16,6 +16,7 @@ export interface NewFeature { id: string; module: string; since: string; hint: s
 
 export const NEW_FEATURES: NewFeature[] = [
   { id: 'home-kai', module: 'inicio', since: '2026-11-02', hint: 'Kai, tu asistente: arma tu presupuesto con sueldo, deudas y ahorro' },
+  { id: 'aj-califica', module: 'ajustes', since: '2026-11-05', hint: 'Califica la app con estrellas' },
   { id: 'aj-deudas-hogar', module: 'ajustes', since: '2026-11-02', hint: 'Sincroniza tus deudas con tu hogar' },
   { id: 'aj-avisos', module: 'ajustes', since: '2026-11-02', hint: 'Elige qué te avisamos y a qué hora' },
   { id: 'aj-kai', module: 'ajustes', since: '2026-11-02', hint: 'Calcula tus presupuestos en un toque' },

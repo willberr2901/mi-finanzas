@@ -60,6 +60,7 @@ const SupportSheet = React.lazy(() => import('./components/support/SupportSheet'
 const BudgetAssistant = React.lazy(() => import('./components/assistant/BudgetAssistant'));
 const BudgetCalc = React.lazy(() => import('./components/assistant/BudgetCalc'));
 const DebtSyncHost = React.lazy(() => import('./components/household/DebtSyncSheet'));
+const RatingHost = React.lazy(() => import('./components/feedback/RatingSheet'));
 const loaders = {
   home: () => import('./pages/HomePage'),
   market: () => import('./pages/MarketPage'),
@@ -231,7 +232,9 @@ function AppContent() {
         <Suspense fallback={null}>
           <InstallAppSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
           <FollowUs ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
-          {!IS_TEST && <FeedbackSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />}
+          {/* La encuesta ya no sale sola al abrir: ahora se piden estrellas en momentos felices (RatingHost). Queda para 'Danos tu opinión'. */}
+          {!IS_TEST && <FeedbackSheet ready={false} />}
+          <RatingHost ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew} />
           {seasonFor() === 'halloween' && <HalloweenIntro ready={!showWelcome && !(isSetup && isLocked)} />}
           <SupportSheet ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
           <LoanReminder ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />

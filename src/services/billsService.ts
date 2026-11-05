@@ -9,6 +9,7 @@
  */
 import { logActivity } from './notificationService';
 import { sharePayment } from './household/debtSync';
+import { happyMoment } from './ratingService';
 import { db, type Bill, type BillPayment } from '../utils/database';
 import { todayISO } from '../utils/format';
 
@@ -70,6 +71,7 @@ export const payBill = async (bill: Bill, amount: number, ref = new Date(), paid
   });
   // 🔄 Deuda compartida con el hogar: el otro celular la ve pagada
   if (bill.shared) sharePayment(bill, periodOf(ref), amount);
+  happyMoment('pago');
   // 🤖 Kai celebra cuando terminas una deuda (y propone pasar esa cuota al ahorro)
   if (bill.kind === 'deuda' && bill.totalInstallments && installment! >= bill.totalInstallments) {
     logActivity({ kind: 'kai', emoji: '🎉', title: `Kai: terminaste de pagar ${bill.name} 🎉`, message: `Liberaste ${cop(bill.amount)}/mes. ¿Los pasamos a tu ahorro?`, link: '/finanzas?tab=metas' });
