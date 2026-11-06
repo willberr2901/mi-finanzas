@@ -9,7 +9,7 @@
  * También se abre desde Pagos con el botón "Sincronizar" (evento 'mf:open-debt-sync').
  * ════════════════════════════════════════════════════════════════════
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -97,8 +97,8 @@ function Card({ mode, onClose }: { mode: Mode; onClose: () => void }) {
               <motion.button whileTap={{ scale: 0.97 }} disabled={busy} onClick={yes} className="mt-4 w-full py-3.5 rounded-2xl font-extrabold bg-gradient-to-r from-pink-300 to-violet-300 text-[#0B1026] disabled:opacity-50">✅ Aprobar y sincronizar</motion.button>
             </>
           )}
-          <button onClick={no} className="mt-2 w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 font-bold">{offer ? 'Ahora no' : 'No por ahora'}</button>
-          <p className="text-[10.5px] text-slate-500 mt-3">{offer ? '🔒 Cifrado de extremo a extremo. Puedes dejar de compartir cuando quieras.' : 'Nadie más ve esto: solo los celulares de tu hogar.'}</p>
+          <button onClick={no} className="mt-2 w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 font-bold">{offer ? 'No por ahora' : 'Ahora no'}</button>
+          <p className="text-[10.5px] text-slate-500 mt-3">{offer ? 'Nadie más ve esto: solo los celulares de tu hogar.' : '🔒 Cifrado de extremo a extremo. Puedes dejar de compartir cuando quieras.'}</p>
         </div>
       </motion.div>
     </motion.div>
@@ -118,20 +118,39 @@ export default function DebtSyncHost({ ready }: { ready: boolean }) {
     if (debts.length) setMode({ kind: 'offer', debts });
   };
 
+  // Una solicitud del hogar NUNCA se pierde: si llega mientras hay otra ventana (bienvenida,
+  // novedades…), se espera y sale apenas esa ventana se cierre. Se revisa también al volver a la app.
+  const pendingRef = useRef(false);
+  const dialogOpen = () => !!document.querySelector('[role="dialog"]');
+  const tryIncoming = () => {
+    if (!getHousehold() || mode) return;
+    const inc = incomingOffers(false);
+    if (!inc.length) { pendingRef.current = false; return; }
+    pendingRef.current = true;
+    if (!dialogOpen()) { pendingRef.current = false; setMode({ kind: 'approve', offer: inc[0] }); }
+  };
+
   useEffect(() => {
-    const onOffer = (e: Event) => { const o = (e as CustomEvent).detail as DebtOffer; if (o) setMode({ kind: 'approve', offer: o }); };
+    const onOffer = () => tryIncoming();
     const onOpen = () => openBest(false);
+    const onVisible = () => { if (document.visibilityState === 'visible') setTimeout(tryIncoming, 1500); };
     window.addEventListener('mf:debt-offer', onOffer);
     window.addEventListener('mf:open-debt-sync', onOpen);
-    return () => { window.removeEventListener('mf:debt-offer', onOffer); window.removeEventListener('mf:open-debt-sync', onOpen); };
-  }, []);
+    document.addEventListener('visibilitychange', onVisible);
+    // Mientras haya una solicitud esperando, revisa cada 4 s si ya se puede mostrar
+    const poll = setInterval(() => { if (pendingRef.current) tryIncoming(); }, 4000);
+    return () => { window.removeEventListener('mf:debt-offer', onOffer); window.removeEventListener('mf:open-debt-sync', onOpen); document.removeEventListener('visibilitychange', onVisible); clearInterval(poll); };
+  }); // se re-registra en cada render para leer el `mode` actual
 
   // Sola, una vez: unos segundos después de abrir, si no hay otra ventana
   useEffect(() => {
     if (!ready) return;
-    // Si hay otra ventana abierta, vuelve a intentar (hasta 3 veces) para no salir encima de otra
-    let tries = 0; let t: ReturnType<typeof setTimeout>;
-    const attempt = () => { if (!document.querySelector('[role="dialog"]')) openBest(true); else if (++tries < 3) t = setTimeout(attempt, 15000); };
+    let t: ReturnType<typeof setTimeout>;
+    const attempt = () => {
+      if (dialogOpen()) { t = setTimeout(attempt, 4000); return; }   // espera a que se cierre la otra ventana
+      if (incomingOffers(false).length) { tryIncoming(); return; }
+      openBest(true);
+    };
     t = setTimeout(attempt, 4500);
     return () => clearTimeout(t);
   }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps

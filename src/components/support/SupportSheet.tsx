@@ -19,6 +19,8 @@ import MoneyInput from '../ui/MoneyInput';
 import { notify } from '../../services/notificationService';
 import { openInstagram } from '../social/Instagram';
 import { IS_TEST } from '../../utils/env';
+import { getHousehold } from '../../services/household/householdSync';
+import { incomingOffers } from '../../services/household/debtSync';
 import KaiCoffee, { KaiSays } from './KaiCoffee';
 import Kai from '../assistant/Kai';
 import { kaiSupportLine, SUPPORT_KEY, SUPPORT_QR, SUPPORT_AMOUNTS, MIN_SUPPORT, readSupport, shouldOfferSupport, countOpen, markAsked, markDismissed, markSupported, claimPromptSlot } from '../../services/supportService';
@@ -47,14 +49,19 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
   useEffect(() => {
     // En la app de pruebas sale en cada apertura para poder revisarla
     if (!ready || !(IS_TEST || shouldOfferSupport(readSupport()))) return;
-    let busy = false;
-    const t1 = setTimeout(() => { if (document.querySelector('[role="dialog"]')) busy = true; }, 2500);
-    const t2 = setTimeout(() => {
-      if (!IS_TEST && (busy || document.querySelector('[role="dialog"]') || !claimPromptSlot())) return;
-      if (IS_TEST && document.querySelector('[role="dialog"]')) return;
+    // Espera a que no haya otra ventana (bienvenida, novedades, deudas…) y sale con calma.
+    // Revisa cada 4 s durante máx. 3 min; una sola ventana "sola" por apertura.
+    let tries = 0, calm = 0;
+    let t2: ReturnType<typeof setTimeout>;
+    const attempt = () => {
+      const debtWaiting = !!getHousehold() && incomingOffers(false).length > 0;  // primero la solicitud del hogar
+      if (debtWaiting || document.querySelector('[role="dialog"]')) { calm = 0; if (++tries < 45) t2 = setTimeout(attempt, 4000); return; }
+      if (++calm < 2) { t2 = setTimeout(attempt, 4000); return; }   // 2 revisiones seguidas sin ventanas
+      if (!IS_TEST && !claimPromptSlot()) return;
       markAsked(); show(true);
-    }, 8000);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    };
+    t2 = setTimeout(attempt, 6000);
+    return () => clearTimeout(t2);
   }, [ready]);
   useEffect(() => {
     if (step === 'pay' && !qr) QRCode.toDataURL(SUPPORT_QR, { margin: 1, width: 360, errorCorrectionLevel: 'M', color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});

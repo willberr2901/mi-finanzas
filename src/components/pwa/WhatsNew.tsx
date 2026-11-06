@@ -16,8 +16,10 @@ import { enableReminders, remindersSupported } from '../../services/alertsServic
 
 export const shouldShowWhatsNew = () => {
   if (localStorage.getItem('mf_lastSeenVersion') === APP_VERSION) return false;
-  // Arreglo pequeño (actualización silenciosa): se marca como visto sin mostrar la ventana
-  if (SILENT_UPDATE) { try { localStorage.setItem('mf_lastSeenVersion', APP_VERSION); } catch { /* sin almacenamiento */ } return false; }
+  // Arreglo pequeño (actualización silenciosa): se marca como visto sin mostrar la ventana…
+  // …salvo que la persona venga de una versión anterior (ej. 1.19 → 1.20.1): ahí sí ve las novedades de la 1.20.
+  const minor = (v: string | null) => (v ?? '').split('.').slice(0, 2).join('.');
+  if (SILENT_UPDATE && minor(localStorage.getItem('mf_lastSeenVersion')) === minor(APP_VERSION)) { try { localStorage.setItem('mf_lastSeenVersion', APP_VERSION); } catch { /* sin almacenamiento */ } return false; }
   return true;
 };
 export const markWhatsNewSeen = () => localStorage.setItem('mf_lastSeenVersion', APP_VERSION);

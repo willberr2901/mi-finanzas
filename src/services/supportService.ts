@@ -6,7 +6,7 @@
  *           (desde $100, sin comisión, directo a la cuenta) y la regla de cuándo
  *           ofrecer "Apóyanos" sin ser intensos.
  * Cuándo se ofrece solo (shouldOfferSupport):
- *   • Primera vez: cuando la persona ya lleva 5 días usando la app y la abrió 5 veces o más.
+ *   • Primera vez: a la 3.ª vez que la persona abre la app (sin esperar días).
  *   • Si dice "Ahora no": se espera cada vez más → 14, 30, 60 y luego 120 días.
  *   • Si dice "Ya apoyé": no se vuelve a ofrecer en 180 días.
  *   • Nunca el mismo día en que salió otra ventana (encuesta, síguenos, novedades…).
@@ -35,7 +35,7 @@ const write = (s: SupportState) => { try { localStorage.setItem(KEY, JSON.string
 /** Regla de cuándo ofrecer "Apóyanos" (función pura, se prueba en __tests__/apoyanos.test.ts). */
 export function shouldOfferSupport(s: SupportState, now = Date.now()): boolean {
   if (s.supportedAt) return now - s.supportedAt >= 180 * DAY;
-  if (s.dismissals === 0) return s.lastAsk === 0 && now - s.firstSeen >= 5 * DAY && s.opens >= 5;
+  if (s.dismissals === 0) return s.lastAsk === 0 && s.opens >= 3; // primera vez: a la 3.ª apertura
   const wait = BACKOFF_DAYS[Math.min(s.dismissals - 1, BACKOFF_DAYS.length - 1)];
   return now - s.lastAsk >= wait * DAY;
 }

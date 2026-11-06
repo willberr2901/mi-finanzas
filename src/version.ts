@@ -6,7 +6,7 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.20.0';
+export const APP_VERSION = '1.20.1';
 
 /**
  * Actualización silenciosa (regla de Gato: no acumular versiones):
@@ -14,7 +14,7 @@ export const APP_VERSION = '1.20.0';
  *     La app se actualiza sola la próxima vez que se abre, sin ventanas ni notificación.
  *   • Función nueva grande: sube APP_VERSION, escribe las novedades y pon SILENT_UPDATE = false.
  */
-export const SILENT_UPDATE = false;
+export const SILENT_UPDATE = true;
 
 export const RELEASE_NOTES: string[] = [
   '🤖 Conoce a Kai: arma tu presupuesto con tu sueldo, deudas y ahorro (blanco o negro)',
