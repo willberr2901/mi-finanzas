@@ -16,30 +16,31 @@ import { X } from 'lucide-react';
 import type { Bill } from '../../utils/database';
 import { formatCOP } from '../../utils/format';
 import { haptic } from '../../utils/haptics';
-import { getHousehold } from '../../services/household/householdSync';
+import { getHousehold, syncNow } from '../../services/household/householdSync';
+import { db } from '../../utils/database';
 import { unsharedDebts, offerDebts, answerOffer, incomingOffers, markAsked, wasAsked, type DebtOffer } from '../../services/household/debtSync';
 
 const emoji = (name: string, kind: string) => kind === 'tarjeta' || /tarjeta/i.test(name) ? '💳' : /celular|tel[eé]fono/i.test(name) ? '📱' : /moto|carro|veh/i.test(name) ? '🏍️' : /pr[eé]stamo/i.test(name) ? '🤝' : '🏦';
 
-type Mode = { kind: 'offer'; debts: Bill[] } | { kind: 'approve'; offer: DebtOffer };
+type Mode = { kind: 'offer'; debts: Bill[] } | { kind: 'approve'; offer: DebtOffer } | { kind: 'status'; checking: boolean; shared: number };
 
 function Card({ mode, onClose }: { mode: Mode; onClose: () => void }) {
   const h = getHousehold();
   const [sel, setSel] = useState<Set<string>>(() => new Set(mode.kind === 'offer' ? mode.debts.map(d => d.id) : []));
   const [busy, setBusy] = useState(false);
   const offer = mode.kind === 'offer';
-  const strip = offer ? 'from-lime-200 via-emerald-300 to-teal-300' : 'from-pink-300 via-violet-300 to-sky-300';
+  const strip = offer || mode.kind === 'status' ? 'from-lime-200 via-emerald-300 to-teal-300' : 'from-pink-300 via-violet-300 to-sky-300';
   const ring = offer ? '#6EE7B7' : '#F9A8D4';
 
   const yes = async () => {
     setBusy(true); haptic('success');
     try {
       if (mode.kind === 'offer') await offerDebts(mode.debts.filter(d => sel.has(d.id)));
-      else await answerOffer(mode.offer, true);
+      else if (mode.kind === 'approve') await answerOffer(mode.offer, true);
     } finally { setBusy(false); onClose(); }
   };
   const no = async () => {
-    if (mode.kind === 'offer') markAsked(); else await answerOffer(mode.offer, false);
+    if (mode.kind === 'offer') markAsked(); else if (mode.kind === 'approve') await answerOffer(mode.offer, false);
     onClose();
   };
 
@@ -50,13 +51,13 @@ function Card({ mode, onClose }: { mode: Mode; onClose: () => void }) {
         <div className={`relative px-5 pt-4 pb-10 bg-gradient-to-br ${strip}`}>
           <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/25 blur-2xl" />
           <div className="relative z-10 flex items-center justify-between gap-2">
-            <p className="text-[11px] font-extrabold tracking-widest text-[#0B1026] truncate">{offer ? `🏠 HOGAR “${(h?.name ?? 'MI HOGAR').toUpperCase()}”` : '💌 SOLICITUD DEL HOGAR'}</p>
+            <p className="text-[11px] font-extrabold tracking-widest text-[#0B1026] truncate">{offer || mode.kind === 'status' ? `🏠 HOGAR “${(h?.name ?? 'MI HOGAR').toUpperCase()}”` : '💌 SOLICITUD DEL HOGAR'}</p>
             <button onClick={no} aria-label="Cerrar" className="p-1 text-[#0B1026]/70"><X size={18} /></button>
           </div>
         </div>
         <div className="relative z-10 -mt-9 flex justify-center">
           <motion.div initial={{ rotate: -90, scale: 0.6 }} animate={{ rotate: 0, scale: 1 }} transition={{ delay: 0.1 }} className="w-[72px] h-[72px] rounded-full p-[4px]" style={{ background: `conic-gradient(${ring} 270deg, rgba(255,255,255,.12) 0deg)` }}>
-            <div className="w-full h-full rounded-full bg-[#121938] flex items-center justify-center text-[30px]">{offer ? '🔄' : '🤝'}</div>
+            <div className="w-full h-full rounded-full bg-[#121938] flex items-center justify-center text-[30px]">{offer ? '🔄' : mode.kind === 'status' ? '🔍' : '🤝'}</div>
           </motion.div>
         </div>
         <div className="px-5 pb-5 pt-2 text-center text-white">
@@ -82,6 +83,18 @@ function Card({ mode, onClose }: { mode: Mode; onClose: () => void }) {
                 🔄 Sí, sincronizar {sel.size === 1 ? '1 deuda' : `${sel.size} deudas`}
               </motion.button>
             </>
+          ) : mode.kind === 'status' ? (
+            <>
+              <h2 id="ds-title" className="text-[18px] font-extrabold">{mode.checking ? 'Buscando solicitudes…' : 'No hay solicitudes nuevas'}</h2>
+              <p className="text-[13px] text-slate-300 mt-1.5">{mode.checking ? `Revisando tu hogar “${h?.name ?? ''}”.` : `Revisamos tu hogar “${h?.name ?? ''}” y no hay deudas por aprobar.`}</p>
+              {!mode.checking && (
+                <div className="mt-3 space-y-2 text-left text-[12.5px]">
+                  {mode.shared > 0 && <p className="rounded-2xl p-3 bg-emerald-400/10 ring-1 ring-emerald-300/30">✅ Ya tienes {mode.shared === 1 ? '1 deuda sincronizada' : `${mode.shared} deudas sincronizadas`} con tu hogar.</p>}
+                  <p className="rounded-2xl p-3 bg-white/[0.04] ring-1 ring-white/10 text-slate-300">📲 Cuando alguien de tu hogar comparta sus deudas desde su celular (<b className="text-white">Pagos → Sincronizar</b>), te sale aquí para aprobarlas.</p>
+                </div>
+              )}
+              <motion.button whileTap={{ scale: 0.97 }} disabled={mode.checking} onClick={() => { onClose(); setTimeout(() => window.dispatchEvent(new Event('mf:open-debt-sync')), 200); }} className="mt-4 w-full py-3.5 rounded-2xl font-extrabold bg-gradient-to-r from-lime-300 to-emerald-300 text-[#0B1026] disabled:opacity-50">🔄 Buscar de nuevo</motion.button>
+            </>
           ) : (
             <>
               <h2 id="ds-title" className="text-[18px] font-extrabold"><span className="text-pink-300">{mode.offer.from}</span> quiere compartir {mode.offer.debts.length === 1 ? '1 deuda' : `${mode.offer.debts.length} deudas`} contigo</h2>
@@ -97,8 +110,8 @@ function Card({ mode, onClose }: { mode: Mode; onClose: () => void }) {
               <motion.button whileTap={{ scale: 0.97 }} disabled={busy} onClick={yes} className="mt-4 w-full py-3.5 rounded-2xl font-extrabold bg-gradient-to-r from-pink-300 to-violet-300 text-[#0B1026] disabled:opacity-50">✅ Aprobar y sincronizar</motion.button>
             </>
           )}
-          <button onClick={no} className="mt-2 w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 font-bold">{offer ? 'No por ahora' : 'Ahora no'}</button>
-          <p className="text-[10.5px] text-slate-500 mt-3">{offer ? 'Nadie más ve esto: solo los celulares de tu hogar.' : '🔒 Cifrado de extremo a extremo. Puedes dejar de compartir cuando quieras.'}</p>
+          <button onClick={no} className="mt-2 w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 font-bold">{offer ? 'No por ahora' : mode.kind === 'status' ? 'Listo' : 'Ahora no'}</button>
+          <p className="text-[10.5px] text-slate-500 mt-3">{offer || mode.kind === 'status' ? 'Nadie más ve esto: solo los celulares de tu hogar.' : '🔒 Cifrado de extremo a extremo. Puedes dejar de compartir cuando quieras.'}</p>
         </div>
       </motion.div>
     </motion.div>
@@ -111,11 +124,17 @@ export default function DebtSyncHost({ ready }: { ready: boolean }) {
 
   const openBest = async (auto = false) => {
     if (!getHousehold()) return;
+    if (!auto) {
+      // Botón "Sincronizar" (Pagos / Ajustes): primero busca en el servidor si llegó algo nuevo
+      setMode({ kind: 'status', checking: true, shared: 0 });
+      await Promise.race([syncNow().catch(() => {}), new Promise(r => setTimeout(r, 6000))]);
+    }
     const inc = incomingOffers(!auto);
     if (inc.length) { setMode({ kind: 'approve', offer: inc[0] }); return; }
     if (auto && wasAsked()) return;
     const debts = await unsharedDebts();
-    if (debts.length) setMode({ kind: 'offer', debts });
+    if (debts.length) { setMode({ kind: 'offer', debts }); return; }
+    if (!auto) setMode({ kind: 'status', checking: false, shared: (await db.bills.toArray()).filter(b => b.shared && b.active).length });
   };
 
   // Una solicitud del hogar NUNCA se pierde: si llega mientras hay otra ventana (bienvenida,
@@ -123,7 +142,7 @@ export default function DebtSyncHost({ ready }: { ready: boolean }) {
   const pendingRef = useRef(false);
   const dialogOpen = () => !!document.querySelector('[role="dialog"]');
   const tryIncoming = () => {
-    if (!getHousehold() || mode) return;
+    if (!getHousehold() || (mode && mode.kind !== 'status')) return;
     const inc = incomingOffers(false);
     if (!inc.length) { pendingRef.current = false; return; }
     pendingRef.current = true;
