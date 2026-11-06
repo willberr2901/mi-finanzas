@@ -56,3 +56,14 @@ export const claimPromptSlot = () => { try { if (sessionStorage.getItem('mf_prom
 
 /** Abrir la ventana desde cualquier parte (menú, Ajustes…). */
 export const openSupport = () => window.dispatchEvent(new Event('mf:open-support'));
+
+/** Lo que dice Kai según el valor elegido (función pura, se prueba en __tests__/apoyanos.test.ts). */
+export function kaiSupportLine(amount: number, touched: boolean): { mood: 'feliz' | 'celebra' | 'pensando'; text: string } {
+  if (!touched) return { mood: 'feliz', text: '¡Hola! Soy Kai 🤖 Te ayudo gratis con tus cuentas. ¿Me invitas un tintico? ☕' };
+  if (amount < MIN_SUPPORT) return { mood: 'pensando', text: '¿Cuánto quieres? Desde $100 ya me alegras el día 💚' };
+  if (amount < 2000) return { mood: 'feliz', text: '¡Un tintico! ☕ Gracias por pensar en mí' };
+  if (amount < 5000) return { mood: 'feliz', text: '¡Tintico doble! ☕☕ Así trabajo más rápido' };
+  if (amount < 10000) return { mood: 'celebra', text: '¡Tintico con pandebono! 🥐 ¡Qué detalle!' };
+  if (amount < 20000) return { mood: 'celebra', text: '¡Desayuno completo! 🍳 Me dejas con energía' };
+  return { mood: 'celebra', text: '¡Me pongo a bailar! 💃 ¡Gracias, de verdad!' };
+}

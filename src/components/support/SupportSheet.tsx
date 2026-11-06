@@ -2,6 +2,7 @@
  * ════════════════════════════════════════════════════════════════════
  * ☕ VENTANA "APÓYANOS" (aporte voluntario por Bre-B)
  * ────────────────────────────────────────────────────────────────────
+ * Protagonista: Kai con su tintico (KaiCoffee.tsx); reacciona al valor elegido.
  * 3 pasos: 1) elegir valor (desde $100) → 2) pagar con la llave o el QR Bre-B
  * desde cualquier banco → 3) gracias + insignia "Aliado de Mi Finanzas".
  * Se abre desde el menú ☰ y, de vez en cuando, sola (regla en services/supportService.ts).
@@ -18,7 +19,9 @@ import MoneyInput from '../ui/MoneyInput';
 import { notify } from '../../services/notificationService';
 import { openInstagram } from '../social/Instagram';
 import { IS_TEST } from '../../utils/env';
-import { SUPPORT_KEY, SUPPORT_QR, SUPPORT_AMOUNTS, MIN_SUPPORT, readSupport, shouldOfferSupport, countOpen, markAsked, markDismissed, markSupported, claimPromptSlot } from '../../services/supportService';
+import KaiCoffee, { KaiSays } from './KaiCoffee';
+import Kai from '../assistant/Kai';
+import { kaiSupportLine, SUPPORT_KEY, SUPPORT_QR, SUPPORT_AMOUNTS, MIN_SUPPORT, readSupport, shouldOfferSupport, countOpen, markAsked, markDismissed, markSupported, claimPromptSlot } from '../../services/supportService';
 
 type Step = 'choose' | 'pay' | 'thanks';
 
@@ -30,8 +33,9 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
   const [other, setOther] = useState(false);
   const [qr, setQr] = useState('');
   const [copied, setCopied] = useState(false);
+  const [touched, setTouched] = useState(false);
 
-  const show = (isAuto: boolean) => { setAuto(isAuto); setStep('choose'); setOther(false); setCopied(false); setOpen(true); };
+  const show = (isAuto: boolean) => { setAuto(isAuto); setStep('choose'); setOther(false); setCopied(false); setTouched(false); setAmount(2000); setOpen(true); };
 
   useEffect(() => { countOpen(); }, []);
   useEffect(() => {
@@ -66,6 +70,7 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
     setStep('pay');
   };
   const done = () => { markSupported(); setStep('thanks'); };
+  const line = kaiSupportLine(amount, touched);
 
   return createPortal(
     <AnimatePresence>
@@ -76,21 +81,22 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
             className="theme-dark relative w-full max-w-sm max-h-[92vh] overflow-y-auto rounded-[30px] bg-[#121938] border border-white/10 shadow-2xl shadow-black/60">
 
             {step === 'choose' && (<>
-              <div className="relative px-5 pt-4 pb-10 bg-gradient-to-br from-amber-200 via-orange-300 to-pink-300">
+              <div className={`relative px-5 pt-4 pb-[104px] bg-gradient-to-br transition-colors ${line.mood === 'celebra' ? 'from-lime-200 via-brand-lime to-emerald-300' : 'from-amber-200 via-orange-300 to-pink-300'}`}>
                 <div aria-hidden="true" className="pointer-events-none absolute -right-6 -top-8 w-32 h-32 rounded-full bg-white/30 blur-2xl" />
                 <div className="relative z-10 flex items-center justify-between"><p className="relative text-[11px] font-extrabold tracking-widest text-[#2A0A1F]">💚 APOYA A MI FINANZAS</p>
                   <button onClick={close} aria-label="Cerrar" className="p-1 text-[#2A0A1F]/70"><X size={18} /></button></div>
               </div>
-              <div className="relative z-10 -mt-9 flex justify-center"><motion.div initial={{ rotateY: 180, scale: 0.6 }} animate={{ rotateY: 0, scale: 1 }} transition={{ delay: 0.15, duration: 0.6 }} className="w-[76px] h-[76px] rounded-full p-[4px]" style={{ background: 'conic-gradient(#FDBA74, #F9A8D4, #C6F432, #FDBA74)' }}><div className="w-full h-full rounded-full bg-[#121938] flex items-center justify-center text-3xl">☕</div></motion.div></div>
-              <div className="px-5 pb-5 pt-2 text-center">
+              <div className="relative z-10 -mt-[104px] flex justify-center"><motion.div initial={{ y: 30, scale: 0.7, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} transition={{ delay: 0.15, type: 'spring', damping: 13 }}><KaiCoffee mood={line.mood} size={132} /></motion.div></div>
+              <div className="relative z-10 px-5 -mt-1"><KaiSays text={line.text} k={line.text} /></div>
+              <div className="px-5 pb-5 pt-3 text-center">
                 <h2 id="support-title" className="text-white text-xl font-extrabold leading-tight">Mi Finanzas es gratis<br /><span className="text-brand-lime">y lo seguirá siendo</span></h2>
                 <p className="text-[13px] text-slate-300 mt-2">Si te ayuda, puedes apoyarnos con lo que quieras, desde $100. Nos ayuda a seguir mejorándola sin anuncios y sin pedir tus datos.</p>
                 <div className="grid grid-cols-3 gap-2 mt-4">
                   {SUPPORT_AMOUNTS.map(v => (
-                    <motion.button key={v} whileTap={{ scale: 0.93 }} onClick={() => { setAmount(v); setOther(false); }} aria-pressed={!other && amount === v}
+                    <motion.button key={v} whileTap={{ scale: 0.93 }} onClick={() => { setAmount(v); setOther(false); setTouched(true); }} aria-pressed={!other && amount === v}
                       className={`h-12 rounded-2xl font-extrabold ${!other && amount === v ? 'bg-brand-lime text-brand-ink' : 'bg-white/[0.06] ring-1 ring-white/10 text-white'}`}>{formatCOP(v)}</motion.button>
                   ))}
-                  <motion.button whileTap={{ scale: 0.93 }} onClick={() => { setOther(true); setAmount(0); }} aria-pressed={other}
+                  <motion.button whileTap={{ scale: 0.93 }} onClick={() => { setOther(true); setAmount(0); setTouched(true); }} aria-pressed={other}
                     className={`h-12 rounded-2xl text-sm font-extrabold ${other ? 'bg-brand-lime text-brand-ink' : 'bg-white/[0.06] ring-1 ring-white/10 text-white'}`}>Otro valor</motion.button>
                 </div>
                 {other && <MoneyInput value={amount} onChange={setAmount} prefix placeholder="Desde $100" ariaLabel="Otro valor" className="mt-2 w-full h-12 px-4 rounded-2xl bg-white/5 border border-white/10 text-white text-center font-bold outline-none focus:border-brand-lime" />}
@@ -108,7 +114,8 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
                   <button onClick={() => setStep('choose')} aria-label="Volver" className="p-1 -ml-1 text-slate-300"><ArrowLeft size={20} /></button>
                   <button onClick={close} aria-label="Cerrar" className="p-1 text-slate-300"><X size={20} /></button>
                 </div>
-                <p className="text-[11px] font-extrabold tracking-widest text-slate-400 mt-1">APOYAR CON {formatCOP(amount)}</p>
+                <div className="flex items-center gap-2 mt-1"><span className="shrink-0"><Kai mood="normal" size={56} still title="Kai" /></span><p className="relative rounded-2xl rounded-tl-[4px] bg-white text-[#0B1026] px-3 py-2 text-[13px] font-bold">Son 3 pasos, yo te acompaño 👇</p></div>
+                <p className="text-[11px] font-extrabold tracking-widest text-slate-400 mt-2">APOYAR CON {formatCOP(amount)}</p>
                 <h2 id="support-title" className="text-white text-xl font-extrabold leading-tight mt-1">Desde tu banco, <span className="text-brand-lime">en 3 pasos</span></h2>
                 <div className="mt-4 p-4 rounded-2xl bg-white/[0.05] ring-1 ring-brand-lime/40">
                   <p className="text-[11px] font-extrabold tracking-widest text-slate-400">LLAVE BRE-B</p>
@@ -134,12 +141,19 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
 
             {step === 'thanks' && (
               <div className="p-6 text-center">
-                <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', damping: 10 }} className="text-6xl mt-4">🥳</motion.div>
+                <motion.div initial={{ scale: 0.3, y: 30 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', damping: 10 }} className="relative flex justify-center">
+                  {[...Array(16)].map((_, i) => (
+                    <motion.i key={i} aria-hidden="true" className="absolute w-2 h-3.5 rounded-[2px]" style={{ background: ['#C6F432', '#F9A8D4', '#7DD3FC', '#FBBF24'][i % 4], left: `${(i * 37) % 100}%`, top: 0 }}
+                      initial={{ y: -20, opacity: 0, rotate: 0 }} animate={{ y: [-20, 150], opacity: [0, 1, 1, 0], rotate: 360 }} transition={{ duration: 2.2, delay: (i % 8) * 0.12, repeat: 2 }} />
+                  ))}
+                  <Kai mood="celebra" size={160} title="Kai celebrando" />
+                </motion.div>
                 <h2 id="support-title" className="text-white text-2xl font-extrabold mt-3">¡Gracias por <span className="text-brand-lime">apoyarnos!</span></h2>
-                <p className="text-sm text-slate-300 mt-2">Tu aporte nos ayuda a mantener Mi Finanzas gratis, sin anuncios y sin pedir tus datos.</p>
-                <div className="mt-5 p-4 rounded-2xl bg-white/[0.05] text-left">
-                  <p className="text-white font-extrabold text-sm">💚 Insignia "Aliado de Mi Finanzas"</p>
-                  <p className="text-[12px] text-slate-400 mt-1">Aparece en tu menú como agradecimiento (solo en tu celular).</p>
+                <p className="text-sm text-slate-300 mt-2">Kai está feliz 🤖💚 Tu aporte nos ayuda a mantener Mi Finanzas gratis, sin anuncios y sin pedir tus datos.</p>
+                <div className="mt-5 p-3 rounded-2xl bg-gradient-to-br from-amber-200/20 to-brand-lime/10 ring-1 ring-amber-200/40 text-left flex items-center gap-3">
+                  <span className="shrink-0 w-12 h-12 rounded-full bg-[radial-gradient(#FDE68A,#F59E0B)] flex items-center justify-center"><Kai mood="feliz" size={38} still title="Kai" /></span>
+                  <span><span className="block text-white font-extrabold text-sm">Insignia "Aliado de Mi Finanzas"</span>
+                  <span className="block text-[12px] text-slate-400 mt-0.5">Aparece en tu menú como agradecimiento (solo en tu celular).</span></span>
                 </div>
                 <button onClick={() => { openInstagram(); }} className="mt-5 w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white font-bold flex items-center justify-center gap-2"><Instagram size={18} /> Síguenos en Instagram</button>
                 <motion.button whileTap={{ scale: 0.96 }} onClick={() => setOpen(false)} className="mt-2 w-full py-3.5 rounded-2xl bg-brand-lime text-brand-ink font-extrabold">Volver a la app</motion.button>
