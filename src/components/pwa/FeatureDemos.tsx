@@ -6,9 +6,10 @@
  */
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import KaiCoffee, { KaiSays } from '../support/KaiCoffee';
 import Kai, { type KaiMood } from '../assistant/Kai';
 import { Jar } from '../goals/PiggyCounter';
-import { Heart, ShieldCheck, Smartphone, FileLock2, Coffee } from 'lucide-react';
+import { ShieldCheck, Smartphone, FileLock2 } from 'lucide-react';
 
 const loop = { repeat: Infinity, repeatDelay: 0.8 };
 const Phone = ({ children }: { children: React.ReactNode }) => (
@@ -92,20 +93,16 @@ export function DemoBackup() {
 
 /** ☕ Apóyanos: monedas que caen en la taza y un corazón. */
 export function DemoSupport() {
+  const lines: [KaiMood, string][] = [['feliz', '¿Me invitas un tintico? ☕'], ['feliz', '¡Desde $100 ya me alegras!'], ['celebra', '¡Gracias por apoyarnos! 💚']];
+  const [i, setI] = useState(0);
+  useEffect(() => { const t = setInterval(() => setI(x => (x + 1) % lines.length), 1900); return () => clearInterval(t); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <div className="relative h-[210px] flex items-end justify-center pb-6">
-      {[0, 1, 2].map(i => (
-        <motion.span key={i} className="absolute w-7 h-7 rounded-full bg-[#C9A44C] shadow-[inset_0_0_0_6px_#C3C9D1]" style={{ left: `calc(50% - 14px + ${(i - 1) * 18}px)` }}
-          animate={{ top: [-10, 110], opacity: [0, 1, 1, 0], rotate: [0, 180] }} transition={{ duration: 1.4, delay: i * 0.45, repeat: Infinity, repeatDelay: 0.6 }} />
-      ))}
-      <div className="w-24 h-24 rounded-3xl bg-orange-300 flex items-center justify-center"><Coffee size={52} className="text-[#2A0A1F]" /></div>
-      <motion.div className="absolute top-6 right-[calc(50%-80px)]" animate={{ scale: [0, 1.3, 1, 0], opacity: [0, 1, 1, 0] }} transition={{ duration: 2.4, repeat: Infinity, times: [0, 0.6, 0.8, 1] }}>
-        <Heart size={30} className="text-brand-lime" fill="currentColor" />
-      </motion.div>
+    <div className="flex flex-col items-center pt-1">
+      <KaiCoffee mood={lines[i][0]} size={130} />
+      <div className="h-11 mt-1 w-full"><KaiSays text={lines[i][1]} k={i} /></div>
     </div>
   );
 }
-
 
 /** 🤖 Kai: cambia de cara y dice lo que hace en cada paso. */
 export function DemoKai() {
@@ -183,7 +180,6 @@ export function DemoStars() {
         ))}
       </div>
       <p className="text-[14px] font-bold text-yellow-300">¡Me encanta! 😍</p>
-      <p className="text-[12px] text-slate-400">☕ y si quieres, apóyanos por Bre-B</p>
     </div>
   );
 }

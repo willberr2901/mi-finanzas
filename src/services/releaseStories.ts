@@ -20,5 +20,6 @@ export const RELEASE_STORY: StorySlide[] = [
   { demo: 'debts', tag: '🔄 DEUDAS DEL HOGAR', title: 'Comparte tus cuotas', text: 'Sincroniza tus deudas con tu hogar: la otra persona aprueba y, cuando alguien paga, el otro lo ve al instante. Todo cifrado.', cta: { label: 'Ir a Pagos', to: '/pagos' } },
   { demo: 'rings', tag: '✨ MÓDULOS', title: 'Un menú con vida', text: 'Toca ☰ y cada módulo te cuenta cómo va: cuánto te queda, qué falta por pagar y qué falta por comprar.', cta: { label: 'Abrir módulos', to: '/' } },
   { demo: 'piggy', tag: '🪙 ALCANCÍA NUEVA', title: 'Cuenta tus monedas', text: 'Un frasco que se llena, monedas con su valor y, al guardar, a qué equivale lo que juntaste (mercados, pasajes).', cta: { label: 'Contar mi alcancía', to: '/finanzas?tab=metas&alcancia=1' } },
-  { demo: 'stars', tag: '⭐ TU OPINIÓN', title: 'Califícanos y apóyanos', text: 'Danos unas estrellas cuando quieras desde el menú. Y si la app te ayuda, puedes apoyarla por Bre-B desde $100. Sigue siendo gratis.', cta: { label: 'Calificar', to: '#calificar' } },
+  { demo: 'stars', tag: '⭐ TU OPINIÓN', title: 'Califícanos', text: 'Danos unas estrellas cuando quieras desde el menú y cuéntanos qué mejorar. Nos ayuda muchísimo.', cta: { label: 'Calificar', to: '#calificar' } },
+  { demo: 'support', tag: '☕ APÓYANOS', title: 'Invítale un tintico a Kai', text: 'Mi Finanzas es gratis y lo seguirá siendo. Si te ayuda, apóyanos por Bre-B desde $100. Kai te lo agradecerá bailando.', cta: { label: 'Apoyar', to: '#apoyar' } },
 ];

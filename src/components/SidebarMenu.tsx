@@ -25,6 +25,7 @@ import { MODULES } from '../utils/modules';
 import { APP_VERSION, RELEASE_NOTES } from '../version';
 import { RELEASE_STORY } from '../services/releaseStories';
 import { moduleHasNew } from '../services/newFeatures';
+import Kai from './assistant/Kai';
 import { openSupport, isAlly } from '../services/supportService';
 import { openRating, myRating } from '../services/ratingService';
 import { db } from '../utils/database';
@@ -34,7 +35,6 @@ import { listLoans, isClosed } from '../services/loansService';
 import { getPlan } from '../services/budgetPlan';
 import { formatCOP } from '../utils/format';
 import { haptic } from '../utils/haptics';
-import Kai from './assistant/Kai';
 import { IS_TEST } from '../utils/env';
 
 type Key = 'inicio' | 'mercado' | 'finanzas' | 'pagos' | 'prestamos' | 'analisis' | 'escaner' | 'facturas';
@@ -190,8 +190,8 @@ export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onCl
               className="relative overflow-hidden mt-3 w-full flex items-center gap-3 p-3.5 rounded-[22px] text-left bg-gradient-to-r from-[#3A2416] via-[#2A1B2E] to-[#141B3A] ring-1 ring-orange-300/40">
               <span aria-hidden="true" className="absolute -left-6 -top-8 w-28 h-28 rounded-full bg-orange-400/30 blur-2xl" />
               <span className="relative w-12 h-12 shrink-0 rounded-[16px] bg-gradient-to-br from-orange-200 to-orange-400 flex items-center justify-center shadow-lg shadow-orange-500/30">
-                <Coffee size={22} className="text-[#3A2416]" strokeWidth={2.4} />
-                {[0, 1, 2].map(i => (
+                {isAlly() ? <Kai mood="feliz" size={44} still title="Kai" /> : <Coffee size={22} className="text-[#3A2416]" strokeWidth={2.4} />}
+                {!isAlly() && [0, 1, 2].map(i => (
                   <motion.span key={i} aria-hidden="true" className="absolute -top-2 w-1 h-2.5 rounded-full bg-orange-100/80" style={{ left: 16 + i * 6 }}
                     animate={{ y: [0, -6], opacity: [0, 0.9, 0] }} transition={{ duration: 1.8, delay: i * 0.4, repeat: Infinity }} />
                 ))}
