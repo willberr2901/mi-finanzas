@@ -12,7 +12,8 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Copy, Check, ArrowLeft, Instagram, ExternalLink, ChevronDown } from 'lucide-react';
+import { X, Copy, Check, ArrowLeft, ExternalLink, ChevronDown } from 'lucide-react';
+import { InstagramLogo } from '../social/BrandIcons';
 import { qrDataURL } from '../../utils/qr';
 import { formatCOP } from '../../utils/format';
 import MoneyInput from '../ui/MoneyInput';
@@ -187,7 +188,7 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
                   <span className="block text-[12px] text-slate-400 mt-0.5">Ya brilla en tu menú como agradecimiento (solo en tu celular).</span></span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-4">
-                  <button onClick={() => { openInstagram(); }} className="h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white text-[12.5px] font-bold flex items-center justify-center gap-1.5"><Instagram size={16} /> Síguenos</button>
+                  <button onClick={() => { openInstagram(); }} className="h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white text-[12.5px] font-bold flex items-center justify-center gap-1.5"><InstagramLogo size={16} /> Síguenos</button>
                   <button onClick={() => { remindNextMonth(); notify({ title: 'Te recuerdo en un mes ☕', type: 'success', log: false }); }} className="h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white text-[12.5px] font-bold">🔁 Recordarme en un mes</button>
                 </div>
                 <motion.button whileTap={{ scale: 0.96 }} onClick={() => setOpen(false)} className="mt-2 w-full py-3.5 rounded-2xl bg-brand-lime text-brand-ink font-extrabold">Volver a la app</motion.button>

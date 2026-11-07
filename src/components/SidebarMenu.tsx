@@ -182,7 +182,7 @@ export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onCl
                 badge={<motion.span className="w-2 h-2 rounded-full bg-violet-400" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.6, repeat: Infinity }} aria-hidden="true" />} />
               <More icon={Star} color="#FACC15" title="Califícanos" sub={myRating() ? <Stars n={myRating()} /> : 'Danos unas estrellas'} onClick={later(openRating)} />
               <More icon={Heart} color="#F472B6" title="Recomiéndala" sub="WhatsApp o QR" onClick={later(openShareApp)} />
-              <More icon={Lock} color="#7DD3FC" title="Privacidad" sub="Solo en tu celular" onClick={() => go('/legal')} />
+              <More icon={Lock} color="#7DD3FC" title="Privacidad" sub="Solo en tu celular" onClick={() => go('/confianza')} />
             </motion.div>
 
             {/* Apóyanos: tarjeta destacada */}

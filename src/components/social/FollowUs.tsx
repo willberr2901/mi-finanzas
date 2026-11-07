@@ -17,7 +17,8 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Instagram, MessageCircle, X, ArrowRight } from 'lucide-react';
+import { X, ArrowRight } from 'lucide-react';
+import { InstagramLogo, WhatsAppLogo } from './BrandIcons';
 import { INSTAGRAM_URL, INSTAGRAM_USER } from './Instagram';
 import { WHATSAPP_CHANNEL_URL } from './WhatsAppChannel';
 import { notify } from '../../services/notificationService';
@@ -30,16 +31,16 @@ const read = (): FollowState => { try { return { asks: 0, next: 0, ...JSON.parse
 const write = (s: FollowState) => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* sin almacenamiento */ } };
 
 type Step = 'ig' | 'wa';
-const STEPS: Record<Step, { strip: string; label: string; ring: string; icon: typeof Instagram; title: React.ReactNode; text: string; perks: string[]; cta: string; ctaCls: string; url: string }> = {
+const STEPS: Record<Step, { strip: string; label: string; ring: string; icon: (p: { size?: number }) => JSX.Element; title: React.ReactNode; text: string; perks: string[]; cta: string; ctaCls: string; url: string }> = {
   ig: {
-    strip: 'from-fuchsia-300 via-rose-300 to-amber-300', label: '📸 SÍGUENOS EN INSTAGRAM', ring: '#F0ABFC', icon: Instagram,
+    strip: 'from-fuchsia-300 via-rose-300 to-amber-300', label: '📸 SÍGUENOS EN INSTAGRAM', ring: '#F0ABFC', icon: InstagramLogo,
     title: <>Síguenos en <span className="text-fuchsia-300">@{INSTAGRAM_USER}</span></>,
     text: 'Tips para que te rinda la plata, novedades de la app y retos de ahorro.',
     perks: ['💡 Tips de ahorro', '🆕 Novedades', '🏆 Retos'],
     cta: 'Seguir en Instagram', ctaCls: 'bg-gradient-to-r from-fuchsia-300 via-rose-300 to-amber-300 text-[#2A0A1F]', url: INSTAGRAM_URL,
   },
   wa: {
-    strip: 'from-lime-200 via-emerald-300 to-teal-400', label: '💬 ÚNETE AL CANAL DE WHATSAPP', ring: '#6EE7B7', icon: MessageCircle,
+    strip: 'from-lime-200 via-emerald-300 to-teal-400', label: '💬 ÚNETE AL CANAL DE WHATSAPP', ring: '#6EE7B7', icon: WhatsAppLogo,
     title: <>El canal de <span className="text-emerald-300">Mi Finanzas</span></>,
     text: 'Te avisamos de cada actualización y de fechas clave (prima, pagos de fin de mes). Solo nosotros escribimos: sin grupos ni cadenas.',
     perks: ['🔔 Actualizaciones', '📅 Fechas clave', '🔕 Sin spam'],
@@ -104,7 +105,7 @@ export default function FollowUs({ ready }: { ready: boolean }) {
             <div className="relative -mt-9 flex justify-center">
               <motion.div initial={{ rotateY: 180, scale: 0.6 }} animate={{ rotateY: 0, scale: 1 }} transition={{ delay: 0.15, duration: 0.6 }}
                 className="w-[76px] h-[76px] rounded-full p-[4px]" style={{ background: `conic-gradient(${d.ring} ${pct * 3.6}deg, rgba(255,255,255,.12) 0deg)` }}>
-                <div className="w-full h-full rounded-full bg-[#121938] flex items-center justify-center"><Icon size={32} style={{ color: d.ring }} /></div>
+                <div className="w-full h-full rounded-full bg-[#121938] flex items-center justify-center"><Icon size={34} /></div>
               </motion.div>
             </div>
             <div className="px-5 pb-5 pt-2 text-center">
@@ -114,7 +115,7 @@ export default function FollowUs({ ready }: { ready: boolean }) {
                 {d.perks.map(p => <span key={p} className="px-2.5 py-1 rounded-full bg-white/[0.06] ring-1 ring-white/10 text-[11px] font-bold text-white">{p}</span>)}
               </div>
               <div className="mt-5 space-y-2">
-                <motion.button whileTap={{ scale: 0.96 }} onClick={() => follow(step)} className={`w-full py-3.5 rounded-2xl font-extrabold flex items-center justify-center gap-2 ${d.ctaCls}`}><Icon size={19} /> {d.cta}</motion.button>
+                <motion.button whileTap={{ scale: 0.96 }} onClick={() => follow(step)} className={`w-full py-3.5 rounded-2xl font-extrabold flex items-center justify-center gap-2 ${d.ctaCls}`}>{d.cta}</motion.button>
                 <button onClick={next} className="w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white font-bold flex items-center justify-center gap-2">
                   {i + 1 < queue.length ? <>Ahora no <ArrowRight size={16} /></> : 'Ahora no'}
                 </button>

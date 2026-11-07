@@ -2,7 +2,7 @@
  * ════════════════════════════════════════════════════════════════════
  * 📸 SÍGUENOS EN INSTAGRAM (@mifinanzas_app)
  * ────────────────────────────────────────────────────────────────────
- * Qué hace: botón con el ícono de Instagram (en los colores de la app) que abre el perfil, y una
+ * Qué hace: botón con el logo OFICIAL de Instagram (BrandIcons.tsx) que abre el perfil, y una
  *           tarjetita de "¡Lo lograste! Síguenos" cuando alguien cumple un logro
  *           (por ejemplo, su primer mercado). La tarjeta sale máximo una vez por logro.
  * Dónde se ve: Menú ☰, Ajustes → Acerca de y tras los logros.
@@ -12,20 +12,16 @@
  */
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Instagram } from 'lucide-react';
+import { X } from 'lucide-react';
+import { InstagramLogo } from './BrandIcons';
 
 export const INSTAGRAM_USER = 'mifinanzas_app';
 export const INSTAGRAM_URL = `https://www.instagram.com/${INSTAGRAM_USER}/`;
 export const openInstagram = () => window.open(INSTAGRAM_URL, '_blank', 'noopener,noreferrer');
 
-/** Ícono de Instagram (de la librería de íconos) sobre un cuadro con los colores de la app. */
+/** Logo oficial de Instagram (archivo de Meta, sin cambios). */
 export function InstagramIcon({ size = 36 }: { size?: number }) {
-  return (
-    <span style={{ width: size, height: size, borderRadius: size * 0.28 }}
-      className="inline-flex items-center justify-center shrink-0 bg-brand-lime shadow-md shadow-lime-400/20" aria-hidden="true">
-      <Instagram size={size * 0.56} className="text-brand-ink" strokeWidth={2.3} />
-    </span>
-  );
+  return <span style={{ width: size, height: size }} className="inline-flex items-center justify-center shrink-0"><InstagramLogo size={Math.round(size * 0.8)} /></span>;
 }
 
 const SEEN = 'mf_ig_moments';

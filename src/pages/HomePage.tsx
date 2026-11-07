@@ -216,6 +216,12 @@ export default function HomePage() {
       <Link to="/analisis" className="flex items-center justify-center gap-1 mt-2 py-1 text-[13px] font-extrabold text-brand-lime">
         Ver análisis completo{hoy.length > fit.items ? ` · ${hoy.length - fit.items} más` : ''} <ChevronRight size={15} />
       </Link>
+
+      {/* 5. Sello de confianza */}
+      <Link to="/confianza" className="mt-4 flex items-center gap-3 rounded-2xl px-3.5 py-3 bg-brand-lime/[0.08] ring-1 ring-brand-lime/30">
+        <span className="text-2xl" aria-hidden="true">🛡️</span>
+        <span className="flex-1"><span className="block text-[13px] font-extrabold text-white">No somos un banco · nunca te pedimos claves</span><span className="block text-[11.5px] font-extrabold text-brand-lime">¿Por qué confiar? ›</span></span>
+      </Link>
     </div>
   );
 }

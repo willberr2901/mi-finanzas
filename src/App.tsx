@@ -74,6 +74,7 @@ const loaders = {
   finance: () => import('./pages/FinancePage'),
   bills: () => import('./pages/BillsPage'),
   legal: () => import('./pages/LegalPage'),
+  confianza: () => import('./pages/TrustPage'),
   reports: () => import('./pages/ReportsPage'),
   loans: () => import('./pages/LoansPage'),
   analysis: () => import('./pages/AnalysisPage'),
@@ -86,6 +87,7 @@ const ReceiptHistoryPage = lazyWithRetry(loaders.history);
 const FinancePage = lazyWithRetry(loaders.finance);
 const BillsPage = lazyWithRetry(loaders.bills);
 const LegalPage = lazyWithRetry(loaders.legal);
+const TrustPage = lazyWithRetry(loaders.confianza);
 const ReportsPage = lazyWithRetry(loaders.reports);
 const LoansPage = lazyWithRetry(loaders.loans);
 const AnalysisPage = lazyWithRetry(loaders.analysis);
@@ -214,6 +216,7 @@ function AppContent() {
                   <Route path="/ajustes" element={<SettingsPage />} />
                   <Route path="/historial-facturas" element={<ReceiptHistoryPage />} />
                   <Route path="/legal" element={<LegalPage />} />
+                  <Route path="/confianza" element={<TrustPage />} />
                   <Route path="/reportes" element={<ReportsPage />} />
                   <Route path="/analisis" element={<AnalysisPage />} />
                   <Route path="/hogar" element={<Navigate to="/mercado" replace />} />

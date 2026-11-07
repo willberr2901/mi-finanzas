@@ -129,7 +129,10 @@ export default function LegalContent() {
       <Section title="6. Edad">
         <p>La app está pensada para personas mayores de 18 años. Si eres menor de edad, úsala con permiso y acompañamiento de tu mamá, papá o acudiente, y no hagas aportes en Apóyanos sin su autorización.</p>
       </Section>
-      <Section title="7. Contacto">
+      <Section title="7. Marcas de terceros">
+        <p>WhatsApp e Instagram son marcas de Meta Platforms; usamos sus logos oficiales solo para los botones de compartir y seguirnos. Los nombres de bancos, billeteras y supermercados que aparecen en la app (por ejemplo Nequi, Daviplata, Bancolombia, D1, Ara, Éxito u Olímpica) son marcas de sus dueños y se usan solo como referencia. Mi Finanzas no está afiliada, patrocinada ni respaldada por ninguna de ellas.</p>
+      </Section>
+      <Section title="8. Contacto">
         <p>Escríbenos a <a className="text-brand-lime font-semibold underline" href={`mailto:${APP_EMAIL}`}>{APP_EMAIL}</a>.</p>
       </Section>
       <p className="text-[11px] text-slate-500 pt-2">Versión {TERMS_VERSION}</p>
