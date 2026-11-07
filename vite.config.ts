@@ -21,7 +21,7 @@ const routeCopies = (): Plugin => ({
   name: 'route-copies',
   closeBundle() {
     if (!TEST) return;
-    for (const r of ['finanzas', 'mercado', 'pagos', 'prestamos', 'escaner', 'ajustes', 'historial-facturas', 'legal', 'reportes', 'hogar']) {
+    for (const r of ['finanzas', 'mercado', 'pagos', 'prestamos', 'escaner', 'ajustes', 'historial-facturas', 'legal', 'reportes', 'hogar', 'confianza', 'analisis']) {
       mkdirSync(`dist/${r}`, { recursive: true }); copyFileSync('dist/index.html', `dist/${r}/index.html`);
     }
   },

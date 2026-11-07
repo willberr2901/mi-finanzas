@@ -6,7 +6,7 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.21.0';
+export const APP_VERSION = '1.21.1';
 
 /**
  * Actualización silenciosa (regla de Gato: no acumular versiones):

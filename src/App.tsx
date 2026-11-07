@@ -184,6 +184,18 @@ function AppContent() {
     checkDailyReminderInApp();
   }, []);
 
+  // Si la bienvenida no sale (misma sesión, p. ej. justo después de actualizar y recargar),
+  // igual seguimos el orden: privacidad → términos → novedades.
+  useEffect(() => {
+    if (showWelcome) return;
+    const t = window.setTimeout(() => {
+      if (!securityIntroSeen()) setShowIntro(true);
+      else if (!termsAccepted()) setShowTerms(true);
+      else if (shouldShowWhatsNew()) setShowWhatsNew(true);
+    }, 600);
+    return () => window.clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const afterIntro = () => {
     setShowIntro(false);
     if (!termsAccepted()) setShowTerms(true);

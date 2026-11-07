@@ -17,7 +17,9 @@ import { APP_VERSION } from './version';
 
 declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: any };
 
-self.skipWaiting();
+// ⚠️ NO llamar self.skipWaiting() aquí: la versión nueva debe ESPERAR a que la app decida
+// (UpdateManager.tsx): ventana con Kai si es versión grande, o instalación silenciosa si es arreglo.
+// Si se activa sola, la app solo "parpadea" y la ventana de actualización nunca sale.
 clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
