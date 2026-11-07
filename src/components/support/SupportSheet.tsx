@@ -12,7 +12,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Copy, Check, ArrowLeft, Instagram } from 'lucide-react';
+import { X, Copy, Check, ArrowLeft, Instagram, ExternalLink, ChevronDown } from 'lucide-react';
 import { qrDataURL } from '../../utils/qr';
 import { formatCOP } from '../../utils/format';
 import MoneyInput from '../ui/MoneyInput';
@@ -23,10 +23,11 @@ import { getHousehold } from '../../services/household/householdSync';
 import { incomingOffers } from '../../services/household/debtSync';
 import KaiCoffee, { KaiSays } from './KaiCoffee';
 import Kai from '../assistant/Kai';
-import { kaiSupportLine, SUPPORT_KEY, SUPPORT_QR, SUPPORT_AMOUNTS, MIN_SUPPORT, readSupport, shouldOfferSupport, countOpen, markAsked, markDismissed, markSupported, claimPromptSlot } from '../../services/supportService';
+import { kaiSupportLine, SUPPORT_LABELS, WALLETS, canOpenWallets, openWallet, remindNextMonth, SUPPORT_KEY, SUPPORT_QR, SUPPORT_AMOUNTS, MIN_SUPPORT, readSupport, shouldOfferSupport, countOpen, markAsked, markDismissed, markSupported, claimPromptSlot } from '../../services/supportService';
 
 type Step = 'choose' | 'pay' | 'thanks';
 
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 export default function SupportSheet({ ready }: { ready: boolean }) {
   const [open, setOpen] = useState(false);
   const [auto, setAuto] = useState(false);
@@ -35,6 +36,7 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
   const [other, setOther] = useState(false);
   const [qr, setQr] = useState('');
   const [copied, setCopied] = useState(false);
+  const [showQr, setShowQr] = useState(false);
   const [touched, setTouched] = useState(false);
 
   const show = (isAuto: boolean) => { setAuto(isAuto); setStep('choose'); setOther(false); setCopied(false); setTouched(false); setAmount(2000); setOpen(true); };
@@ -64,17 +66,18 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
     return () => clearTimeout(t2);
   }, [ready]);
   useEffect(() => {
-    if (step === 'pay' && !qr) qrDataURL(SUPPORT_QR, { margin: 1, width: 360, errorCorrectionLevel: 'M', color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
-  }, [step, qr]);
+    if (step === 'pay' && showQr && !qr) qrDataURL(SUPPORT_QR, { margin: 1, width: 360, errorCorrectionLevel: 'M', color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
+  }, [step, qr, showQr]);
 
   const close = () => { if (auto && step === 'choose') markDismissed(); setOpen(false); };
   const copy = async () => {
-    try { await navigator.clipboard.writeText(SUPPORT_KEY); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    try { await navigator.clipboard.writeText(SUPPORT_KEY); setCopied(true); }
     catch { notify({ title: `La llave es ${SUPPORT_KEY}`, message: 'Cópiala a mano en tu banco.', type: 'info', log: false }); }
   };
   const goPay = () => {
     if (amount < MIN_SUPPORT) return notify({ title: `Desde ${formatCOP(MIN_SUPPORT)}`, message: 'Escribe un valor de $100 o más.', type: 'info', log: false });
     setStep('pay');
+    navigator.clipboard?.writeText(SUPPORT_KEY).then(() => setCopied(true)).catch(() => {});   // la llave queda copiada de una
   };
   const done = () => { markSupported(); setStep('thanks'); };
   const line = kaiSupportLine(amount, touched);
@@ -99,19 +102,26 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
                 <h2 id="support-title" className="text-white text-xl font-extrabold leading-tight">Mi Finanzas es gratis<br /><span className="text-brand-lime">y lo seguirá siendo</span></h2>
                 <p className="text-[13px] text-slate-300 mt-2">Si te ayuda, puedes apoyarnos con lo que quieras, desde $100. Nos ayuda a seguir mejorándola sin anuncios y sin pedir tus datos.</p>
                 <div className="grid grid-cols-3 gap-2 mt-4">
-                  {SUPPORT_AMOUNTS.map(v => (
-                    <motion.button key={v} whileTap={{ scale: 0.93 }} onClick={() => { setAmount(v); setOther(false); setTouched(true); }} aria-pressed={!other && amount === v}
-                      className={`h-12 rounded-2xl font-extrabold ${!other && amount === v ? 'bg-brand-lime text-brand-ink' : 'bg-white/[0.06] ring-1 ring-white/10 text-white'}`}>{formatCOP(v)}</motion.button>
-                  ))}
+                  {SUPPORT_AMOUNTS.map(v => {
+                    const on = !other && amount === v; const [e, t] = SUPPORT_LABELS[v] ?? ['💚', ''];
+                    return (
+                      <motion.button key={v} whileTap={{ scale: 0.93 }} onClick={() => { setAmount(v); setOther(false); setTouched(true); }} aria-pressed={on}
+                        className={`rounded-2xl py-2 px-1 flex flex-col items-center transition-shadow ${on ? 'bg-brand-lime text-brand-ink shadow-[0_0_18px_rgba(198,244,50,.45)]' : 'bg-white/[0.06] ring-1 ring-white/10 text-white'}`}>
+                        <span className="text-lg leading-none" aria-hidden="true">{e}</span><span className="font-extrabold text-[14px] mt-0.5">{formatCOP(v)}</span><span className={`text-[9.5px] font-bold ${on ? 'text-brand-ink/70' : 'text-slate-400'}`}>{t}</span>
+                      </motion.button>
+                    );
+                  })}
                   <motion.button whileTap={{ scale: 0.93 }} onClick={() => { setOther(true); setAmount(0); setTouched(true); }} aria-pressed={other}
-                    className={`h-12 rounded-2xl text-sm font-extrabold ${other ? 'bg-brand-lime text-brand-ink' : 'bg-white/[0.06] ring-1 ring-white/10 text-white'}`}>Otro valor</motion.button>
+                    className={`rounded-2xl py-2 px-1 flex flex-col items-center ${other ? 'bg-brand-lime text-brand-ink' : 'bg-white/[0.06] ring-1 ring-white/10 text-white'}`}>
+                    <span className="text-lg leading-none" aria-hidden="true">✏️</span><span className="font-extrabold text-[14px] mt-0.5">Otro</span><span className={`text-[9.5px] font-bold ${other ? 'text-brand-ink/70' : 'text-slate-400'}`}>desde $100</span>
+                  </motion.button>
                 </div>
                 {other && <MoneyInput value={amount} onChange={setAmount} prefix placeholder="Desde $100" ariaLabel="Otro valor" className="mt-2 w-full h-12 px-4 rounded-2xl bg-white/5 border border-white/10 text-white text-center font-bold outline-none focus:border-brand-lime" />}
                 <motion.button whileTap={{ scale: 0.96 }} onClick={goPay} className="mt-4 w-full py-3.5 rounded-2xl bg-brand-lime text-brand-ink font-extrabold">
-                  {amount >= MIN_SUPPORT ? `Apoyar con ${formatCOP(amount)} por Bre-B` : 'Apoyar por Bre-B'}
+                  {amount >= MIN_SUPPORT ? `Apoyar con ${formatCOP(amount)} →` : 'Apoyar →'}
                 </motion.button>
                 {auto && <button onClick={close} className="mt-2 w-full h-11 text-sm font-bold text-slate-400">Ahora no</button>}
-                <p className="text-[11px] text-slate-500 mt-2">Es voluntario: no se desbloquea nada ni cambia la app.</p>
+                <p className="text-[10.5px] text-slate-400 mt-2.5 font-semibold">🔒 Desde tu banco · Sin comisión · Voluntario</p>
               </div>
             </>)}
 
@@ -121,28 +131,40 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
                   <button onClick={() => setStep('choose')} aria-label="Volver" className="p-1 -ml-1 text-slate-300"><ArrowLeft size={20} /></button>
                   <button onClick={close} aria-label="Cerrar" className="p-1 text-slate-300"><X size={20} /></button>
                 </div>
-                <div className="flex items-center gap-2 mt-1"><span className="shrink-0"><Kai mood="normal" size={56} still title="Kai" /></span><p className="relative rounded-2xl rounded-tl-[4px] bg-[#fff] text-[#0B1026] px-3 py-2 text-[13px] font-bold">Son 3 pasos, yo te acompaño 👇</p></div>
-                <p className="text-[11px] font-extrabold tracking-widest text-slate-400 mt-2">APOYAR CON {formatCOP(amount)}</p>
-                <h2 id="support-title" className="text-white text-xl font-extrabold leading-tight mt-1">Desde tu banco, <span className="text-brand-lime">en 3 pasos</span></h2>
-                <div className="mt-4 p-4 rounded-2xl bg-white/[0.05] ring-1 ring-brand-lime/40">
-                  <p className="text-[11px] font-extrabold tracking-widest text-slate-400">LLAVE BRE-B</p>
+                <div className="text-center -mt-2">
+                  <p className="text-[10.5px] font-extrabold tracking-widest text-slate-400">VAS A APOYAR CON</p>
+                  <p id="support-title" className="text-[38px] leading-tight font-extrabold text-brand-lime drop-shadow-[0_0_14px_rgba(198,244,50,.35)]">{formatCOP(amount)}</p>
+                  <button onClick={() => setStep('choose')} className="text-[11.5px] font-bold text-slate-400">Cambiar valor</button>
+                </div>
+                <div className="mt-3 p-3.5 rounded-2xl bg-gradient-to-br from-brand-lime/15 to-white/[0.03] ring-[1.5px] ring-brand-lime">
+                  <p className="text-[10.5px] font-extrabold tracking-widest text-slate-400">1 · COPIA LA LLAVE BRE-B</p>
                   <div className="flex items-center justify-between gap-2 mt-1">
-                    <span className="text-2xl font-extrabold text-white tracking-wide">{SUPPORT_KEY}</span>
+                    <span className="text-[26px] font-extrabold text-white tracking-wide">{SUPPORT_KEY}</span>
                     <motion.button whileTap={{ scale: 0.92 }} onClick={copy} className="px-3 h-9 rounded-xl bg-brand-lime text-brand-ink text-sm font-extrabold flex items-center gap-1.5">{copied ? <><Check size={15} strokeWidth={3} /> Copiada</> : <><Copy size={15} /> Copiar</>}</motion.button>
                   </div>
                 </div>
-                <ol className="mt-4 space-y-2.5 text-sm text-slate-200">
-                  {[<>Abre la app de tu banco o billetera</>, <>Entra a <b className="text-white">Bre-B → enviar con llave</b></>, <>Pega la llave y escribe <b className="text-white">{formatCOP(amount)}</b></>].map((t, i) => (
-                    <li key={i} className="flex items-center gap-3"><span className="w-7 h-7 shrink-0 rounded-full bg-brand-lime text-brand-ink text-sm font-extrabold flex items-center justify-center">{i + 1}</span><span>{t}</span></li>
-                  ))}
-                </ol>
-                <div className="mt-4 p-4 rounded-2xl bg-white text-center">
-                  {qr ? <img src={qr} alt="Código QR Bre-B para apoyar a Mi Finanzas" className="w-52 h-52 mx-auto" /> : <div className="w-52 h-52 mx-auto rounded-lg bg-slate-200 animate-pulse" />}
-                  <p className="text-[#0B1026] text-[13px] font-semibold mt-2">O escanea este código desde la app de tu banco</p>
-                  <p className="text-slate-500 text-[11px]">Código QR Bre-B de la llave {SUPPORT_KEY}</p>
-                </div>
-                <motion.button whileTap={{ scale: 0.96 }} onClick={done} className="mt-4 w-full py-3.5 rounded-2xl bg-brand-lime text-brand-ink font-extrabold">Ya apoyé 💚</motion.button>
-                <p className="text-[11px] text-slate-500 text-center mt-2">Sin comisiones: Bre-B es gratis e inmediato.</p>
+                <p className="text-[10.5px] font-extrabold tracking-widest text-slate-400 mt-3.5">2 · ABRE TU APP Y PEGA</p>
+                {canOpenWallets() ? (
+                  <div className="grid grid-cols-2 gap-2 mt-1.5">
+                    {WALLETS.map(w => (
+                      <motion.button key={w.id} whileTap={{ scale: 0.95 }} onClick={() => { copy(); openWallet(w.pkg); }}
+                        className="h-11 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 text-white text-[13px] font-extrabold flex items-center gap-1.5 px-3">📱 {w.name}<ExternalLink size={13} className="ml-auto text-slate-400" /></motion.button>
+                    ))}
+                    <div className="h-11 rounded-2xl bg-white/[0.04] ring-1 ring-white/10 text-slate-300 text-[12px] font-bold flex items-center px-3">🏦 Otro banco: ábrelo tú</div>
+                  </div>
+                ) : <p className="text-[13px] text-slate-300 mt-1.5">Abre la app de tu banco o billetera (Nequi, Daviplata, Bancolombia…).</p>}
+                <p className="mt-3 p-3 rounded-2xl bg-white/[0.04] text-[12.5px] text-slate-300 leading-relaxed"><b className="text-white">3 ·</b> En tu app: Enviar → <b className="text-white">Bre-B / Llaves</b> → pega <b className="text-brand-lime">{SUPPORT_KEY}</b> y escribe <b className="text-brand-lime">{formatCOP(amount)}</b></p>
+                <button onClick={() => setShowQr(v => !v)} className="mt-2 w-full h-11 rounded-2xl bg-white/[0.04] text-white text-[12.5px] font-extrabold flex items-center gap-2 px-3">🔳 ¿Pagas desde otro celular? {showQr ? 'Ocultar' : 'Ver'} QR<ChevronDown size={15} className={`ml-auto text-slate-400 transition-transform ${showQr ? 'rotate-180' : ''}`} /></button>
+                <AnimatePresence>{showQr && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                    <div className="mt-2 p-4 rounded-2xl bg-white text-center">
+                      {qr ? <img src={qr} alt="Código QR Bre-B para apoyar a Mi Finanzas" className="w-48 h-48 mx-auto" /> : <div className="w-48 h-48 mx-auto rounded-lg bg-slate-200 animate-pulse" />}
+                      <p className="text-[#0B1026] text-[12px] font-semibold mt-2">Escanéalo desde la app de tu banco</p>
+                    </div>
+                  </motion.div>
+                )}</AnimatePresence>
+                <div className="flex items-center gap-2 mt-3"><span className="shrink-0"><Kai mood="normal" size={44} still title="Kai" /></span><p className="text-[12px] text-slate-300 font-semibold">Aquí te espero. Cuando vuelvas, toca "Ya apoyé" 💚</p></div>
+                <motion.button whileTap={{ scale: 0.96 }} onClick={done} className="mt-3 w-full py-3.5 rounded-2xl bg-brand-lime text-brand-ink font-extrabold">Ya apoyé 💚</motion.button>
               </div>
             )}
 
@@ -155,14 +177,18 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
                   ))}
                   <Kai mood="celebra" size={160} title="Kai celebrando" />
                 </motion.div>
-                <h2 id="support-title" className="text-white text-2xl font-extrabold mt-3">¡Gracias por <span className="text-brand-lime">apoyarnos!</span></h2>
+                <span className="inline-block mt-1 px-3 py-1 rounded-full bg-amber-400 text-[#2A0A1F] text-[11px] font-black tracking-wide">🏅 ALIADO DE {MESES[new Date().getMonth()].toUpperCase()}</span>
+                <h2 id="support-title" className="text-white text-2xl font-extrabold mt-2">¡Gracias por <span className="text-brand-lime">apoyarnos!</span></h2>
                 <p className="text-sm text-slate-300 mt-2">Kai está feliz 🤖💚 Tu aporte nos ayuda a mantener Mi Finanzas gratis, sin anuncios y sin pedir tus datos.</p>
                 <div className="mt-5 p-3 rounded-2xl bg-gradient-to-br from-amber-200/20 to-brand-lime/10 ring-1 ring-amber-200/40 text-left flex items-center gap-3">
                   <span className="shrink-0 w-12 h-12 rounded-full bg-[radial-gradient(#FDE68A,#F59E0B)] flex items-center justify-center"><Kai mood="feliz" size={38} still title="Kai" /></span>
-                  <span><span className="block text-white font-extrabold text-sm">Insignia "Aliado de Mi Finanzas"</span>
-                  <span className="block text-[12px] text-slate-400 mt-0.5">Aparece en tu menú como agradecimiento (solo en tu celular).</span></span>
+                  <span><span className="block text-white font-extrabold text-sm">Kai dorado desbloqueado ✨</span>
+                  <span className="block text-[12px] text-slate-400 mt-0.5">Ya brilla en tu menú como agradecimiento (solo en tu celular).</span></span>
                 </div>
-                <button onClick={() => { openInstagram(); }} className="mt-5 w-full h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white font-bold flex items-center justify-center gap-2"><Instagram size={18} /> Síguenos en Instagram</button>
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <button onClick={() => { openInstagram(); }} className="h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white text-[12.5px] font-bold flex items-center justify-center gap-1.5"><Instagram size={16} /> Síguenos</button>
+                  <button onClick={() => { remindNextMonth(); notify({ title: 'Te recuerdo en un mes ☕', type: 'success', log: false }); }} className="h-12 rounded-2xl bg-white/[0.07] ring-1 ring-white/10 text-white text-[12.5px] font-bold">🔁 Recordarme en un mes</button>
+                </div>
                 <motion.button whileTap={{ scale: 0.96 }} onClick={() => setOpen(false)} className="mt-2 w-full py-3.5 rounded-2xl bg-brand-lime text-brand-ink font-extrabold">Volver a la app</motion.button>
               </div>
             )}

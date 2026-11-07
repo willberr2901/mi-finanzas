@@ -19,12 +19,25 @@ export const SUPPORT_KEY = '@WBR617';
 export const SUPPORT_BANK = 'Nu';
 /** Contenido exacto del QR Bre-B de la llave (verificado con su código de control CRC). */
 export const SUPPORT_QR = '00020101021126290014CO.COM.RBM.LLA0407@wbr61749250014CO.COM.RBM.RED0103RBM50310013CO.COM.RBM.CU0110000000000051220013CO.COM.RBM.CA010105204000053031705802CO59010600106101062270710CC4006D149080200110363180270016CO.COM.RBM.CANAL0103APP81250015CO.COM.RBM.CIVA01020282260014CO.COM.RBM.IVA01040.0083270015CO.COM.RBM.BASE01040.0084250015CO.COM.RBM.CINC01020285260014CO.COM.RBM.INC01040.0090430016CO.COM.RBM.TRXID0119000000Rt6lWnaGTmuIY91460014CO.COM.RBM.SEC0124kq2StfW5Q/P5vQESHHe1Du0/6304255A';
-export const SUPPORT_AMOUNTS = [1000, 2000, 5000, 10000, 20000];
+export const SUPPORT_AMOUNTS = [2000, 5000, 10000, 20000, 50000];
+/** Cada valor con su dibujo y nombre (como en la ventana). */
+export const SUPPORT_LABELS: Record<number, [string, string]> = { 2000: ['☕', 'un tinto'], 5000: ['🥐', 'con pandebono'], 10000: ['🍳', 'un desayuno'], 20000: ['🍕', 'un almuerzo'], 50000: ['🎁', '¡wow!'] };
+
+/** 📱 Billeteras que se pueden abrir directo en Android (la llave ya queda copiada).
+ *  En iPhone no hay forma estándar de abrir otra app: ahí se muestra solo "Copiar". */
+export const WALLETS: { id: string; name: string; pkg: string }[] = [
+  { id: 'nequi', name: 'Nequi', pkg: 'com.nequi.MobileApp' },
+  { id: 'daviplata', name: 'Daviplata', pkg: 'com.davivienda.daviplataapp' },
+  { id: 'bancolombia', name: 'Bancolombia', pkg: 'com.todo1.mobile' },
+];
+export const canOpenWallets = () => /android/i.test(navigator.userAgent);
+/** Abre la app del banco en Android (si no está instalada, Android ofrece la tienda). */
+export const openWallet = (pkg: string) => { window.location.href = `intent://#Intent;package=${pkg};end`; };
 export const MIN_SUPPORT = 100;
 
 const DAY = 86400000;
 const BACKOFF_DAYS = [14, 30, 60, 120];
-export interface SupportState { firstSeen: number; opens: number; dismissals: number; lastAsk: number; supportedAt: number }
+export interface SupportState { firstSeen: number; opens: number; dismissals: number; lastAsk: number; supportedAt: number; remindAt?: number }
 const KEY = 'mf_support';
 export const readSupport = (): SupportState => {
   try { return { firstSeen: Date.now(), opens: 0, dismissals: 0, lastAsk: 0, supportedAt: 0, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; }
@@ -34,6 +47,7 @@ const write = (s: SupportState) => { try { localStorage.setItem(KEY, JSON.string
 
 /** Regla de cuándo ofrecer "Apóyanos" (función pura, se prueba en __tests__/apoyanos.test.ts). */
 export function shouldOfferSupport(s: SupportState, now = Date.now()): boolean {
+  if (s.remindAt) return now >= s.remindAt;                       // pidió "recordarme en un mes"
   if (s.supportedAt) return now - s.supportedAt >= 180 * DAY;
   if (s.dismissals === 0) return s.lastAsk === 0 && s.opens >= 3; // primera vez: a la 3.ª apertura
   const wait = BACKOFF_DAYS[Math.min(s.dismissals - 1, BACKOFF_DAYS.length - 1)];
@@ -48,8 +62,11 @@ export const countOpen = () => {
 };
 export const markAsked = () => write({ ...readSupport(), lastAsk: Date.now() });
 export const markDismissed = () => { const s = readSupport(); write({ ...s, dismissals: s.dismissals + 1, lastAsk: Date.now() }); };
-export const markSupported = () => write({ ...readSupport(), supportedAt: Date.now(), dismissals: 0 });
+export const markSupported = () => write({ ...readSupport(), supportedAt: Date.now(), dismissals: 0, remindAt: undefined });
 export const isAlly = () => readSupport().supportedAt > 0;
+/** "Recordarme en un mes" (después de apoyar). */
+export const remindNextMonth = () => write({ ...readSupport(), remindAt: Date.now() + 30 * DAY });
+export const markSupportedNow = () => write({ ...readSupport(), supportedAt: Date.now(), dismissals: 0, remindAt: undefined });
 
 /** Una sola ventana "de invitación" por sesión (Apóyanos, Síguenos, encuesta…). */
 export const claimPromptSlot = () => { try { if (sessionStorage.getItem('mf_prompt_slot')) return false; sessionStorage.setItem('mf_prompt_slot', '1'); return true; } catch { return false; } };
