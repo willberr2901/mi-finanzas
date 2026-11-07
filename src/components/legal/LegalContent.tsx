@@ -8,7 +8,11 @@
  * ════════════════════════════════════════════════════════════════════
  */
 
-export const TERMS_VERSION = '2026-10-19-a';
+export const TERMS_VERSION = '2026-11-07-a';
+/** 📮 Contacto oficial de la app (derechos sobre datos, dudas, aportes). Cámbialo aquí y se actualiza en toda la app. */
+export const APP_EMAIL = 'mifinanzas.app@gmail.com';
+export const APP_OWNER = 'el equipo de Mi Finanzas';
+export const APP_CITY = 'Bogotá, Colombia';
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <section className="space-y-1.5">
@@ -38,6 +42,9 @@ export default function LegalContent() {
         <p>Ojo: dentro del celular esa información se guarda de forma que no se lee a simple vista, pero <strong>no está protegida con contraseña</strong>. Quien tenga tu celular desbloqueado podría abrir la app. Por eso te recomendamos <strong>activar el PIN</strong> de la app y guardar tus <strong>copias de respaldo</strong>, que sí van cifradas con la contraseña que tú eliges.</p>
         <p>El nombre con el que la app te saluda es opcional y también queda solo en tu celular.</p>
       </Section>
+      <Section title="2.1 Cookies y almacenamiento del celular">
+        <p>Mi Finanzas <strong>no usa cookies</strong> de publicidad ni de seguimiento. Para funcionar guarda información en el almacenamiento interno del navegador de tu celular: tus registros, tus preferencias (tema, color de Kai, avisos), el PIN cifrado y el registro de intentos fallidos de PIN para avisarte si alguien intentó entrar. Todo eso se queda en tu celular y se borra con «Borrar todos mis datos».</p>
+      </Section>
       <Section title="3. Fotos de facturas">
         <p>Cuando escaneas una factura, la imagen se procesa dentro de tu celular. Para leer el texto la app descarga una única vez las herramientas de reconocimiento; tu foto no se envía a ningún servidor.</p>
       </Section>
@@ -58,19 +65,27 @@ export default function LegalContent() {
         <p>La descarga de la app y de sus actualizaciones desde el servidor donde está publicada. Ese servidor, como cualquier página web, puede registrar datos técnicos básicos de la visita (como la dirección IP), pero no tus datos financieros.</p>
         <p>Las estadísticas anónimas (punto 6), que puedes apagar, y, solo si tú lo activas, el hogar sincronizado (punto 5) y el dictado por voz del celular (punto 3.1).</p>
       </Section>
+      <Section title="4.1 Servicios de terceros que usa la app">
+        <p><strong>Render</strong> (Estados Unidos): publica la app y sus actualizaciones.</p>
+        <p><strong>Supabase</strong> (servidor en São Paulo, Brasil): guarda las cajas cifradas del hogar sincronizado, las sumas anónimas de estadísticas y las opiniones que envías.</p>
+        <p><strong>Reconocimiento de voz de Google o Apple</strong>: solo si tocas el micrófono (punto 3.1).</p>
+        <p><strong>Enlaces a otras apps</strong> (WhatsApp, Instagram, Google Calendar y apps de bancos como Nequi, Daviplata o Bancolombia): la app solo las abre cuando tú tocas el botón; lo que hagas allá se rige por las políticas de cada una. Mi Finanzas no tiene acuerdos con esas empresas ni usa sus logos.</p>
+        <p>La app no tiene publicidad ni herramientas de rastreo de terceros.</p>
+      </Section>
       <Section title="5. Hogar sincronizado (opcional)">
         <p>Sirve para compartir la lista de mercado, el historial de compras y los precios con las personas de tu hogar. Está apagado hasta que tú creas un hogar o te unes a uno.</p>
         <p><strong>Cómo te protege:</strong> cada cambio se cifra en tu celular con AES-256 usando una llave que solo existe en los celulares del hogar (viaja dentro del código QR o del enlace de invitación, en una parte que nunca se envía a ningún servidor). Al servidor solo llega texto cifrado, sin nombres de productos, precios, nombres de personas, correos ni teléfonos. Ni los creadores de la app ni el proveedor del servidor pueden leerlo.</p>
-        <p><strong>Qué no se comparte:</strong> tus ingresos, gastos, pagos, deudas, metas y facturas nunca salen de tu celular.</p>
+        <p><strong>Deudas compartidas (opcional):</strong> si aceptas sincronizar deudas con tu hogar, solo las que tú marcas (nombre, valor, cuotas y fecha de pago) viajan con el mismo cifrado. Las demás quedan solo tuyas.</p>
+        <p><strong>Qué no se comparte:</strong> tus ingresos, gastos, metas, facturas y las deudas que no marcaste nunca salen de tu celular.</p>
         <p><strong>Dónde y cuánto tiempo:</strong> las cajas cifradas se guardan en un servidor de Supabase en São Paulo (Brasil). Se borran solas si nadie usa el hogar durante 60 días, y puedes borrarlas cuando quieras en Mercado → Hogar → «Borrar del servidor». Como cualquier servicio en internet, el servidor ve datos técnicos de la conexión (como la dirección IP) mientras sincroniza.</p>
         <p><strong>Tu responsabilidad:</strong> quien tenga el código del hogar puede ver y editar la lista. Compártelo solo con personas de tu confianza.</p>
       </Section>
       <Section title="6. Estadísticas anónimas">
-        <p>Para saber cuántas personas usan la app, cada celular suma +1 al servidor la primera vez que abre la app, cuando la instala y máximo una vez al día si la usa. Solo se envía: el tipo de evento, si el celular es Android, iPhone o computador, si la app está instalada o en el navegador, y el código del enlace con el que llegaste (si alguien te la compartió).</p>
+        <p>Para saber cuántas personas usan la app, cada celular suma +1 al servidor la primera vez que abre la app, cuando la instala y máximo una vez al día si la usa. Además, máximo una vez al día, se suma <strong>cuántos</strong> productos se agregaron al mercado y <strong>cuántos</strong> gastos se registraron (solo el número, sin montos, nombres ni categorías). Solo se envía: el tipo de evento, si el celular es Android, iPhone o computador, si la app está instalada o en el navegador, y el código del enlace con el que llegaste (si alguien te la compartió).</p>
         <p>No se envía tu nombre, correo, teléfono, montos, listas ni ningún identificador de tu celular: el servidor solo guarda sumas por día y no puede saber quién es quién. Puedes apagarlas en Ajustes → Tus datos → Estadísticas anónimas.</p>
       </Section>
       <Section title="7. Opiniones">
-        <p>Si decides darnos tu opinión, se envía solo lo que escribes: las estrellas, lo que te gusta, lo que mejorarías, la parte de la app y, si quieres, un nombre o apodo. También se guarda el tipo de celular y la versión de la app para entender el comentario. No escribas datos personales como teléfono, cédula o cuentas. Las opiniones solo las ve el equipo de Mi Finanzas.</p>
+        <p>Si decides darnos tu opinión, se envía solo lo que escribes o dictas: la calificación, lo que te gusta, lo que mejorarías, la parte de la app y, si quieres, un nombre o apodo. También se guarda el tipo de celular y la versión de la app para entender el comentario. No escribas datos personales como teléfono, cédula o cuentas. Las opiniones solo las ve el equipo de Mi Finanzas.</p>
       </Section>
       <Section title="7.1 Notificaciones">
         <p>Los recordatorios de pagos los genera tu propio celular a partir de lo que registraste. Puedes desactivarlos en cualquier momento desde la configuración del navegador.</p>
@@ -82,10 +97,15 @@ export default function LegalContent() {
         <p>Puedes exportar un respaldo en PDF o Excel desde Finanzas cuando quieras.</p>
       </Section>
       <Section title="9. Seguridad">
-        <p>La app se protege contra ataques comunes: solo ejecuta su propio código (bloquea código inyectado), no se deja meter dentro de otras páginas, avisa si la abres desde una dirección falsa, guarda el PIN cifrado y limita los intentos, revisa los respaldos antes de abrirlos y usa conexiones seguras (HTTPS). Ninguna app es 100% invulnerable; te recomendamos activar el PIN.</p>
+        <p>La app se protege contra ataques comunes: solo ejecuta su propio código (bloquea código inyectado), no se deja meter dentro de otras páginas, avisa si la abres desde una dirección falsa, guarda el PIN cifrado y limita los intentos, te avisa si alguien intentó entrar con un PIN equivocado, oculta la pantalla al cambiar de app (con PIN activo), revisa los respaldos antes de abrirlos y usa conexiones seguras (HTTPS). Ninguna app es 100% invulnerable; te recomendamos activar el PIN.</p>
       </Section>
       <Section title="10. Ley colombiana">
-        <p>Esta política se inspira en la Ley 1581 de 2012 de protección de datos personales. La app no recoge datos que identifiquen a las personas; la información del hogar sincronizado viaja y se guarda cifrada de forma que nadie distinto a los celulares del hogar puede leerla.</p>
+        <p>Esta política sigue la Ley 1581 de 2012 de protección de datos personales. La app no recoge datos que identifiquen a las personas; la información del hogar sincronizado viaja y se guarda cifrada de forma que nadie distinto a los celulares del hogar puede leerla.</p>
+      </Section>
+      <Section title="11. Responsable y contacto">
+        <p>Responsable: {APP_OWNER}, {APP_CITY}.</p>
+        <p>Para preguntas, quejas o para ejercer tus derechos (conocer, actualizar, corregir o borrar información, o retirar tu autorización) escríbenos a <a className="text-brand-lime font-semibold underline" href={`mailto:${APP_EMAIL}`}>{APP_EMAIL}</a>. Respondemos en máximo 15 días hábiles. Si no quedas conforme, puedes acudir a la Superintendencia de Industria y Comercio (SIC).</p>
+        <p>Como casi todo vive solo en tu celular, para borrar tus datos no necesitas escribirnos: usa Ajustes → «Borrar todos mis datos». Las opiniones que enviaste sí podemos borrarlas si nos escribes.</p>
       </Section>
 
       <h2 className="text-white text-base font-bold pt-2">Términos y condiciones</h2>
@@ -100,6 +120,16 @@ export default function LegalContent() {
       </Section>
       <Section title="4. Cambios">
         <p>Si estos términos cambian, la app te los mostrará de nuevo para que los aceptes.</p>
+      </Section>
+      <Section title="5. Apóyanos (aportes voluntarios)">
+        <p>Mi Finanzas es y seguirá siendo gratis. «Apóyanos» es un aporte <strong>voluntario</strong> que haces desde tu propio banco a la llave Bre-B del creador de la app. La app no procesa pagos, no ve tu banco y no sabe si aportaste.</p>
+        <p>El aporte no compra nada ni desbloquea funciones: el sello «Aliado» y el Kai dorado son solo un agradecimiento. No es una donación con beneficio tributario. Si aportaste por error, escríbenos al correo de contacto y lo revisamos.</p>
+      </Section>
+      <Section title="6. Edad">
+        <p>La app está pensada para personas mayores de 18 años. Si eres menor de edad, úsala con permiso y acompañamiento de tu mamá, papá o acudiente, y no hagas aportes en Apóyanos sin su autorización.</p>
+      </Section>
+      <Section title="7. Contacto">
+        <p>Escríbenos a <a className="text-brand-lime font-semibold underline" href={`mailto:${APP_EMAIL}`}>{APP_EMAIL}</a>.</p>
       </Section>
       <p className="text-[11px] text-slate-500 pt-2">Versión {TERMS_VERSION}</p>
     </div>

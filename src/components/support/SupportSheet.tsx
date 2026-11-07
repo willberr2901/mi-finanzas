@@ -122,6 +122,7 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
                 </motion.button>
                 {auto && <button onClick={close} className="mt-2 w-full h-11 text-sm font-bold text-slate-400">Ahora no</button>}
                 <p className="text-[10.5px] text-slate-400 mt-2.5 font-semibold">🔒 Desde tu banco · Sin comisión · Voluntario</p>
+                <p className="text-[10px] text-slate-500 mt-1">La app sigue gratis: tu aporte no desbloquea funciones. <a href="/legal" className="underline">Términos</a></p>
               </div>
             </>)}
 
