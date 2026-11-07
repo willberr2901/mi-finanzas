@@ -19,7 +19,8 @@ import { notify } from '../../services/notificationService';
 
 export interface KaiTip { text: string; mood: KaiMood; action?: () => void }
 
-export default function FloatingKai({ tips, onTap }: { tips: KaiTip[]; onTap?: () => void }) {
+/** restMood/badge: cómo está Kai cuando no habla (reacciona a tu plata: 🎉 día de pago, 💧 cerca del límite, 😴 de noche, 🔥 racha). */
+export default function FloatingKai({ tips, onTap, restMood = 'feliz', badge }: { tips: KaiTip[]; onTap?: () => void; restMood?: KaiMood; badge?: string }) {
   const [i, setI] = useState(0);
   const [show, setShow] = useState(false);
   const press = useRef<number>();
@@ -54,7 +55,8 @@ export default function FloatingKai({ tips, onTap }: { tips: KaiTip[]; onTap?: (
     <div className="relative shrink-0 -my-3 -mx-1.5">
       <button onPointerDown={down} onPointerUp={up} onPointerLeave={up} onContextMenu={e => e.preventDefault()} onClick={click}
         aria-label="Kai, tu asistente. Toca para un consejo; deja presionado para cambiar su color" className="block select-none [-webkit-touch-callout:none]">
-        <Kai mood={show && tip ? tip.mood : 'feliz'} size={52} />
+        <Kai mood={show && tip ? tip.mood : restMood} size={52} />
+        {badge && <motion.span key={badge} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 10 }} className="absolute -bottom-0.5 -left-1 min-w-[22px] h-[22px] px-1 rounded-full bg-[#0B1026] ring-2 ring-brand-lime/60 text-[11px] font-extrabold text-white flex items-center justify-center" aria-hidden="true">{badge}</motion.span>}
       </button>
       <AnimatePresence>
         {show && tip && (

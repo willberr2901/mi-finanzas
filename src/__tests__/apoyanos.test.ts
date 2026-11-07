@@ -15,3 +15,17 @@ describe('Apóyanos con Kai', () => {
     expect(kaiSupportLine(0, true).mood).toBe('pensando');
   });
 });
+
+import { streakDays } from '../pages/HomePage';
+describe('Racha de Kai', () => {
+  const t = (d: string) => ({ date: d });
+  it('cuenta días seguidos hasta hoy', () => {
+    expect(streakDays([t('2026-11-06'), t('2026-11-05'), t('2026-11-04'), t('2026-11-01')], new Date(2026, 10, 6))).toBe(3);
+  });
+  it('si hoy aún no anota, cuenta desde ayer', () => {
+    expect(streakDays([t('2026-11-05'), t('2026-11-04')], new Date(2026, 10, 6))).toBe(2);
+  });
+  it('sin movimientos recientes es 0', () => {
+    expect(streakDays([t('2026-10-01')], new Date(2026, 10, 6))).toBe(0);
+  });
+});

@@ -30,6 +30,18 @@ import { daysSinceBackup, backupSnoozed } from '../services/backupService';
 import TripleRing from '../components/home/TripleRing';
 import HomeSkeleton from '../components/home/HomeSkeleton';
 import FloatingKai, { type KaiTip } from '../components/assistant/FloatingKai';
+import type { KaiMood } from '../components/assistant/Kai';
+
+/** 🔥 Racha: días seguidos (hasta hoy o ayer) en los que anotaste al menos un movimiento. */
+export function streakDays(tx: { date: string }[], today = new Date()): number {
+  const days = new Set(tx.map(t => t.date.slice(0, 10)));
+  const key = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (!days.has(key(d))) d.setDate(d.getDate() - 1);   // si hoy aún no anota, cuenta desde ayer
+  let n = 0;
+  while (days.has(key(d)) && n < 999) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
 import Kai from '../components/assistant/Kai';
 import NewBadge from '../components/ui/NewBadge';
 
@@ -137,11 +149,21 @@ export default function HomePage() {
     { emoji: '📊', label: 'Reportes', to: '/analisis' },
   ];
 
+  // 🤖 Kai reacciona a tu plata (cuando no está hablando)
+  const hourNow = now.getHours();
+  const streak = streakDays(tx);
+  const kaiState: { mood: KaiMood; badge?: string } =
+    salary ? { mood: 'celebra', badge: '🎉' }
+    : worst?.level === 'over' ? { mood: 'calma', badge: '💧' }
+    : hourNow >= 22 || hourNow < 5 ? { mood: 'calma', badge: '😴' }
+    : streak >= 3 ? { mood: 'feliz', badge: `🔥${streak}` }
+    : { mood: 'feliz' };
+
   return (
     <div className="overscroll-none">
       <ModuleHeader module="inicio" title={`${name ? `Hola, ${name}` : 'Mi Finanzas'}${season ? ` ${season.emoji}` : ''}`}
         subtitle={`${DAYS[now.getDay()][0].toUpperCase()}${DAYS[now.getDay()].slice(1)} ${now.getDate()} de ${MONTHS[now.getMonth()]}`}
-        right={<FloatingKai tips={tips} onTap={openAssistant} />} hideIcon />
+        right={<FloatingKai tips={tips} onTap={openAssistant} restMood={kaiState.mood} badge={kaiState.badge} />} hideIcon />
 
       {/* 1. Anillos del mes */}
       <motion.div data-tour="home-hero" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}

@@ -41,6 +41,19 @@ const PIN_KEY = 'mf_pin';
 const ATT_KEY = 'mf_pin_attempts';
 const BIO_KEY = 'mf_bio_cred';
 const AUTO_KEY = 'mf_autolock_min';
+const FAILS_KEY = 'mf_pin_fails';     // horas de intentos fallidos desde el último desbloqueo
+export const ALERT_KEY = 'mf_pin_alert'; // 🚨 aviso pendiente "alguien intentó entrar"
+/** Al desbloquear bien: si hubo intentos fallidos, deja el aviso listo y limpia la lista. */
+const flushFails = () => {
+  try {
+    const fails: number[] = JSON.parse(localStorage.getItem(FAILS_KEY) || '[]');
+    if (fails.length) localStorage.setItem(ALERT_KEY, JSON.stringify({ count: fails.length, last: fails[fails.length - 1] }));
+    localStorage.removeItem(FAILS_KEY);
+  } catch { /* sin almacenamiento */ }
+};
+const logFail = () => {
+  try { const f: number[] = JSON.parse(localStorage.getItem(FAILS_KEY) || '[]'); f.push(Date.now()); localStorage.setItem(FAILS_KEY, JSON.stringify(f.slice(-50))); } catch { /* nada */ }
+};
 
 const SecurityContext = createContext<SecurityContextType | undefined>(undefined);
 
@@ -92,9 +105,11 @@ export const SecurityProvider = ({ children }: { children: ReactNode }) => {
     if (wait > 0) return { ok: false, waitSeconds: wait };
     if (await verifyPin(pin)) {
       localStorage.setItem(ATT_KEY, JSON.stringify({ count: 0, until: 0 }));
+      flushFails();
       setIsLocked(false);
       return { ok: true };
     }
+    logFail();
     const a = readAttempts();
     const count = a.count + 1;
     // 5 intentos libres; luego espera de 30 s, 60 s, 120 s… (máx. 15 min)
@@ -144,7 +159,7 @@ export const SecurityProvider = ({ children }: { children: ReactNode }) => {
       const res = await navigator.credentials.get({
         publicKey: { challenge: randomBytes(32), allowCredentials: [{ type: 'public-key', id: fromB64(id) }], userVerification: 'required', timeout: 60_000 },
       });
-      if (res) { setIsLocked(false); localStorage.setItem(ATT_KEY, JSON.stringify({ count: 0, until: 0 })); return true; }
+      if (res) { flushFails(); setIsLocked(false); localStorage.setItem(ATT_KEY, JSON.stringify({ count: 0, until: 0 })); return true; }
     } catch { /* cancelado */ }
     return false;
   }, []);

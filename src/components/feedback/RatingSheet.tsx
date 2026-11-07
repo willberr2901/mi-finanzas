@@ -23,25 +23,26 @@ import { openInstagram } from '../social/Instagram';
 import { IS_TEST } from '../../utils/env';
 import { haptic } from '../../utils/haptics';
 import { notify } from '../../services/notificationService';
+import { listen, isVoiceSupported } from '../../services/voice/speech';
 
-const LABELS = ['', 'No me gusta 😕', 'Le falta 🤔', 'Está bien 🙂', '¡Me gusta! 😊', '¡Me encanta! 😍'];
+const LABELS = ['', 'No me gusta 😞', 'Le falta 😕', 'Está bien 😐', '¡Me gusta! 🙂', '¡Me encanta! 🤩'];
+const FACES = ['😞', '😕', '😐', '🙂', '🤩'];
+/** Lo que más le gusta (toques rápidos cuando califica 4-5). */
+const LIKES = ['🤖 Kai', '🛒 Mercado', '🏠 Inicio', '📅 Pagos', '🪙 Alcancía', '🔔 Avisos', '🔒 Privacidad', '🎨 Diseño'];
 const moodFor = (n: number): KaiMood => (n === 0 ? 'feliz' : n <= 2 ? 'calma' : n === 3 ? 'pensando' : n === 4 ? 'feliz' : 'celebra');
 
-function Star({ on, i, onPick }: { on: boolean; i: number; onPick: (n: number) => void }) {
-  return (
-    <motion.button type="button" aria-label={`${i} estrella${i > 1 ? 's' : ''}`} onClick={() => onPick(i)} whileTap={{ scale: 0.8 }}
-      animate={on ? { scale: [1, 1.35, 1], rotate: [0, -12, 0] } : { scale: 1 }} transition={{ duration: 0.35, delay: on ? (i - 1) * 0.04 : 0 }}
-      className="p-1">
-      <svg width="44" height="44" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z"
-          fill={on ? '#FACC15' : 'rgba(255,255,255,.08)'} stroke={on ? '#F59E0B' : 'rgba(255,255,255,.25)'} strokeWidth="1.4" strokeLinejoin="round" />
-      </svg>
-    </motion.button>
-  );
-}
 
 function Card({ auto, onClose }: { auto: boolean; onClose: () => void }) {
   const [stars, setStars] = useState(0);
+  const [likes, setLikes] = useState<string[]>([]);
+  const [listening, setListening] = useState(false);
+  const stopRef = useRef<null | (() => void)>(null);
+  const dictate = () => {
+    if (listening) { stopRef.current?.(); return; }
+    setListening(true);
+    const base = text ? text.trim() + ' ' : '';
+    stopRef.current = listen({ onText: t => setText((base + t).slice(0, 1000)), onEnd: () => setListening(false) });
+  };
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [text, setText] = useState('');
   const [area, setArea] = useState<FeedbackArea>('general');
@@ -54,7 +55,7 @@ function Card({ auto, onClose }: { auto: boolean; onClose: () => void }) {
     sent.current = true;
     saveRating(stars);
     if (IS_TEST) return; // la app de pruebas no envía nada
-    try { await sendFeedback({ rating: stars, liked: high && withText ? text : '', improve: !high && withText ? text : '', area, alias: '' }); }
+    try { await sendFeedback({ rating: stars, liked: high ? [likes.join(', '), withText ? text : ''].filter(Boolean).join(' · ') : '', improve: !high && withText ? text : '', area, alias: '' }); }
     catch { /* sin conexión: la calificación queda guardada en el celular */ }
   };
   const pick = (n: number) => { setStars(n); haptic(n >= 4 ? 'success' : 'light'); };
@@ -90,25 +91,42 @@ function Card({ auto, onClose }: { auto: boolean; onClose: () => void }) {
             <button onClick={close} aria-label="Cerrar" className="p-1 text-[#0B1026]/70"><X size={18} /></button>
           </div>
         </div>
-        <div className="relative z-10 -mt-[70px] flex justify-center"><Kai mood={mood} size={112} /></div>
+        <div className="relative z-10 -mt-[70px] flex justify-center"><Kai mood={mood} size={step === 1 ? 136 : 112} /></div>
 
         <div className="px-5 pb-5 text-center">
           <AnimatePresence mode="wait">
             {step === 1 && (
               <motion.div key="s1" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-                <h2 id="rate-title" className="text-[19px] font-extrabold">¿Cómo te parece Mi Finanzas?</h2>
-                <div className="flex justify-center mt-2" role="radiogroup" aria-label="Calificación">
-                  {[1, 2, 3, 4, 5].map(i => <Star key={i} i={i} on={i <= stars} onPick={pick} />)}
+                <h2 id="rate-title" className="text-[19px] font-extrabold">¿Cómo te hace sentir Mi Finanzas?</h2>
+                <p className={`text-[20px] font-extrabold h-7 mt-1 ${stars >= 4 ? 'text-brand-lime' : stars ? 'text-yellow-300' : 'text-slate-400'}`}>{stars ? LABELS[stars] : 'Desliza y mira a Kai 👇'}</p>
+                {/* Barra de caritas: al moverla, la cara de Kai cambia */}
+                <div className="mt-3 px-1">
+                  <input type="range" min={1} max={5} step={1} value={stars || 3} aria-label="Calificación de 1 a 5"
+                    onChange={e => pick(Number(e.target.value))} onClick={e => pick(Number((e.target as HTMLInputElement).value))}
+                    className="mf-rate-range w-full" style={{ ['--p' as string]: `${(((stars || 3) - 1) / 4) * 100}%` }} />
+                  <div className="flex justify-between mt-1.5" role="radiogroup" aria-label="Caritas">
+                    {FACES.map((f, i) => (
+                      <button key={i} type="button" onClick={() => pick(i + 1)} aria-label={LABELS[i + 1]}
+                        className={`text-[26px] transition-all ${stars === i + 1 ? 'scale-125' : 'opacity-40 grayscale-[.4]'}`}>{f}</button>
+                    ))}
+                  </div>
                 </div>
-                <p className={`text-[14px] font-bold h-5 ${stars ? 'text-yellow-300' : 'text-slate-400'}`}>{stars ? LABELS[stars] : 'Toca las estrellas'}</p>
                 <motion.button whileTap={{ scale: 0.97 }} disabled={!stars} onClick={next} className="mt-4 w-full py-3.5 rounded-2xl font-extrabold bg-brand-lime text-brand-ink disabled:opacity-40">Continuar</motion.button>
-                <button onClick={close} className="mt-2 w-full h-11 rounded-2xl text-slate-300 font-bold">{stars ? 'Solo las estrellas' : 'Ahora no'}</button>
+                <button onClick={close} className="mt-2 w-full h-11 rounded-2xl text-slate-300 font-bold">{stars ? 'Enviar así' : 'Ahora no'}</button>
               </motion.div>
             )}
             {step === 2 && (
               <motion.div key="s2" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
                 <h2 id="rate-title" className="text-[18px] font-extrabold">{high ? '¡Gracias! 💚 ¿Qué es lo que más te gusta?' : '¿Qué podemos mejorar?'}</h2>
                 <p className="text-[12.5px] text-slate-300 mt-1">{high ? 'Opcional, pero nos alegra el día.' : 'Cuéntanos sin pena: lo leemos todo.'}</p>
+                {high && (
+                  <div className="flex flex-wrap justify-center gap-1.5 mt-3">
+                    {LIKES.map(l => { const on = likes.includes(l); return (
+                      <button key={l} onClick={() => setLikes(v => on ? v.filter(x => x !== l) : [...v, l])} aria-pressed={on}
+                        className={`px-3 py-1.5 rounded-full text-[12px] font-bold ring-1 ${on ? 'bg-brand-lime text-brand-ink ring-brand-lime' : 'bg-white/[0.05] ring-white/10'}`}>{l}</button>
+                    ); })}
+                  </div>
+                )}
                 {!high && (
                   <div className="flex flex-wrap justify-center gap-1.5 mt-3">
                     {AREAS.map(a => (
@@ -117,11 +135,17 @@ function Card({ auto, onClose }: { auto: boolean; onClose: () => void }) {
                     ))}
                   </div>
                 )}
+                <div className="relative">
                 <textarea value={text} onChange={e => setText(e.target.value.slice(0, 1000))} rows={3} placeholder={high ? 'Ej: Kai, el mercado, los anillos…' : 'Ej: me gustaría que…'}
                   aria-label={high ? 'Lo que más te gusta' : 'Qué mejorarías'}
-                  className="mt-3 w-full rounded-2xl bg-[#0B1026] ring-1 ring-white/10 focus:ring-brand-lime outline-none px-3.5 py-3 text-[14px] text-left resize-none" />
+                  className="mt-3 w-full rounded-2xl bg-[#0B1026] ring-1 ring-white/10 focus:ring-brand-lime outline-none px-3.5 py-3 pr-14 text-[14px] text-left resize-none" />
+                {isVoiceSupported() && (
+                  <button type="button" onClick={dictate} aria-label={listening ? 'Parar de dictar' : 'Dictar por voz'}
+                    className={`absolute right-2.5 bottom-3.5 w-10 h-10 rounded-full flex items-center justify-center text-lg ${listening ? 'bg-rose-500 animate-pulse' : 'bg-brand-lime text-brand-ink'}`}>🎤</button>
+                )}
+                </div>
                 <motion.button whileTap={{ scale: 0.97 }} disabled={sending} onClick={next} className="mt-3 w-full py-3.5 rounded-2xl font-extrabold bg-brand-lime text-brand-ink disabled:opacity-50">{sending ? 'Enviando…' : 'Enviar'}</motion.button>
-                <p className="text-[10.5px] text-slate-500 mt-2">Sin datos de tus finanzas: solo tu opinión.</p>
+                <p className="text-[10.5px] text-slate-500 mt-2">🔒 Anónimo: no enviamos tu nombre ni tus datos.</p>
               </motion.div>
             )}
             {step === 3 && (
