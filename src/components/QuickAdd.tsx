@@ -5,6 +5,9 @@
  * Qué hace: Botón redondo abajo a la derecha para registrar un gasto o ingreso rápido, dictarlo por voz 🎤
  *           ("gasté 25 mil en almuerzo") o pegar la notificación del banco.
  * Dónde se ve: Inicio, Finanzas, Pagos y Ajustes (se oculta en Mercado, Escáner y Privacidad).
+ * Cómo se ve: al tocar el + se abre la RUEDA CON KAI en el centro de la pantalla
+ *   (Dictar, Gasto, Ingreso, Mercado, Pago fijo, Del banco alrededor; tocar a Kai = dictar).
+ *   Gasto/Ingreso abren abajo la hoja para escribir el valor. El + se vuelve × en la misma esquina.
  * Si lo cambias: Cambia el registro rápido de movimientos.
  * ════════════════════════════════════════════════════════════════════
  */
@@ -22,6 +25,8 @@ import { formatCOP, todayISO } from '../utils/format';
 import { notify } from '../services/notificationService';
 import { findMatchingBill, markPaidFromTransaction } from '../services/billsService';
 import { haptic } from '../utils/haptics';
+import Kai from './assistant/Kai';
+import { Landmark } from 'lucide-react';
 
 /** Botón flotante "+": registra rápido un gasto o ingreso, o salta a Mercado / Pagos, desde cualquier pantalla. */
 export default function QuickAdd({ hidden }: { hidden?: boolean }) {
@@ -64,6 +69,18 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
     { id: 'bill', label: 'Pago fijo', desc: 'Arriendo, tarjeta, crédito', icon: CalendarPlus, grad: 'from-amber-500 to-orange-500', onClick: () => { close(); navigate('/pagos'); } },
   ];
 
+  /** 🎡 Rueda: en el sentido del reloj desde arriba. */
+  const wheel = [
+    { id: 'voice', label: 'Dictar', icon: Mic, onClick: () => setVoice(true) },
+    { id: 'expense', label: 'Gasto', icon: ArrowDownCircle, onClick: () => setMode('expense') },
+    { id: 'income', label: 'Ingreso', icon: ArrowUpCircle, onClick: () => setMode('income') },
+    { id: 'market', label: 'Mercado', icon: ShoppingCart, onClick: () => { close(); navigate('/mercado'); } },
+    { id: 'bill', label: 'Pago fijo', icon: CalendarPlus, onClick: () => { close(); navigate('/pagos'); } },
+    { id: 'bank', label: 'Del banco', icon: Landmark, onClick: () => { close(); setTimeout(() => openPasteMovement(), 200); } },
+  ];
+  const R = 122;
+  const showWheel = open && !mode && !saved;
+
   return (
     <>
       <AnimatePresence>
@@ -79,8 +96,41 @@ export default function QuickAdd({ hidden }: { hidden?: boolean }) {
 
       {createPortal(
         <AnimatePresence>
-          {open && (
-            <motion.div className="fixed inset-0 z-[115] bg-black/70 backdrop-blur-sm flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
+          {showWheel && (
+            <motion.div key="wheel" className="theme-dark fixed inset-0 z-[115] bg-[#040713]/80 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}
+              role="dialog" aria-modal="true" aria-label="Registro rápido">
+              <motion.div className="absolute left-1/2 top-[46%] w-0 h-0" initial={{ x: 120, y: 260, scale: 0.2 }} animate={{ x: 0, y: 0, scale: 1 }} exit={{ x: 120, y: 260, scale: 0.2, opacity: 0 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 240 }}>
+                <div aria-hidden="true" className="absolute -left-[172px] -top-[172px] w-[344px] h-[344px] rounded-full bg-[radial-gradient(circle,rgba(79,70,229,.32),rgba(11,16,38,0)_70%)] border border-[#8B5CF6]/40" />
+                {wheel.map((w, i) => {
+                  const a = (Math.PI / 180) * (90 - 60 * i);
+                  const x = Math.round(R * Math.cos(a)), y = Math.round(-R * Math.sin(a));
+                  return (
+                    <motion.button key={w.id} onClick={e => { e.stopPropagation(); haptic('light'); w.onClick(); }}
+                      initial={{ x: 0, y: 0, scale: 0, opacity: 0 }} animate={{ x, y, scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 16, stiffness: 260, delay: 0.05 + i * 0.04 }}
+                      whileTap={{ scale: 0.88 }} className="absolute -left-[40px] -top-[30px] w-[80px] flex flex-col items-center">
+                      <span className={`w-[58px] h-[58px] rounded-full flex items-center justify-center ring-2 ring-white/25 shadow-xl shadow-black/60 ${i % 2 ? 'bg-[linear-gradient(135deg,#7C3AED,#4F46E5)]' : 'bg-[linear-gradient(135deg,#4F46E5,#0EA5E9)]'}`}>
+                        <w.icon size={25} className="text-white" strokeWidth={2.2} />
+                      </span>
+                      <span className="mt-1 text-[12px] font-extrabold text-white [text-shadow:0_2px_6px_#000]">{w.label}</span>
+                    </motion.button>
+                  );
+                })}
+                <motion.button onClick={e => { e.stopPropagation(); haptic('light'); setVoice(true); }} aria-label="Toca a Kai para dictar"
+                  initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12, delay: 0.12 }} whileTap={{ scale: 0.92 }}
+                  className="absolute -left-[54px] -top-[54px] w-[108px] h-[108px] rounded-full bg-[#0B1026] ring-[3px] ring-brand-lime shadow-[0_0_40px_rgba(198,244,50,.35)] flex items-center justify-center">
+                  <Kai mood="feliz" size={84} />
+                </motion.button>
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }} className="absolute -left-[90px] top-[62px] w-[180px] text-center text-[11px] font-extrabold text-brand-lime pointer-events-none">Toca a Kai para dictar</motion.p>
+              </motion.div>
+              <motion.button onClick={close} aria-label="Cerrar" initial={{ rotate: -45, scale: 0.6 }} animate={{ rotate: 0, scale: 1 }}
+                className="absolute bottom-6 right-5 w-16 h-16 rounded-[22px] bg-brand-lime shadow-2xl shadow-black/60 flex items-center justify-center">
+                <X size={30} className="text-brand-ink" strokeWidth={2.6} />
+              </motion.button>
+            </motion.div>
+          )}
+          {open && !showWheel && (
+            <motion.div key="sheet" className="fixed inset-0 z-[115] bg-black/70 backdrop-blur-sm flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close}>
               <motion.div onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Registro rápido"
                 className="w-full max-w-md bg-surface2 border border-white/10 rounded-t-[32px] p-5 pb-10"
                 initial={{ y: 300 }} animate={{ y: 0 }} exit={{ y: 300 }} transition={{ type: 'spring', damping: 26, stiffness: 260 }}>
