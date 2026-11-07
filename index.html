@@ -17,7 +17,40 @@
     <title>Mi Finanzas</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><!-- ✨ Pantalla de carga: Kai se enciende mientras el anillo se llena (solo HTML/CSS; React la reemplaza al cargar) -->
+      <style>
+        #mf-splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 42%,#1D2668 0,#0B1033 45%,#04060E 85%);font-family:system-ui,sans-serif}
+        #mf-splash .r{position:relative;width:190px;height:190px}
+        #mf-splash svg.mfr{position:absolute;inset:0;transform:rotate(-90deg)}
+        #mf-splash .mfr circle.p{stroke-dasharray:540;stroke-dashoffset:540;animation:mfFill 1.4s cubic-bezier(.4,0,.2,1) .15s forwards;filter:drop-shadow(0 0 8px #C6F432)}
+        #mf-splash .kai{position:absolute;left:50%;top:50%;width:112px;height:124px;margin:-62px 0 0 -56px;animation:mfOn 1.2s ease-out forwards,mfFloat 3s ease-in-out 1.2s infinite}
+        #mf-splash .eye{animation:mfEye 1.2s ease-out forwards;opacity:.15}
+        #mf-splash .t{margin-top:22px;color:#fff;font-weight:800;font-size:22px;letter-spacing:-.01em;opacity:0;animation:mfTxt .6s ease-out .9s forwards}
+        #mf-splash .t b{color:#C6F432;text-shadow:0 0 18px rgba(198,244,50,.6)}
+        @keyframes mfFill{to{stroke-dashoffset:0}}
+        @keyframes mfOn{0%{filter:brightness(.35) saturate(0)}60%{filter:brightness(.6) saturate(.4)}100%{filter:none}}
+        @keyframes mfEye{0%{opacity:.15}55%{opacity:.15}70%{opacity:1}80%{opacity:.4}100%{opacity:1}}
+        @keyframes mfFloat{50%{transform:translateY(-6px)}}
+        @keyframes mfTxt{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+        @media (prefers-reduced-motion:reduce){#mf-splash *{animation:none!important;opacity:1!important;stroke-dashoffset:0!important}}
+      </style>
+      <div id="mf-splash" aria-label="Cargando Mi Finanzas" role="status">
+        <div class="r">
+          <svg class="mfr" viewBox="0 0 190 190" width="190" height="190"><circle cx="95" cy="95" r="86" stroke="rgba(255,255,255,.08)" stroke-width="8" fill="none"/><circle class="p" cx="95" cy="95" r="86" stroke="#C6F432" stroke-width="8" fill="none" stroke-linecap="round"/></svg>
+          <svg class="kai" viewBox="0 0 400 440" aria-hidden="true">
+            <defs><radialGradient id="sk" cx=".35" cy=".28" r=".85"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#E8ECF8"/><stop offset="1" stop-color="#9AA3C7"/></radialGradient></defs>
+            <path d="M200 64 C200 46 210 36 222 30" stroke="#C9CFE6" stroke-width="5" fill="none" stroke-linecap="round"/><circle class="eye" cx="224" cy="28" r="11" fill="#C6F432"/>
+            <rect x="68" y="134" width="30" height="70" rx="15" fill="url(#sk)"/><rect x="302" y="134" width="30" height="70" rx="15" fill="url(#sk)"/>
+            <path d="M138 300 C138 266 166 252 200 252 C234 252 262 266 262 300 C262 352 236 384 200 384 C164 384 138 352 138 300Z" fill="url(#sk)"/>
+            <circle cx="200" cy="318" r="26" fill="#0B1026"/><circle class="eye" cx="200" cy="318" r="14" fill="none" stroke="#C6F432" stroke-width="5"/>
+            <rect x="86" y="62" width="228" height="196" rx="92" fill="url(#sk)"/>
+            <rect x="112" y="114" width="176" height="110" rx="54" fill="#0B1026"/>
+            <rect class="eye" x="148" y="146" width="34" height="44" rx="17" fill="#C6F432"/><rect class="eye" x="218" y="146" width="34" height="44" rx="17" fill="#C6F432"/>
+          </svg>
+        </div>
+        <div class="t">Mi <b>Finanzas</b></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -85,6 +85,12 @@ export default function HomePage() {
     if (r === 'asistente') setTimeout(openAssistant, 300);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Guarda el dato del día para el saludo de Kai de la próxima apertura (solo en este celular)
+  useEffect(() => {
+    if (!loaded || !(base > 0 && left >= 0)) return;
+    const n = new Date();
+    try { localStorage.setItem('mf_hoy', JSON.stringify({ d: `${n.getFullYear()}-${n.getMonth()}-${n.getDate()}`, t: formatCOP(perDayAllowed) })); } catch { /* sin almacenamiento */ }
+  }, [loaded, base, left, perDayAllowed]);
   if (!loaded) return <HomeSkeleton />;
 
   // ── Presupuestos en alerta ──

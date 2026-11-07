@@ -8,9 +8,9 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { useEffect, useState } from 'react';
+import Kai from '../assistant/Kai';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
-import AppLogo from '../ui/AppLogo';
 import { MODULES } from '../../utils/modules';
 
 const APP_NAME = 'Mi Finanzas';
@@ -39,6 +39,18 @@ const Backdrop = () => (
   </div>
 );
 
+
+/** Monedas que suben detrás de Kai en el saludo. */
+const COINS = Array.from({ length: 9 }, (_, i) => ({ x: (i * 37 + 8) % 92, s: 10 + ((i * 7) % 10), d: (i % 5) * 0.12 }));
+/** "Hoy puedes gastar…" que dejó el Inicio la última vez (solo si es de hoy). */
+const todayFact = (): string | null => {
+  try {
+    const v = JSON.parse(localStorage.getItem('mf_hoy') || 'null');
+    const d = new Date(); const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    return v && v.d === key && v.t ? v.t : null;
+  } catch { return null; }
+};
+
 /**
  * Primera vez: bienvenida animada → nombre (opcional) → recorrido por los módulos.
  * Las siguientes veces: un saludo corto de "qué bueno verte de nuevo".
@@ -52,7 +64,7 @@ export default function WelcomeExperience({ firstTime, onDone }: { firstTime: bo
   // Regreso: saludo breve que se cierra solo.
   useEffect(() => {
     if (firstTime) return;
-    const t = setTimeout(onDone, 2400);
+    const t = setTimeout(onDone, 2900);
     return () => clearTimeout(t);
   }, [firstTime, onDone]);
 
@@ -65,18 +77,33 @@ export default function WelcomeExperience({ firstTime, onDone }: { firstTime: bo
   if (!firstTime) {
     const hour = new Date().getHours();
     const greet = hour < 5 ? 'Buenas noches' : hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+    const today = todayFact();
+    // ✨ Kai llega volando con estela y monedas, saluda, da el dato del día y se va a su esquina del Inicio
     return (
-      <motion.div className="theme-dark fixed inset-0 z-[160] bg-appbg flex flex-col items-center justify-center text-center px-8" onClick={onDone}
-        initial={{ opacity: 1 }} exit={{ opacity: 0, scale: 1.04 }} transition={{ duration: 0.4 }}>
+      <motion.div className="theme-dark fixed inset-0 z-[160] bg-appbg flex flex-col items-center justify-center text-center px-8 overflow-hidden" onClick={onDone}
+        initial={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45 }}>
         <Backdrop />
-        <motion.div initial={{ scale: 0.4, rotate: -20, opacity: 0 }} animate={{ scale: 1, rotate: 0, opacity: 1 }} transition={{ type: 'spring', damping: 11, stiffness: 160 }}>
-          <AppLogo size={88} />
+        {COINS.map((c, i) => (
+          <motion.span key={i} aria-hidden="true" className="absolute rounded-full" style={{ left: `${c.x}%`, width: c.s, height: c.s, background: 'radial-gradient(circle at 35% 30%,#FDE68A,#D4A017)', boxShadow: '0 0 10px rgba(251,191,36,.5)' }}
+            initial={{ y: '110vh', opacity: 0 }} animate={{ y: '-15vh', opacity: [0, 1, 1, 0] }} transition={{ duration: 2.2, delay: c.d, ease: 'easeOut' }} />
+        ))}
+        <motion.div className="relative" initial={{ y: 420, rotate: -12, scale: 0.8 }} animate={{ y: 0, rotate: 0, scale: 1 }}
+          exit={{ x: 150, y: -330, scale: 0.25, opacity: 0 }} transition={{ type: 'spring', damping: 13, stiffness: 110 }}>
+          <motion.span aria-hidden="true" className="absolute left-1/2 -translate-x-1/2 top-[85%] w-8 rounded-full blur-md" style={{ background: 'linear-gradient(#C6F432,transparent)' }}
+            initial={{ height: 140, opacity: 0.9 }} animate={{ height: 0, opacity: 0 }} transition={{ duration: 0.9, delay: 0.35 }} />
+          <Kai mood="feliz" size={150} title="Kai" />
         </motion.div>
-        <motion.p className="relative text-slate-400 mt-6 text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>{greet}</motion.p>
-        <motion.h1 className="relative text-white text-3xl font-extrabold mt-1 leading-tight" initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} transition={{ delay: 0.35, duration: 0.6 }}>
-          {savedName ? <>¡Hola de nuevo,<br /><span className="bg-gradient-to-r from-violet-300 to-cyan-300 bg-clip-text text-transparent">{savedName}!</span></> : '¡Qué bueno verte de nuevo!'}
-        </motion.h1>
-        <motion.p className="relative text-violet-300 mt-2 font-medium" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}>{APP_NAME}</motion.p>
+        <motion.p className="relative mt-3 rounded-2xl bg-[#fff] text-[#0B1026] px-4 py-2.5 font-extrabold text-[15px] shadow-xl shadow-black/40"
+          initial={{ opacity: 0, scale: 0.7, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ delay: 0.55, type: 'spring', damping: 14 }}>
+          👋 ¡{greet}{savedName ? <>, <span className="text-[#4D7C0F]">{savedName}</span></> : ''}!
+        </motion.p>
+        {today && (
+          <motion.div className="relative mt-4 rounded-[22px] px-5 py-3 bg-[#121938] ring-1 ring-brand-lime/40" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.05 }}>
+            <p className="text-[10.5px] font-extrabold tracking-[.14em] text-slate-400">HOY PUEDES GASTAR</p>
+            <p className="text-[30px] font-extrabold text-brand-lime leading-tight drop-shadow-[0_0_14px_rgba(198,244,50,.4)]">{today}</p>
+          </motion.div>
+        )}
+        <motion.p className="relative text-slate-500 mt-6 text-xs font-semibold" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4 }}>Toca para entrar</motion.p>
       </motion.div>
     );
   }
@@ -87,10 +114,17 @@ export default function WelcomeExperience({ firstTime, onDone }: { firstTime: bo
       <AnimatePresence mode="wait">
         {step === 'intro' && (
           <motion.div key="intro" className="relative flex flex-col items-center text-center" exit={{ opacity: 0, y: -20 }}>
-            <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', damping: 10, stiffness: 120 }}>
-              <AppLogo size={108} />
-            </motion.div>
-            <motion.p className="text-slate-300 mt-8" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>Te damos la bienvenida a</motion.p>
+            {/* 🤖 Kai "arranca": se enciende mientras su anillo se llena */}
+            <div className="relative w-[200px] h-[200px] flex items-center justify-center">
+              <svg className="absolute inset-0 -rotate-90" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="92" stroke="rgba(255,255,255,.08)" strokeWidth="7" fill="none" />
+                <motion.circle cx="100" cy="100" r="92" stroke="#C6F432" strokeWidth="7" fill="none" strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 8px #C6F432)' }}
+                  initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.3, ease: 'easeInOut' }} /></svg>
+              <motion.div initial={{ filter: 'brightness(.3) saturate(0)', scale: 0.85 }} animate={{ filter: 'brightness(1) saturate(1)', scale: 1 }} transition={{ duration: 1.2 }}>
+                <Kai mood="celebra" size={140} title="Kai" />
+              </motion.div>
+            </div>
+            <motion.p className="mt-3 rounded-2xl bg-[#fff] text-[#0B1026] px-4 py-2 font-extrabold text-[15px]" initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 1.2, type: 'spring', damping: 14 }}>¡Hola! Soy Kai 👋 Te ayudo con tu plata</motion.p>
+            <motion.p className="text-slate-300 mt-5" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>Te damos la bienvenida a</motion.p>
             <h1 className="text-white text-4xl font-extrabold mt-1 tracking-tight"><Letters text={APP_NAME} delay={0.7} /></h1>
             <motion.p className="text-slate-400 mt-3 max-w-xs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4 }}>
               El mercado, los pagos y las cuentas de tu hogar, claros y en un solo lugar.
