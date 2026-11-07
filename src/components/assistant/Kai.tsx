@@ -16,6 +16,7 @@
 import { useId } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useKaiColor, type KaiColor } from '../../services/kaiPrefs';
+import { useSeason } from '../../services/season';
 
 export type KaiMood = 'normal' | 'feliz' | 'pensando' | 'calma' | 'celebra';
 const L = '#D4FF4A';
@@ -48,9 +49,11 @@ const PAL: Record<KaiColor, { s: [string, string, string, string]; hl: number; f
   negro: { s: ['#5A6188', '#272C47', '#12162B', '#04060E'], hl: 0.3, frame: '#0A0E24', stem: '#3A4166', rim: '#C6F432', rimOp: 0.55 },
 };
 
-interface KaiProps { mood?: KaiMood; size?: number; className?: string; title?: string; still?: boolean; color?: KaiColor }
+interface KaiProps { mood?: KaiMood; size?: number; className?: string; title?: string; still?: boolean; color?: KaiColor; /** false = sin disfraz de temporada */ outfit?: boolean }
 
-export default function Kai({ mood = 'normal', size = 160, className = '', title = 'Kai, tu asistente', still: forceStill = false, color }: KaiProps) {
+export default function Kai({ mood = 'normal', size = 160, className = '', title = 'Kai, tu asistente', still: forceStill = false, color, outfit = true }: KaiProps) {
+  const season = useSeason();
+  const xmas = outfit && season?.id === 'navidad';   // 🎅 Kai Noel: gorro y bufanda en diciembre
   const id = useId().replace(/:/g, '');
   const reduce = useReducedMotion();
   const saved = useKaiColor();
@@ -95,10 +98,12 @@ export default function Kai({ mood = 'normal', size = 160, className = '', title
         <circle cx="200" cy="318" r="7" fill="none" stroke="#F9A8D4" strokeWidth="3.5" strokeLinecap="round" strokeDasharray="44" strokeDashoffset={44 * 0.2} transform="rotate(-90 200 318)" />
       </g>
       <ellipse cx="200" cy="258" rx="46" ry="7" fill="#C6F432" opacity={lite ? 0.35 : 0.55} filter={gf('s')} />
-      {/* Antena */}
+      {/* Antena (con gorro de Navidad queda escondida) */}
+      {!xmas && <>
       <path d="M200 64 C200 46 210 36 222 30" stroke={P.stem} strokeWidth="5" fill="none" strokeLinecap="round" />
       <circle cx="224" cy="28" r="11" fill={L} filter={gf('g')} />
       <circle cx="220" cy="24" r="3.5" fill="#fff" opacity=".9" />
+      </>}
       {/* Orejas */}
       <rect x="68" y="134" width="30" height="70" rx="15" fill={`url(#${u('hb')})`} /><rect x="302" y="134" width="30" height="70" rx="15" fill={`url(#${u('hb')})`} />
       <rect x="76" y="154" width="6" height="30" rx="3" fill={L} filter={gf('g')} /><rect x="318" y="154" width="6" height="30" rx="3" fill={L} filter={gf('g')} />
@@ -140,6 +145,19 @@ export default function Kai({ mood = 'normal', size = 160, className = '', title
           <circle cx="318" cy="96" r="6" fill="#A5B4FC" /><circle cx="338" cy="74" r="9" fill="#A5B4FC" />
           <rect x="330" y="20" width="62" height="38" rx="19" fill="#1B2350" stroke="#A5B4FC" strokeWidth="2" />
           {[0, 1, 2].map(i => <motion.circle key={i} cx={347 + i * 14} cy="39" r="4" fill={L} animate={still ? undefined : { opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, delay: i * 0.2, repeat: Infinity }} />)}
+        </g>
+      )}
+      {xmas && (
+        <g aria-hidden="true">
+          {/* 🧣 Bufanda */}
+          <path d="M132 246 C160 262 240 262 268 246 L272 270 C240 286 160 286 128 270Z" fill="#DC2626" />
+          <path d="M150 256 L156 278 M178 262 L182 284 M206 263 L208 285 M234 260 L236 282 M258 252 L262 274" stroke="#fff" strokeWidth="7" strokeLinecap="round" opacity=".9" />
+          <path d="M238 268 L262 330 L236 334 L222 274Z" fill="#DC2626" /><path d="M244 300 L254 298 M248 318 L258 316" stroke="#fff" strokeWidth="6" strokeLinecap="round" />
+          {/* 🎅 Gorro */}
+          <path d="M104 96 C120 30 220 -6 300 22 C320 30 336 46 344 66 C326 56 310 58 300 70 C304 80 304 90 300 98Z" fill="#DC2626" />
+          <path d="M150 50 C180 30 220 22 262 26" stroke="#fff" strokeOpacity=".25" strokeWidth="8" fill="none" strokeLinecap="round" />
+          <circle cx="346" cy="70" r="20" fill="#fff" /><circle cx="340" cy="64" r="7" fill="#F1F5F9" />
+          <rect x="90" y="86" width="222" height="34" rx="17" fill="#fff" /><rect x="90" y="86" width="222" height="12" rx="6" fill="#F1F5F9" />
         </g>
       )}
       {mood === 'calma' && <path transform="translate(300 64) scale(1.6)" d="M0 6 C0 -2 10 -4 12 3 C14 -4 24 -2 24 6 C24 14 12 20 12 22 C12 20 0 14 0 6Z" fill="#6EE7B7" />}

@@ -34,6 +34,10 @@ import VoiceSheet from '../components/voice/VoiceSheet';
 import StorePicker from '../components/market/StorePicker';
 import StoreBadge from '../components/market/StoreBadge';
 import { useHousehold } from '../services/household/householdSync';
+import { useSeason } from '../services/season';
+
+/** 🎄 Plantilla de diciembre: la cena navideña colombiana, a la lista con un toque. */
+const CENA_NAVIDAD = ['Natilla', 'Buñuelos', 'Hojuelas', 'Pernil de cerdo', 'Uvas', 'Sidra', 'Queso costeño', 'Galletas', 'Pan de bono', 'Gaseosa'];
 import { HouseholdChip, openHousehold } from '../components/household/HouseholdSheet';
 import { QtyStepper, UnitPicker, fmtQty } from '../components/market/QtyUnit';
 import TrendBadge from '../components/market/TrendBadge';
@@ -127,6 +131,14 @@ export default function MarketPage() {
     for (const b of BASICS) if (!taken.has(norm(b)) && out.length < 14) { out.push({ name: b, unit: 'und', price: lastPrice(b) }); taken.add(norm(b)); }
     return out;
   }, [items, known]);
+  // 🎄 Navidad: plantilla de la cena (sale en diciembre o con /mercado?plantilla=navidad)
+  const season = useSeason();
+  const showXmas = mode === 'plan' && (season?.id === 'navidad' || params.get('plantilla') === 'navidad');
+  const xmasMissing = CENA_NAVIDAD.filter(n => !items.some(i => !i.checked && norm(i.name) === norm(n)));
+  const addXmas = () => {
+    xmasMissing.forEach(n => addItem({ name: n, qty: 1, unit: 'und' }));
+    notify({ title: 'Cena navideña en tu lista 🎄', message: `${xmasMissing.length} productos agregados. ¡Feliz Navidad!`, type: 'success', log: false });
+  };
   /** Agrega a la lista con un solo toque (sin escribir ni presionar +). */
   const quickAdd = (n: string, u: Unit = 'und', q2 = 1) => {
     const dup = items.find(i => !i.checked && norm(i.name) === norm(n));
@@ -361,6 +373,15 @@ export default function MarketPage() {
                 <p className="text-[10px] text-slate-500 mt-1.5">Así comparamos precios entre tiendas. Es opcional.</p>
               </>
             )}
+          </div>
+        )}
+
+        {showXmas && xmasMissing.length > 0 && (
+          <div className="snow-cap relative mt-4 rounded-[22px] p-4 bg-gradient-to-br from-[#14532D] to-[#7A1424] ring-1 ring-amber-300/40 overflow-hidden">
+            <span aria-hidden="true" className="absolute -right-3 -top-3 text-6xl opacity-25">🎄</span>
+            <p className="relative text-white font-extrabold text-[15px]">🎄 Plantilla: Cena de Navidad</p>
+            <p className="relative text-[12px] text-amber-100/90 mt-0.5">{xmasMissing.slice(0, 5).join(' · ')}{xmasMissing.length > 5 ? '…' : ''}</p>
+            <button onClick={addXmas} className="relative mt-3 w-full h-11 rounded-2xl bg-brand-lime text-brand-ink font-extrabold text-sm active:scale-[0.98]">Agregar {xmasMissing.length} a mi lista</button>
           </div>
         )}
 

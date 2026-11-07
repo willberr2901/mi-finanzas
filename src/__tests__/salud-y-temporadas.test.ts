@@ -27,10 +27,11 @@ describe('Temporadas', () => {
     expect(seasonFor(d(10, 31))).toBe('halloween');
     expect(seasonFor(d(11, 1))).toBeNull();
   });
-  test('Navidad del 1 de diciembre al 1 de enero', () => {
+  test('Navidad del 1 de diciembre al 6 de enero (Reyes)', () => {
     expect(seasonFor(d(11, 30))).toBeNull();
     expect(seasonFor(d(12, 1))).toBe('navidad');
     expect(seasonFor(new Date(2027, 0, 1, 12))).toBe('navidad');
-    expect(seasonFor(new Date(2027, 0, 2, 12))).toBeNull();
+    expect(seasonFor(new Date(2027, 0, 6, 12))).toBe('navidad');
+    expect(seasonFor(new Date(2027, 0, 7, 12))).toBeNull();
   });
 });

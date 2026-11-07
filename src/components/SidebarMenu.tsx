@@ -152,7 +152,7 @@ export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onCl
                 return (
                   <motion.button key={key} onClick={() => go(m.path)} whileTap={{ scale: 0.95 }}
                     variants={{ h: { opacity: 0, y: 26, scale: 0.92 }, s: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', damping: 18, stiffness: 260 } } }}
-                    className="relative overflow-hidden text-left rounded-[24px] p-3.5 h-[122px] flex flex-col bg-[#141B3A] ring-1"
+                    className="snow-cap relative overflow-hidden text-left rounded-[24px] p-3.5 h-[122px] flex flex-col bg-[#141B3A] ring-1"
                     style={{ ['--tw-ring-color' as string]: active ? color : 'rgba(255,255,255,.08)' }}>
                     <span aria-hidden="true" className="absolute -right-6 -top-6 w-24 h-24 rounded-full blur-2xl opacity-35" style={{ background: color }} />
                     <span className="relative flex items-start justify-between">

@@ -10,6 +10,7 @@
  * ════════════════════════════════════════════════════════════════════
  */
 import { useEffect, useMemo, useState } from 'react';
+import Kai from '../assistant/Kai';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles } from 'lucide-react';
 import { useSeason, seasonPopupPending, markSeasonPopupSeen, setSeasonEnabled, type Season } from '../../services/season';
@@ -166,7 +167,7 @@ export function SeasonPopup({ ready }: { ready: boolean }) {
             className={`theme-dark relative w-full max-w-sm overflow-hidden rounded-[32px] p-6 text-center border border-white/10 shadow-2xl ${hw ? 'bg-gradient-to-b from-[#3B1E5E] via-[#24123D] to-[#120A22]' : 'bg-gradient-to-b from-[#145A3A] via-[#0D3B27] to-[#071F16]'}`}>
             <button onClick={close} aria-label="Cerrar" className="absolute right-4 top-4 p-1.5 text-white/60"><X size={18} /></button>
             <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full blur-3xl opacity-40" style={{ background: hw ? '#FF8A1F' : '#F7C948' }} />
-            <motion.div className="relative text-7xl" initial={{ scale: 0, rotate: -25 }} animate={{ scale: [0, 1.25, 1], rotate: [-25, 10, 0] }} transition={{ duration: 0.8 }}>{season.emoji}</motion.div>
+            <motion.div className="relative flex justify-center" initial={{ scale: 0, rotate: -25 }} animate={{ scale: [0, 1.15, 1], rotate: [-25, 10, 0] }} transition={{ duration: 0.8 }}>{hw ? <span className="text-7xl">{season.emoji}</span> : <Kai mood="celebra" size={150} title="Kai Noel" />}</motion.div>
             <p className="relative mt-3 inline-flex items-center gap-1 text-[11px] font-extrabold tracking-widest uppercase px-3 py-1 rounded-full bg-brand-lime text-brand-ink"><Sparkles size={12} /> {season.name}</p>
             <h2 id="season-title" className="relative text-white text-2xl font-extrabold mt-3 leading-tight">{season.popupTitle}</h2>
             <p className="relative text-white/80 text-sm mt-2">{season.popupText}</p>

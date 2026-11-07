@@ -1,4 +1,5 @@
 import './utils/polyfills';
+import './utils/simDate'; // 🧪 solo pruebas: reloj simulado (debe ir antes que todo)
 /**
  * ════════════════════════════════════════════════════════════════════
  * 🚀 ARRANQUE

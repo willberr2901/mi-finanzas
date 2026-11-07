@@ -38,6 +38,7 @@ import { seasonFor } from './services/season';
 import { syncLoansToSW } from './services/loansService';
 import { startStats } from './services/statsService';
 import TestBanner from './components/ui/TestBanner';
+import DateSimulator from './components/ui/DateSimulator';
 import { IS_TEST } from './utils/env';
 
 // Lazy loading de páginas. Si tras una actualización falla la carga de una página
@@ -243,7 +244,7 @@ function AppContent() {
           <BudgetCalc />
           <DebtSyncHost ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
         </Suspense>
-        <TestBanner />
+        <TestBanner /><DateSimulator />
         <UpdateManager />
         <ToastProvider />
         <Suspense fallback={null}><AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence></Suspense>

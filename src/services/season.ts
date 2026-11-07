@@ -4,7 +4,7 @@
  * ────────────────────────────────────────────────────────────────────
  * Qué hace: decide qué temporada está activa HOY y la aplica en toda la app:
  *   • 🎃 Mes de brujas  → del 1 al 31 de octubre (se quita sola el 1 de noviembre)
- *   • 🎄 Navidad        → del 1 de diciembre al 1 de enero (se quita sola el 2 de enero)
+ *   • 🎄 Navidad        → del 1 de diciembre al 6 de enero, Día de Reyes (se quita sola el 7 de enero)
  * Cómo: pone la clase .season-halloween / .season-navidad en <html> (colores en
  *       src/index.css) y avisa a la decoración, el aviso y la tarjeta de Inicio.
  * No hay que publicar nada para que cambie: lo calcula cada celular con su fecha.
@@ -43,15 +43,15 @@ export const SEASONS: Record<SeasonId, Season> = {
   },
   navidad: {
     id: 'navidad', name: 'Navidad', emoji: '🎄',
-    popupTitle: '¡Una nueva versión llegó por ti!',
-    popupText: 'Feliz Navidad 🎄 Tu app se vistió de fiesta hasta el 1 de enero. Que este diciembre la plata rinda.',
+    popupTitle: '¡Llegó Kai Noel! 🎅',
+    popupText: '¡Jo, jo, jo! Soy Kai Noel 🎅 Tu app se vistió de Navidad hasta el 6 de enero. Te ayudo con la prima, los regalos y la cena.',
     tipTitle: 'Una Navidad sin deudas 🎁',
     tips: [
       'Haz la lista de regalos con nombre y valor antes de salir a comprar.',
       'Separa el ahorro de la prima apenas te llegue, antes de gastarla.',
       'Novenas y cenas: ponlas en el mercado y compara precios entre tiendas.',
     ],
-    until: 'Hasta el 1 de enero',
+    until: 'Hasta el 6 de enero',
   },
 };
 
@@ -60,7 +60,7 @@ export const SEASONS: Record<SeasonId, Season> = {
 export function seasonFor(d = new Date()): SeasonId | null {
   const m = d.getMonth(), day = d.getDate();
   if (m === 9) return 'halloween';                         // octubre completo
-  if (m === 11 || (m === 0 && day === 1)) return 'navidad'; // 1 dic – 1 ene
+  if (m === 11 || (m === 0 && day <= 6)) return 'navidad'; // 1 dic – 6 ene (Reyes)
   return null;
 }
 /** Clave única de cada temporada por año (para mostrar el aviso una sola vez). */

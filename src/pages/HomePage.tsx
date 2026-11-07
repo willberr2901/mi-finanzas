@@ -104,6 +104,7 @@ export default function HomePage() {
   if (urgentBill) hoy.push({ key: 'pago', node: <HoyRow emoji="📅" bg={urgentBill.state === 'vencido' || urgentBill.state === 'hoy' ? 'bg-rose-500/20' : 'bg-amber-500/15'} title={`${urgentBill.bill.name} ${urgentBill.daysLeft < 0 ? 'está vencido' : urgentBill.daysLeft === 0 ? 'vence hoy' : urgentBill.daysLeft === 1 ? 'vence mañana' : `vence en ${urgentBill.daysLeft} días`}`} sub={formatCOP(urgentBill.bill.amount)} action="Pagar" to="/pagos" /> });
   if (!plan) hoy.push({ key: 'kai', node: <HoyRow emoji={<Kai size={34} still />} bg="bg-[#1D2A6B]" title={<span className="flex items-center gap-1.5">Arma tu presupuesto con Kai <NewBadge id="home-kai" /></span>} sub="Sueldo, deudas y ahorro en 3 pasos" action="Empezar" onClick={openAssistant} /> });
   if (worst) hoy.push({ key: 'presupuesto', node: <HoyRow emoji="🎯" bg={worst.level === 'over' ? 'bg-rose-500/20' : 'bg-amber-500/15'} title={worst.level === 'over' ? `${worst.cat} pasó su límite` : `${worst.cat} va en ${Math.round(worst.pct)}%`} sub={worst.level === 'over' ? `Te pasaste ${formatCOP(-worst.left)}` : `Quedan ${formatCOP(worst.left)} para ${daysLeft + 1} días`} to="/analisis" /> });
+  if (season?.id === 'navidad') hoy.push({ key: 'navidad', node: <HoyRow emoji={<Kai size={34} still />} bg="bg-[#7A1424]" title="Kai Noel: arma tu cena navideña 🎄" sub="Natilla, buñuelos, pernil… a la lista con un toque" action="Armar" to="/mercado?plantilla=navidad" /> });
   if (recapAvailable(tx)) hoy.push({ key: 'recap', node: <MonthRecapCard tx={tx} compact /> });
   if (backupDue) hoy.push({ key: 'respaldo', node: <HoyRow emoji="💾" bg="bg-sky-400/15" title="Guarda una copia de tus datos" sub="Si pierdes el celular, la recuperas" to="/ajustes?s=respaldo" /> });
   if (nextBill && nextBill !== urgentBill) hoy.push({ key: 'proximo', node: <HoyRow emoji="🗓️" bg="bg-white/[0.06]" title={`Próximo pago: ${nextBill.bill.name}`} sub={`En ${nextBill.daysLeft} días · ${formatCOP(nextBill.bill.amount)}`} to="/pagos" /> });
@@ -166,7 +167,7 @@ export default function HomePage() {
       <motion.div data-tour="home-icons" className="grid grid-cols-4 gap-2 mt-3" initial="h" animate="s" variants={{ s: { transition: { staggerChildren: 0.03 } } }}>
         {icons.map(a => {
           const inner = <><span className={`${fit.compact ? 'text-[20px]' : 'text-[23px]'} leading-none`} aria-hidden="true">{a.emoji}</span><span className="text-[11px] font-bold text-white mt-1.5">{a.label}</span></>;
-          const cls = `flex flex-col items-center justify-center rounded-[20px] bg-surface border border-white/5 ${fit.compact ? 'h-[62px]' : 'h-[72px]'} active:scale-95 transition-transform`;
+          const cls = `snow-cap relative flex flex-col items-center justify-center rounded-[20px] bg-surface border border-white/5 ${fit.compact ? 'h-[62px]' : 'h-[72px]'} active:scale-95 transition-transform`;
           return (
             <motion.div key={a.label} variants={{ h: { opacity: 0, y: 10 }, s: { opacity: 1, y: 0 } }}>
               {a.to ? <Link to={a.to} className={cls}>{inner}</Link> : <button onClick={a.onClick} className={`${cls} w-full`}>{inner}</button>}
