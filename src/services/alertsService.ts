@@ -222,6 +222,9 @@ export const setUpdateNotices = async (on: boolean) => {
   localStorage.setItem(UPDATE_KEY, on ? 'on' : 'off');
   // El service worker no puede leer localStorage: se lo dejamos en su caché.
   try { await (await caches.open('mf-meta')).put(new Request('/__mf_update_notif'), new Response(on ? 'on' : 'off')); } catch { /* sin caché */ }
+  // 📲 Avisos con el celular bloqueado: se registran o se borran del servidor
+  const { enablePush, disablePush } = await import('./pushService');
+  if (on) enablePush().catch(() => {}); else disablePush().catch(() => {});
 };
 /**
  * Estado real de los avisos en este celular (para mostrarlo en Ajustes):

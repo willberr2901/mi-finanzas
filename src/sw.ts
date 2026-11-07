@@ -338,6 +338,23 @@ self.addEventListener('message', (e) => {
   if (e.data?.type === 'TEST_UPDATE_NOTICE') e.waitUntil(checkUpdate(true));
 });
 
+// ---------- 📲 Aviso de versión nueva enviado por el servidor (llega con el celular bloqueado) ----------
+self.addEventListener('push', (event: any) => {
+  let d: { title?: string; body?: string; url?: string; tag?: string; version?: string } = {};
+  try { d = event.data?.json() ?? {}; } catch { d = { body: event.data?.text?.() }; }
+  event.waitUntil((async () => {
+    const cache = await caches.open('mf-meta');
+    const off = await cache.match(new Request('/__mf_update_notif'));
+    if (off && (await off.text()) === 'off') return;
+    if (d.version) await cache.put(new Request('/__mf_notified_version'), new Response(d.version));
+    await self.registration.showNotification(d.title || '⬆️ Nueva versión de Mi Finanzas', {
+      body: d.body || 'Toca para actualizar.', icon: '/icon-192.png', badge: '/icon-192.png', tag: d.tag || 'mf-update',
+      data: { url: d.url || '/' }, actions: [{ action: 'actualizar', title: 'Actualizar' }, { action: 'novedades', title: 'Ver novedades' }],
+    } as NotificationOptions);
+    self.registration.update().catch(() => {});
+  })());
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};

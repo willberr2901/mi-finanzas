@@ -18,6 +18,7 @@ import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
 import ToastProvider from './components/ToastProvider';
 import SecurityLock from './components/SecurityLock';
 import SecurityAlert from './components/security/SecurityAlert';
+import PushPrompt from './components/pwa/PushPrompt';
 import TermsModal, { termsAccepted } from './components/TermsModal';
 import SidebarMenu from './components/SidebarMenu';
 import { AppMenuContext } from './components/ui/ModuleHeader';
@@ -245,7 +246,7 @@ function AppContent() {
           <BudgetCalc />
           <DebtSyncHost ready={!showWelcome && !showIntro && !showTerms && !showWhatsNew && !(isSetup && isLocked)} />
         </Suspense>
-        <TestBanner /><DateSimulator /><SecurityAlert />
+        <TestBanner /><DateSimulator /><SecurityAlert /><PushPrompt />
         <UpdateManager />
         <ToastProvider />
         <Suspense fallback={null}><AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence></Suspense>

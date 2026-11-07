@@ -67,7 +67,7 @@ export default function LegalContent() {
       </Section>
       <Section title="4.1 Servicios de terceros que usa la app">
         <p><strong>Render</strong> (Estados Unidos): publica la app y sus actualizaciones.</p>
-        <p><strong>Supabase</strong> (servidor en São Paulo, Brasil): guarda las cajas cifradas del hogar sincronizado, las sumas anónimas de estadísticas y las opiniones que envías.</p>
+        <p><strong>Supabase</strong> (servidor en São Paulo, Brasil): guarda las cajas cifradas del hogar sincronizado, las sumas anónimas de estadísticas, las opiniones que envías y, si los activas, la dirección anónima de avisos de versión nueva.</p>
         <p><strong>Reconocimiento de voz de Google o Apple</strong>: solo si tocas el micrófono (punto 3.1).</p>
         <p><strong>Enlaces a otras apps</strong> (WhatsApp, Instagram, Google Calendar y apps de bancos como Nequi, Daviplata o Bancolombia): la app solo las abre cuando tú tocas el botón; lo que hagas allá se rige por las políticas de cada una. Mi Finanzas no tiene acuerdos con esas empresas ni usa sus logos.</p>
         <p>La app no tiene publicidad ni herramientas de rastreo de terceros.</p>
@@ -90,6 +90,7 @@ export default function LegalContent() {
       <Section title="7.1 Notificaciones">
         <p>Los recordatorios de pagos los genera tu propio celular a partir de lo que registraste. Puedes desactivarlos en cualquier momento desde la configuración del navegador.</p>
         <p>Si tienes los avisos activados, tu celular también revisa de vez en cuando si hay una versión nueva de la app (solo descarga el número de versión, igual que al abrirla) y te muestra un aviso. No se envía ningún dato tuyo. Puedes apagarlo en Ajustes → Recordatorios → Avisos de nuevas versiones.</p>
+        <p><strong>Avisos con el celular bloqueado (opcional):</strong> si los activas, tu navegador nos da una dirección de avisos anónima (no dice quién eres) que guardamos en el servidor de Supabase solo para avisarte de versiones nuevas. No guardamos nombre, correo, teléfono ni datos de tus finanzas. Al apagar los avisos esa dirección se borra.</p>
       </Section>
       <Section title="8. Tus derechos y cómo borrar todo">
         <p>Como tus datos solo están en tu celular, tú tienes el control total. En Ajustes → «Borrar todos mis datos» se elimina todo de forma permanente. Si desinstalas la app o borras los datos del navegador, la información también se elimina.</p>
