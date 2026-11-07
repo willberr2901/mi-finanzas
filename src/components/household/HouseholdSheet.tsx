@@ -11,7 +11,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import QRCode from 'qrcode';
+import { qrDataURL } from '../../utils/qr';
 import { Home, Users, QrCode, Link2, ShieldCheck, RefreshCw, LogOut, Trash2, Share2, Lock, Wifi, WifiOff, Camera } from 'lucide-react';
 import BottomSheet from '../ui/BottomSheet';
 import { askConfirm } from '../ui/ConfirmDialog';
@@ -113,7 +113,7 @@ export default function HouseholdSheet() {
   useEffect(() => { if (!name) setName(`Casa de ${ownerLabel('yo')}`); }, [open]);
   useEffect(() => {
     if (!household) { setQr(''); return; }
-    QRCode.toDataURL(inviteLink(), { margin: 1, width: 520, errorCorrectionLevel: 'M', color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
+    qrDataURL(inviteLink(), { margin: 1, width: 520, errorCorrectionLevel: 'M', color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
   }, [household?.key]);
 
   const create = async () => {

@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Copy, Check, ArrowLeft, Instagram } from 'lucide-react';
-import QRCode from 'qrcode';
+import { qrDataURL } from '../../utils/qr';
 import { formatCOP } from '../../utils/format';
 import MoneyInput from '../ui/MoneyInput';
 import { notify } from '../../services/notificationService';
@@ -64,7 +64,7 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
     return () => clearTimeout(t2);
   }, [ready]);
   useEffect(() => {
-    if (step === 'pay' && !qr) QRCode.toDataURL(SUPPORT_QR, { margin: 1, width: 360, errorCorrectionLevel: 'M', color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
+    if (step === 'pay' && !qr) qrDataURL(SUPPORT_QR, { margin: 1, width: 360, errorCorrectionLevel: 'M', color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
   }, [step, qr]);
 
   const close = () => { if (auto && step === 'choose') markDismissed(); setOpen(false); };
@@ -121,7 +121,7 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
                   <button onClick={() => setStep('choose')} aria-label="Volver" className="p-1 -ml-1 text-slate-300"><ArrowLeft size={20} /></button>
                   <button onClick={close} aria-label="Cerrar" className="p-1 text-slate-300"><X size={20} /></button>
                 </div>
-                <div className="flex items-center gap-2 mt-1"><span className="shrink-0"><Kai mood="normal" size={56} still title="Kai" /></span><p className="relative rounded-2xl rounded-tl-[4px] bg-white text-[#0B1026] px-3 py-2 text-[13px] font-bold">Son 3 pasos, yo te acompaño 👇</p></div>
+                <div className="flex items-center gap-2 mt-1"><span className="shrink-0"><Kai mood="normal" size={56} still title="Kai" /></span><p className="relative rounded-2xl rounded-tl-[4px] bg-[#fff] text-[#0B1026] px-3 py-2 text-[13px] font-bold">Son 3 pasos, yo te acompaño 👇</p></div>
                 <p className="text-[11px] font-extrabold tracking-widest text-slate-400 mt-2">APOYAR CON {formatCOP(amount)}</p>
                 <h2 id="support-title" className="text-white text-xl font-extrabold leading-tight mt-1">Desde tu banco, <span className="text-brand-lime">en 3 pasos</span></h2>
                 <div className="mt-4 p-4 rounded-2xl bg-white/[0.05] ring-1 ring-brand-lime/40">

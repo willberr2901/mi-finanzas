@@ -9,7 +9,7 @@
  */
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import QRCode from 'qrcode';
+import { qrDataURL } from '../../utils/qr';
 import { X, Copy, Check, Share2, Heart, QrCode } from 'lucide-react';
 import AppLogo from '../ui/AppLogo';
 import { notify } from '../../services/notificationService';
@@ -43,7 +43,7 @@ export default function ShareAppSheet() {
 
   useEffect(() => {
     if (!open || qr) return;
-    QRCode.toDataURL(appUrl(), { margin: 1, width: 520, errorCorrectionLevel: 'H', color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
+    qrDataURL(appUrl(), { margin: 1, width: 520, errorCorrectionLevel: 'H', color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
   }, [open, qr]);
 
   const bump = () => { const n = count + 1; setCount(n); try { localStorage.setItem(COUNT_KEY, String(n)); } catch { /* sin almacenamiento */ } };

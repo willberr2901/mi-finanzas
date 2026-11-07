@@ -20,7 +20,7 @@ import BottomSheet from '../ui/BottomSheet';
 import AppLogo from '../ui/AppLogo';
 import { notify } from '../../services/notificationService';
 import { isStandalone } from '../../services/statsService';
-import QRCode from 'qrcode';
+import { qrDataURL } from '../../utils/qr';
 
 // ═══ SECCIÓN: Captura del permiso de instalación del navegador ═══
 type BIPEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> };
@@ -127,7 +127,7 @@ export default function InstallAppSheet({ ready }: { ready: boolean }) {
 
   // En computador: QR para abrir la app en el celular.
   useEffect(() => {
-    if ((nudge || open) && !isMobile() && !qr) QRCode.toDataURL(location.origin, { margin: 1, width: 400, color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
+    if ((nudge || open) && !isMobile() && !qr) qrDataURL(location.origin, { margin: 1, width: 400, color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
   }, [nudge, open]);
   const nudgeInstall = async () => { if (deferred) { await install(); } else { setNudge(false); openInstall(); } };
 

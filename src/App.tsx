@@ -12,19 +12,16 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { motion, AnimatePresence } from 'framer-motion';
 import UpdateManager from './components/pwa/UpdateManager';
 import WhatsNew, { shouldShowWhatsNew, markWhatsNewSeen } from './components/pwa/WhatsNew';
-import WhatsNewStory from './components/pwa/WhatsNewStory';
 import { RELEASE_STORY } from './services/releaseStories';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SecurityProvider, useSecurity } from './contexts/SecurityContext';
 import ToastProvider from './components/ToastProvider';
 import SecurityLock from './components/SecurityLock';
 import TermsModal, { termsAccepted } from './components/TermsModal';
-import WelcomeExperience from './components/welcome/WelcomeExperience';
 import SidebarMenu from './components/SidebarMenu';
 import { AppMenuContext } from './components/ui/ModuleHeader';
 import QuickAdd from './components/QuickAdd';
 import HomeSkeleton from './components/home/HomeSkeleton';
-import ShareAppSheet from './components/share/ShareAppSheet';
 import PasteMovementSheet, { openPasteMovement } from './components/quick/PasteMovementSheet';
 import { checkDailyReminderInApp } from './services/dailyReminder';
 import { TourProvider } from './components/tour/Tour';
@@ -51,6 +48,10 @@ const lazyWithRetry = (factory: () => Promise<{ default: React.ComponentType<any
     throw err;
   }));
 // Ventanas que salen de vez en cuando: se descargan solo cuando hacen falta (la app abre más rápido)
+// Pantallas grandes que no hacen falta para pintar el Inicio: se cargan aparte (abre más rápido)
+const WhatsNewStory = lazyWithRetry(() => import('./components/pwa/WhatsNewStory'));
+const WelcomeExperience = lazyWithRetry(() => import('./components/welcome/WelcomeExperience'));
+const ShareAppSheet = React.lazy(() => import('./components/share/ShareAppSheet'));
 const InstallAppSheet = React.lazy(() => import('./components/pwa/InstallAppSheet'));
 const FeedbackSheet = React.lazy(() => import('./components/feedback/FeedbackSheet'));
 const HalloweenIntro = React.lazy(() => import('./components/season/HalloweenIntro'));
@@ -221,7 +222,7 @@ function AppContent() {
 
         <QuickAdd hidden={['/mercado', '/prestamos', '/legal', '/escaner', '/reportes'].includes(location.pathname)} />
         <SidebarMenu isOpen={menuOpen} onClose={() => setMenuOpen(false)} />
-        <ShareAppSheet />
+        <Suspense fallback={null}><ShareAppSheet /></Suspense>
         <PasteMovementSheet />
         <HouseholdSheet />
         <ConfirmHost />
@@ -245,11 +246,11 @@ function AppContent() {
         <TestBanner />
         <UpdateManager />
         <ToastProvider />
-        <AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence>
+        <Suspense fallback={null}><AnimatePresence>{showWelcome && <WelcomeExperience firstTime={firstTime} onDone={afterWelcome} />}</AnimatePresence></Suspense>
         {showTerms && <TermsModal onAccept={afterTerms} />}
-        <AnimatePresence>{showWhatsNew && (RELEASE_STORY.length
+        <Suspense fallback={null}><AnimatePresence>{showWhatsNew && (RELEASE_STORY.length
           ? <WhatsNewStory onClose={() => { markWhatsNewSeen(); setShowWhatsNew(false); }} />
-          : <WhatsNew onClose={() => setShowWhatsNew(false)} />)}</AnimatePresence>
+          : <WhatsNew onClose={() => setShowWhatsNew(false)} />)}</AnimatePresence></Suspense>
       </div>
      </TourProvider>
     </AppMenuContext.Provider>

@@ -60,8 +60,8 @@ export default function FloatingKai({ tips, onTap }: { tips: KaiTip[]; onTap?: (
         {show && tip && (
           <motion.button key={i % Math.max(1, tips.length)} onClick={click} initial={{ opacity: 0, y: -6, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-            className="absolute right-4 top-[56px] z-30 w-max max-w-[200px] text-left rounded-[16px_4px_16px_16px] bg-white text-[#0B1026] text-[12.5px] font-bold leading-snug px-3 py-2 shadow-xl shadow-black/50">
-            {tip.text}{tip.action && <span className="block text-[11px] text-lime-700 font-extrabold mt-0.5">Tócame ›</span>}
+            className="absolute right-4 top-[56px] z-30 w-max max-w-[200px] text-left rounded-[16px_4px_16px_16px] bg-[#fff] text-[#0B1026] text-[12.5px] font-bold leading-snug px-3 py-2 shadow-xl shadow-black/50">
+            {tip.text}{tip.action && <span className="block text-[11px] text-[#4D7C0F] font-extrabold mt-0.5">Tócame ›</span>}
           </motion.button>
         )}
       </AnimatePresence>

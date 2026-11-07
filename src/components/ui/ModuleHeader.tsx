@@ -40,7 +40,7 @@ export default function ModuleHeader({ module, title, subtitle, right, hideIcon 
           <h1 className="text-xl font-bold text-white truncate">{title ?? m.label}</h1>
           <button onClick={() => start()} aria-label={`Guíame en ${m.label}`} title="Guíame"
             className="shrink-0 flex items-center gap-1 text-[10px] font-bold text-violet-200 bg-violet-500/15 border border-violet-400/30 rounded-full px-2 py-0.5 active:scale-95">
-            <Sparkles size={11} />{!right && ' Guíame'}
+            <Sparkles size={11} />{!right && <span className="hidden min-[390px]:inline">Guíame</span>}
           </button>
         </div>
         <p className="text-xs text-slate-400 truncate">{subtitle ?? m.tagline}</p>

@@ -25,10 +25,10 @@ export function Cup({ size = 44 }: { size?: number }) {
 export function KaiSays({ text, k }: { text: string; k: string | number }) {
   return (
     <div className="relative mx-auto max-w-[300px]">
-      <span aria-hidden="true" className="absolute -top-2 left-1/2 -ml-2 border-8 border-transparent border-t-0 border-b-white" />
+      <span aria-hidden="true" className="absolute -top-2 left-1/2 -ml-2 border-8 border-transparent border-t-0 border-b-[#fff]" />
       <AnimatePresence mode="wait">
         <motion.p key={k} role="status" initial={{ opacity: 0, y: 6, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }}
-          className="rounded-2xl bg-white text-[#0B1026] px-4 py-2.5 text-[13.5px] font-bold leading-snug text-center">{text}</motion.p>
+          className="rounded-2xl bg-[#fff] text-[#0B1026] px-4 py-2.5 text-[13.5px] font-bold leading-snug text-center">{text}</motion.p>
       </AnimatePresence>
     </div>
   );

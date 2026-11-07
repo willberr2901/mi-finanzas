@@ -241,8 +241,9 @@ export default function FinancePage() {
               <div className="min-w-0"><p className="text-[11px] text-slate-400 flex items-center justify-center gap-1"><TrendingDown size={12} className="text-red-400" /> Gastos</p><p className="text-base font-extrabold text-red-400 truncate">{formatCOP(cycleExpense)}</p></div>
             </div>
             <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
-              <span className="text-sm text-slate-300 font-semibold">{cycleLeft >= 0 ? 'Te queda' : 'Te pasaste por'}</span>
-              <span className={`text-2xl font-extrabold ${cycleLeft >= 0 ? 'text-brand-lime' : 'text-red-400'}`}>{formatCOP(Math.abs(cycleLeft))}</span>
+              {/* Sin ingresos registrados no decimos "Te pasaste": solo cuánto lleva gastado */}
+              <span className="text-sm text-slate-300 font-semibold">{cycleIncome === 0 ? 'Llevas gastado' : cycleLeft >= 0 ? 'Te queda' : 'Te pasaste por'}</span>
+              <span className={`text-2xl font-extrabold ${cycleIncome === 0 ? 'text-white' : cycleLeft >= 0 ? 'text-brand-lime' : 'text-red-400'}`}>{formatCOP(cycleIncome === 0 ? cycleExpense : Math.abs(cycleLeft))}</span>
             </div>
             {cycleIncome > 0 && <div className="mt-2 h-2 rounded-full bg-slate-800 overflow-hidden" aria-hidden="true"><div className={`h-full rounded-full ${cycleLeft >= 0 ? 'bg-emerald-400' : 'bg-red-400'}`} style={{ width: `${Math.min(100, (cycleExpense / cycleIncome) * 100)}%` }} /></div>}
             {cycleIncome > 0 && <p className="text-[11px] text-slate-400 mt-1">Has gastado el {Math.round((cycleExpense / cycleIncome) * 100)}% de lo que entró</p>}
