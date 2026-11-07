@@ -39,7 +39,7 @@ export default function WhatsNewStory({ onClose }: { onClose: () => void }) {
   const tryIt = () => {
     const to = s.cta?.to; if (!to) return;
     onClose();
-    if (to === '#apoyar') setTimeout(openSupport, 250); else if (to === '#kai') setTimeout(openAssistant, 250); else if (to === '#calificar') setTimeout(openRating, 250); else navigate(to);
+    if (to === '#apoyar') setTimeout(openSupport, 250); else if (to === '#kai') setTimeout(openAssistant, 250); else if (to === '#calificar') setTimeout(openRating, 250); else if (to === '#mas') setTimeout(() => window.dispatchEvent(new CustomEvent('mf:quick-add')), 250); else navigate(to);
   };
 
   return (

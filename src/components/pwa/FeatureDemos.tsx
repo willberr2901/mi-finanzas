@@ -184,5 +184,55 @@ export function DemoStars() {
   );
 }
 
-export const DEMOS = { kai: DemoKai, piggy: DemoPiggy, stars: DemoStars, notif: DemoNotif, debts: DemoDebts, recap: DemoRecap, rings: DemoRings, haptics: DemoHaptics, backup: DemoBackup, support: DemoSupport } as const;
+
+/** 🎡 Botón + en rueda: los botones salen alrededor de Kai. */
+export function DemoWheel() {
+  const ic = ['🎙️', '➖', '➕', '🛒', '📅', '🏦'];
+  return (
+    <Phone>
+      <div className="absolute left-1/2 top-1/2 w-0 h-0">
+        <div className="absolute -left-[70px] -top-[70px] w-[140px] h-[140px] rounded-full border border-[#8B5CF6]/40 bg-[radial-gradient(circle,rgba(79,70,229,.35),transparent_70%)]" />
+        {ic.map((e, i) => {
+          const a = (Math.PI / 180) * (90 - 60 * i); const x = 56 * Math.cos(a), y = -56 * Math.sin(a);
+          return <motion.span key={i} className="absolute -left-[15px] -top-[15px] w-[30px] h-[30px] rounded-full flex items-center justify-center text-[13px] ring-1 ring-white/25" style={{ background: i % 2 ? 'linear-gradient(135deg,#7C3AED,#4F46E5)' : 'linear-gradient(135deg,#4F46E5,#0EA5E9)' }}
+            animate={{ x: [0, x, x, 0], y: [0, y, y, 0], scale: [0, 1, 1, 0] }} transition={{ duration: 3.6, times: [0, 0.2 + i * 0.03, 0.85, 1], ...loop }}>{e}</motion.span>;
+        })}
+        <span className="absolute -left-[26px] -top-[26px] w-[52px] h-[52px] rounded-full bg-[#0B1026] ring-2 ring-brand-lime flex items-center justify-center"><Kai mood="feliz" size={40} /></span>
+      </div>
+      <span className="absolute bottom-3 right-3 w-8 h-8 rounded-[10px] bg-brand-lime text-brand-ink font-extrabold flex items-center justify-center">+</span>
+    </Phone>
+  );
+}
+
+/** 🎄 Navidad: Kai Noel con nieve cayendo. */
+export function DemoXmas() {
+  return (
+    <Phone>
+      {Array.from({ length: 14 }, (_, i) => (
+        <motion.span key={i} className="absolute w-1.5 h-1.5 rounded-full bg-white/80" style={{ left: `${(i * 37) % 100}%` }}
+          animate={{ y: [-10, 240], opacity: [0, 1, 1, 0] }} transition={{ duration: 3 + (i % 4) * 0.5, repeat: Infinity, delay: (i % 7) * 0.4, ease: 'linear' }} />
+      ))}
+      <div className="flex justify-center mt-4"><Kai mood="celebra" size={110} /></div>
+      <p className="text-center text-[13px] font-extrabold text-white mt-1">¡Llegó Kai Noel! 🎅</p>
+      <p className="text-center text-[9px] font-bold text-red-300">Del 1 de diciembre al 6 de enero</p>
+    </Phone>
+  );
+}
+
+/** 🛡️ Seguridad: aviso de intentos con PIN y pantalla que se oculta. */
+export function DemoShield() {
+  return (
+    <Phone>
+      <motion.div className="rounded-xl bg-white/[0.06] p-2.5 text-center" animate={{ filter: ['blur(0px)', 'blur(0px)', 'blur(6px)', 'blur(6px)', 'blur(0px)'] }} transition={{ duration: 4.5, times: [0, 0.4, 0.5, 0.85, 1], ...loop }}>
+        <p className="text-[8px] text-slate-400 font-bold">TU SALDO</p><p className="text-[18px] font-extrabold text-brand-lime">$1.250.000</p>
+      </motion.div>
+      <motion.p className="text-center text-[8.5px] font-bold text-slate-300 mt-1" animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration: 4.5, times: [0, 0.45, 0.5, 0.85, 1], ...loop }}>🙈 Oculto al cambiar de app</motion.p>
+      <motion.div className="mt-3 rounded-xl bg-[#3B0D16] ring-1 ring-rose-400/40 p-2.5 text-center" animate={{ opacity: [0, 1, 1, 0], y: [10, 0, 0, 0] }} transition={{ duration: 4.5, times: [0, 0.12, 0.9, 1], ...loop }}>
+        <p className="text-[10px] font-extrabold text-white">🚨 Alguien intentó entrar</p><p className="text-[8.5px] text-slate-300 font-semibold">3 intentos · hoy 6:48 p. m.</p>
+      </motion.div>
+    </Phone>
+  );
+}
+
+export const DEMOS = { wheel: DemoWheel, xmas: DemoXmas, shield: DemoShield, kai: DemoKai, piggy: DemoPiggy, stars: DemoStars, notif: DemoNotif, debts: DemoDebts, recap: DemoRecap, rings: DemoRings, haptics: DemoHaptics, backup: DemoBackup, support: DemoSupport } as const;
 export type DemoId = keyof typeof DEMOS;

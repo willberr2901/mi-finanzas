@@ -57,6 +57,8 @@ export default function DateSimulator() {
               })}
             </div>
             <p className="text-[10.5px] text-slate-400 mt-2 leading-snug">La app se ve como si fuera esa fecha (temporada, Kai, saludos, avisos). Tus datos no cambian.{cur && <> Ahora: <b className="text-amber-300">{cur}</b></>}</p>
+            <button onClick={() => { setOpen(false); window.dispatchEvent(new Event('mf:update-preview')); }}
+              className="mt-2 w-full h-10 rounded-xl bg-white/[0.08] text-white text-[12px] font-extrabold">⬆️ Ver ventana de actualización</button>
           </motion.div>
         )}
       </AnimatePresence>
