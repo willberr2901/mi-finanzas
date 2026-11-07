@@ -19,7 +19,6 @@ import { formatCOP } from '../../utils/format';
 import MoneyInput from '../ui/MoneyInput';
 import { notify } from '../../services/notificationService';
 import { openInstagram } from '../social/Instagram';
-import { IS_TEST } from '../../utils/env';
 import { getHousehold } from '../../services/household/householdSync';
 import { incomingOffers } from '../../services/household/debtSync';
 import KaiCoffee, { KaiSays } from './KaiCoffee';
@@ -51,7 +50,7 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
   // De vez en cuando, sola (nunca junto a otra ventana)
   useEffect(() => {
     // En la app de pruebas sale en cada apertura para poder revisarla
-    if (!ready || !(IS_TEST || shouldOfferSupport(readSupport()))) return;
+    if (!ready || !shouldOfferSupport(readSupport())) return;
     // Espera a que no haya otra ventana (bienvenida, novedades, deudas…) y sale con calma.
     // Revisa cada 4 s durante máx. 3 min; una sola ventana "sola" por apertura.
     let tries = 0, calm = 0;
@@ -60,7 +59,7 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
       const debtWaiting = !!getHousehold() && incomingOffers(false).length > 0;  // primero la solicitud del hogar
       if (debtWaiting || document.querySelector('[role="dialog"]')) { calm = 0; if (++tries < 45) t2 = setTimeout(attempt, 4000); return; }
       if (++calm < 2) { t2 = setTimeout(attempt, 4000); return; }   // 2 revisiones seguidas sin ventanas
-      if (!IS_TEST && !claimPromptSlot()) return;
+      if (!claimPromptSlot()) return;
       markAsked(); show(true);
     };
     t2 = setTimeout(attempt, 6000);
@@ -70,7 +69,7 @@ export default function SupportSheet({ ready }: { ready: boolean }) {
     if (step === 'pay' && showQr && !qr) qrDataURL(SUPPORT_QR, { margin: 1, width: 360, errorCorrectionLevel: 'M', color: { dark: '#0B1026', light: '#FFFFFF' } }).then(setQr).catch(() => {});
   }, [step, qr, showQr]);
 
-  const close = () => { if (auto && step === 'choose') markDismissed(); setOpen(false); };
+  const close = () => { if (auto && step !== 'thanks') markDismissed(); setOpen(false); };
   const copy = async () => {
     try { await navigator.clipboard.writeText(SUPPORT_KEY); setCopied(true); }
     catch { notify({ title: `La llave es ${SUPPORT_KEY}`, message: 'Cópiala a mano en tu banco.', type: 'info', log: false }); }

@@ -60,7 +60,8 @@ export const countOpen = () => {
   const s = readSupport(); if (!localStorage.getItem(KEY)) s.firstSeen = Date.now();
   write({ ...s, opens: s.opens + 1 });
 };
-export const markAsked = () => write({ ...readSupport(), lastAsk: Date.now() });
+/** Se mostró sola: guarda la fecha y borra el "recordarme" ya cumplido (si no, saldría en cada apertura). */
+export const markAsked = () => write({ ...readSupport(), lastAsk: Date.now(), remindAt: undefined });
 export const markDismissed = () => { const s = readSupport(); write({ ...s, dismissals: s.dismissals + 1, lastAsk: Date.now() }); };
 export const markSupported = () => write({ ...readSupport(), supportedAt: Date.now(), dismissals: 0, remindAt: undefined });
 export const isAlly = () => readSupport().supportedAt > 0;
