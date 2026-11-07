@@ -5,18 +5,18 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { IS_TEST } from '../../utils/env';
-import { simDate, setSimDate } from '../../utils/simDate';
+import { simDate, setSimDate, realToday } from '../../utils/simDate';
 import { getPlan } from '../../services/budgetPlan';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
 function options() {
-  const real = new Date();
-  const y = real.getMonth() === 11 ? real.getFullYear() : real.getFullYear();
+  const real = realToday();               // siempre desde la fecha real, no la simulada
+  const y = real.getMonth() === 0 ? real.getFullYear() - 1 : real.getFullYear(); // en enero: la Navidad que acaba de pasar
   const payDay = (getPlan()?.payDays?.[0]) ?? 1;
-  const pay = new Date(real.getFullYear(), real.getMonth() + (real.getDate() > payDay ? 1 : 0), payDay);
-  const end = new Date(real.getFullYear(), real.getMonth() + 1, 0);
+  const pay = new (realToday().constructor as DateConstructor)(real.getFullYear(), real.getMonth() + (real.getDate() > payDay ? 1 : 0), payDay);
+  const end = new (realToday().constructor as DateConstructor)(real.getFullYear(), real.getMonth() + 1, 0);
   return [
     { e: '📅', t: 'Hoy real', v: null },
     { e: '🎄', t: '1 dic', v: `${y}-12-01` },

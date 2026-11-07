@@ -16,6 +16,8 @@ import { IS_TEST } from './env';
 export const SIM_KEY = 'mf_sim_date'; // "AAAA-MM-DD"
 
 const RealDate = Date;
+/** Fecha REAL de hoy (sin simular): para armar las opciones del simulador. */
+export const realToday = () => new RealDate();
 /** Fecha simulada guardada (solo pruebas). */
 export const simDate = (): string | null => {
   if (!IS_TEST) return null;
