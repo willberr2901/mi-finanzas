@@ -24,7 +24,7 @@ const TOUR: { key: keyof typeof MODULES; text: string }[] = [
 
 /** Letras que aparecen una por una. */
 const Letters = ({ text, delay = 0, className = '' }: { text: string; delay?: number; className?: string }) => (
-  <span className={className} aria-label={text}>
+  <span role="img" className={className} aria-label={text}>
     {text.split('').map((ch, i) => (
       <motion.span key={i} aria-hidden="true" className="inline-block" initial={{ opacity: 0, y: 18, rotateX: 90 }} animate={{ opacity: 1, y: 0, rotateX: 0 }}
         transition={{ delay: delay + i * 0.045, type: 'spring', damping: 14, stiffness: 200 }}>{ch === ' ' ? ' ' : ch}</motion.span>

@@ -95,7 +95,7 @@ function More({ icon: Icon, color, title, sub, onClick, badge }: { icon: LucideI
 }
 
 const Stars = ({ n }: { n: number }) => (
-  <span className="inline-flex gap-px" aria-label={n ? `Calificaste ${n} estrellas` : 'Sin calificar'}>
+  <span role="img" className="inline-flex gap-px" aria-label={n ? `Calificaste ${n} estrellas` : 'Sin calificar'}>
     {[1, 2, 3, 4, 5].map(i => <span key={i} className={i <= n ? 'text-yellow-300' : 'text-slate-600'}>★</span>)}
   </span>
 );
@@ -161,7 +161,7 @@ export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onCl
                         <span aria-hidden="true">{emoji}</span>
                       </motion.span>
                       {isNew ? <span className="px-1.5 py-px rounded-full bg-brand-lime text-brand-ink text-[9px] font-extrabold tracking-wider">NUEVO</span>
-                        : active ? <span className="w-2.5 h-2.5 rounded-full mt-1" style={{ background: color }} aria-label="Estás aquí" /> : null}
+                        : active ? <span role="img" className="w-2.5 h-2.5 rounded-full mt-1" style={{ background: color }} aria-label="Estás aquí" /> : null}
                     </span>
                     <span className="relative mt-auto">
                       <span className="block text-[15.5px] font-extrabold">{m.label}</span>
@@ -176,7 +176,7 @@ export default function SidebarMenu({ isOpen, onClose }: { isOpen: boolean; onCl
             <p className="text-[11px] font-extrabold tracking-[.12em] text-slate-400 mt-6 mb-2 px-1">MÁS</p>
             <motion.div className="grid grid-cols-2 gap-2" initial="h" animate="s" variants={{ s: { transition: { staggerChildren: 0.04, delayChildren: 0.35 } } }}>
               <More icon={Settings} color="#C6F432" title="Ajustes" sub="Tema y avisos" onClick={() => go('/ajustes')}
-                badge={moduleHasNew('ajustes') ? <span className="w-2 h-2 rounded-full bg-brand-lime shadow-[0_0_8px_#C6F432]" aria-label="Hay algo nuevo" /> : undefined} />
+                badge={moduleHasNew('ajustes') ? <span role="img" className="w-2 h-2 rounded-full bg-brand-lime shadow-[0_0_8px_#C6F432]" aria-label="Hay algo nuevo" /> : undefined} />
               <More icon={ShieldCheck} color="#34D399" title="Seguridad" sub="Bloqueo y cifrado" onClick={later(openSecurityCenter)} />
               <More icon={Sparkles} color="#A78BFA" title="Novedades" sub={`${RELEASE_STORY.length || RELEASE_NOTES.length} cosas nuevas`} onClick={later(() => window.dispatchEvent(new Event('mf:open-whatsnew')))}
                 badge={<motion.span className="w-2 h-2 rounded-full bg-violet-400" animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 1.6, repeat: Infinity }} aria-hidden="true" />} />

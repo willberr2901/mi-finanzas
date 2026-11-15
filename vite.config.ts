@@ -9,6 +9,8 @@ import { APP_VERSION, RELEASE_NOTES, SILENT_UPDATE } from './src/version';
 const versionFile = (): Plugin => ({
   name: 'version-file',
   generateBundle() {
+    // robots.txt: la app real se puede encontrar en Google; la de pruebas no.
+    this.emitFile({ type: 'asset', fileName: 'robots.txt', source: process.env.VITE_APP_ENV === 'pruebas' ? 'User-agent: *\nDisallow: /\n' : 'User-agent: *\nAllow: /\n' });
     this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify({ version: APP_VERSION, notes: RELEASE_NOTES, silent: SILENT_UPDATE }) });
   },
 });
@@ -38,7 +40,30 @@ export default defineConfig({
       manifest: {
         name: TEST ? 'Mi Finanzas · Pruebas' : 'Mi Finanzas',
         short_name: TEST ? 'MF Pruebas' : 'Finanzas',
-        description: 'Las finanzas de tu hogar, claras y en orden',
+        id: '/',
+        start_url: '/',
+        scope: '/',
+        lang: 'es-CO',
+        dir: 'ltr',
+        description: 'Las finanzas de tu hogar, claras y en orden: gastos, mercado, pagos y préstamos con Kai. Gratis y tus datos se quedan en tu celular.',
+        categories: ['finance', 'productivity', 'lifestyle'],
+        display_override: ['standalone', 'minimal-ui'] as any,
+        launch_handler: { client_mode: 'navigate-existing' } as any,
+        prefer_related_applications: false,
+        // Atajos al dejar presionado el ícono de la app
+        shortcuts: [
+          { name: 'Anotar un gasto', short_name: 'Gasto', url: '/?registrar=gasto', icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+          { name: 'Lista del mercado', short_name: 'Mercado', url: '/mercado', icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+          { name: 'Préstamos', short_name: 'Préstamos', url: '/prestamos', icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+          { name: 'Pagos', short_name: 'Pagos', url: '/pagos', icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+        ] as any,
+        // Capturas que se ven al instalar (y que pide Play Store)
+        screenshots: [
+          { src: 'screens/inicio.png', sizes: '780x1688', type: 'image/png', form_factor: 'narrow', label: 'Inicio con Kai' },
+          { src: 'screens/rueda.png', sizes: '780x1688', type: 'image/png', form_factor: 'narrow', label: 'Anota en un toque con la rueda de Kai' },
+          { src: 'screens/prestamos.png', sizes: '780x1688', type: 'image/png', form_factor: 'narrow', label: 'Préstamos con historial' },
+          { src: 'screens/escritorio.png', sizes: '1280x800', type: 'image/png', form_factor: 'wide', label: 'Mi Finanzas en computador' },
+        ] as any,
         theme_color: '#0B1026',
         background_color: '#0B1026',
         display: 'standalone',
@@ -59,7 +84,7 @@ export default defineConfig({
       filename: 'sw.ts',
       injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2,mp3}'],
-        globIgnores: ['**/version.json', '**/ocr/**'],
+        globIgnores: ['**/version.json', '**/ocr/**', '**/screens/**'],
       }
     })
   ],

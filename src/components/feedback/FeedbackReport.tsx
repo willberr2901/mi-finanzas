@@ -22,7 +22,7 @@ const PLATFORM: Record<string, string> = { android: 'Android', ios: 'iPhone', de
 const STATUS = { nuevo: { label: 'Nuevo', cls: 'bg-brand-lime text-brand-ink' }, revisado: { label: 'Revisado', cls: 'bg-sky-400/20 text-sky-200' }, resuelto: { label: 'Resuelto', cls: 'bg-emerald-500/20 text-emerald-300' } };
 
 const Stars = ({ n, size = 14 }: { n: number; size?: number }) => (
-  <span className="inline-flex gap-0.5" aria-label={`${n} de 5 estrellas`}>
+  <span role="img" className="inline-flex gap-0.5" aria-label={`${n} de 5 estrellas`}>
     {[1, 2, 3, 4, 5].map(i => <Star key={i} size={size} className={i <= n ? 'text-brand-lime' : 'text-white/20'} fill={i <= n ? 'currentColor' : 'none'} />)}
   </span>
 );

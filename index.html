@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="description" content="Las finanzas de tu hogar, claras y en orden" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0B1026" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -34,7 +34,7 @@
         @keyframes mfTxt{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
         @media (prefers-reduced-motion:reduce){#mf-splash *{animation:none!important;opacity:1!important;stroke-dashoffset:0!important}}
       </style>
-      <div id="mf-splash" aria-label="Cargando Mi Finanzas" role="status">
+      <header id="mf-splash" aria-label="Cargando Mi Finanzas">
         <div class="r">
           <svg class="mfr" viewBox="0 0 190 190" width="190" height="190"><circle cx="95" cy="95" r="86" stroke="rgba(255,255,255,.08)" stroke-width="8" fill="none"/><circle class="p" cx="95" cy="95" r="86" stroke="#C6F432" stroke-width="8" fill="none" stroke-linecap="round"/></svg>
           <svg class="kai" viewBox="0 0 400 440" aria-hidden="true">
@@ -48,8 +48,8 @@
             <rect class="eye" x="148" y="146" width="34" height="44" rx="17" fill="#C6F432"/><rect class="eye" x="218" y="146" width="34" height="44" rx="17" fill="#C6F432"/>
           </svg>
         </div>
-        <div class="t">Mi <b>Finanzas</b></div>
-      </div>
+        <h1 class="t" style="margin-bottom:0">Mi <b>Finanzas</b></h1>
+      </header>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

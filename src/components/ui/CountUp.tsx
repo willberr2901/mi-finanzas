@@ -19,5 +19,5 @@ export default function CountUp({ value, className = '' }: { value: number; clas
     const controls = animate(0, value, { duration: 1.1, ease: [0.2, 0.8, 0.2, 1], onUpdate: v => setShown(v) });
     return () => controls.stop();
   }, [value]);
-  return <span className={className} aria-label={formatCOP(value)}>{formatCOP(shown)}</span>;
+  return <span role="img" className={className} aria-label={formatCOP(value)}>{formatCOP(shown)}</span>;
 }
