@@ -15,6 +15,7 @@ export interface StorySlide { demo: DemoId; tag: string; title: string; text: st
 
 export const RELEASE_STORY: StorySlide[] = [
   { demo: 'wheel', tag: '🎡 BOTÓN + NUEVO', title: 'La rueda de Kai', text: 'Toca el + y elige en la rueda: gasto, ingreso, mercado, pago fijo o del banco. Toca a Kai en el centro y dile lo que gastaste.', cta: { label: 'Probar la rueda', to: '#mas' } },
+  { demo: 'loans', tag: '🤝 PRÉSTAMOS', title: 'Verde abona, rojo suma', text: '¿Te abonaron o prestaste más? Regístralo con fecha y hora: el saldo se calcula solo y puedes enviar el estado de cuenta por WhatsApp.', cta: { label: 'Ver préstamos', to: '/prestamos' } },
   { demo: 'xmas', tag: '🎄 NAVIDAD', title: 'Llega Kai Noel', text: 'Del 1 de diciembre al 6 de enero toda la app se viste de Navidad: nieve, gorritos y la plantilla “Cena de Navidad” en Mercado.', cta: { label: 'Ver plantilla', to: '/mercado?plantilla=navidad' } },
   { demo: 'kai', tag: '🤖 KAI REACCIONA', title: 'Kai siente tu plata', text: 'En Inicio, Kai celebra el día de pago, se preocupa si te pasas, duerme de noche y te muestra tu racha 🔥 de días anotando.', cta: { label: 'Ver mi Inicio', to: '/' } },
   { demo: 'shield', tag: '🛡️ MÁS SEGURA', title: 'Te avisa si alguien intentó entrar', text: 'Si alguien pone mal tu PIN, al abrir te contamos cuántas veces y a qué hora. Y con PIN activo, tus saldos se ocultan al cambiar de app.', cta: { label: 'Activar PIN', to: '/ajustes' } },

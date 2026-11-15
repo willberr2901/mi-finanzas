@@ -4,7 +4,10 @@
  * ────────────────────────────────────────────────────────────────────
  * Qué hace: lleva las deudas pequeñas con amigos y familia, aparte de los
  *           pagos fijos y créditos: "me prestaron para el pasaje", "le presté
- *           a Juan para el almuerzo". Cada préstamo tiene abonos hasta quedar saldado.
+ *           a Juan para el almuerzo". Cada préstamo tiene movimientos hasta quedar saldado:
+ *             🟢 abono (la deuda baja) · 🔴 "le presté / me prestó más" (la deuda sube).
+ *           Cada movimiento guarda fecha y HORA, nota y el saldo se recalcula solo:
+ *             debe = prestado + prestado después − abonos.
  * Dónde se guarda: solo en el celular, cifrado (secureStorage 'mf_loans_v1').
  * Dónde se ve: módulo Préstamos (pages/LoansPage.tsx), resumen en Pagos.
  * ════════════════════════════════════════════════════════════════════
@@ -13,7 +16,8 @@ import { useEffect, useState } from 'react';
 import { secureStorage } from '../utils/security';
 
 export type LoanDir = 'debo' | 'meDeben';
-export interface LoanPayment { id: string; amount: number; date: string; note?: string }
+/** Movimiento de un préstamo. kind 'mas' = se prestó más (sube). Sin kind = abono (préstamos viejos). at = fecha y hora exactas. */
+export interface LoanPayment { id: string; amount: number; date: string; note?: string; kind?: 'abono' | 'mas'; at?: number }
 export interface Loan {
   id: string;
   dir: LoanDir;           // 'debo' = yo le debo a alguien · 'meDeben' = alguien me debe
@@ -34,8 +38,16 @@ const save = (l: Loan[]) => { secureStorage.setItem(KEY, l); window.dispatchEven
 export const REASONS = ['Pasaje', 'Almuerzo', 'Mercado', 'Préstamo', 'Servicios', 'Salida', 'Otro'];
 export const today = () => new Date().toLocaleDateString('en-CA');
 
-export const paidOf = (l: Loan) => l.payments.reduce((a, p) => a + p.amount, 0);
-export const leftOf = (l: Loan) => Math.max(0, l.amount - paidOf(l));
+const isMore = (p: LoanPayment) => p.kind === 'mas';
+/** Lo abonado (🟢). */
+export const paidOf = (l: Loan) => l.payments.reduce((a, p) => a + (isMore(p) ? 0 : p.amount), 0);
+/** Lo prestado después del préstamo inicial (🔴). */
+export const extraOf = (l: Loan) => l.payments.reduce((a, p) => a + (isMore(p) ? p.amount : 0), 0);
+/** Todo lo prestado: inicial + lo de después. */
+export const totalOf = (l: Loan) => l.amount + extraOf(l);
+export const leftOf = (l: Loan) => Math.max(0, totalOf(l) - paidOf(l));
+/** % pagado (0–100). */
+export const pctPaid = (l: Loan) => (totalOf(l) ? Math.min(100, Math.round((paidOf(l) / totalOf(l)) * 100)) : 0);
 export const isClosed = (l: Loan) => leftOf(l) === 0;
 export const isLate = (l: Loan) => !isClosed(l) && !!l.due && l.due < today();
 
@@ -45,10 +57,49 @@ export const addLoan = (d: Omit<Loan, 'id' | 'payments' | 'createdAt'>) => {
   save([l, ...load()]);
   return l;
 };
-export const addPayment = (id: string, amount: number, date = today(), note?: string) =>
-  save(load().map(l => l.id === id ? { ...l, payments: [...l.payments, { id: crypto.randomUUID(), amount: Math.min(Math.round(amount), leftOf(l)), date, note }] } : l));
+const clean = (n?: string) => (n ? n.trim().slice(0, 80) || undefined : undefined);
+/** 🟢 Abono (nunca más de lo que falta). */
+export const addPayment = (id: string, amount: number, date = today(), note?: string, at = Date.now()) =>
+  save(load().map(l => l.id === id ? { ...l, payments: [...l.payments, { id: crypto.randomUUID(), kind: 'abono' as const, amount: Math.min(Math.round(amount), leftOf(l)), date, note: clean(note), at }] } : l));
+/** 🔴 Se prestó más a la misma persona (la deuda sube). */
+export const addMore = (id: string, amount: number, date = today(), note?: string, at = Date.now()) =>
+  save(load().map(l => l.id === id ? { ...l, payments: [...l.payments, { id: crypto.randomUUID(), kind: 'mas' as const, amount: Math.max(1, Math.round(amount)), date, note: clean(note), at }] } : l));
 export const removeLoan = (id: string) => save(load().filter(l => l.id !== id));
 export const undoLastPayment = (id: string) => save(load().map(l => l.id === id ? { ...l, payments: l.payments.slice(0, -1) } : l));
+
+// ═══ SECCIÓN: Historial (línea de tiempo con saldo) ═══
+export type LoanEventKind = 'inicio' | 'abono' | 'mas';
+export interface LoanEvent { id: string; kind: LoanEventKind; amount: number; date: string; at?: number; note?: string; after: number }
+const sortKey = (date: string, at?: number) => at ?? new Date(`${date}T12:00:00`).getTime();
+/** Movimientos en orden (del más viejo al más nuevo) con el saldo que quedó después de cada uno. */
+export function loanHistory(l: Loan): LoanEvent[] {
+  const moves = l.payments.map((p, i) => ({ p, i })).sort((a, b) => sortKey(a.p.date, a.p.at) - sortKey(b.p.date, b.p.at) || a.i - b.i);
+  let bal = l.amount;
+  const out: LoanEvent[] = [{ id: 'inicio', kind: 'inicio', amount: l.amount, date: l.date, at: l.createdAt && new Date(l.createdAt).toLocaleDateString('en-CA') === l.date ? l.createdAt : undefined, after: bal }];
+  for (const { p } of moves) {
+    bal = isMore(p) ? bal + p.amount : Math.max(0, bal - p.amount);
+    out.push({ id: p.id, kind: isMore(p) ? 'mas' : 'abono', amount: p.amount, date: p.date, at: p.at, note: p.note, after: bal });
+  }
+  return out;
+}
+
+/** Lo abonado (🟢) y lo prestado (🔴, incluye préstamos nuevos) en un mes, para una dirección. */
+export function monthFlow(loans: Loan[], dir: LoanDir, ym = today().slice(0, 7)) {
+  let abonado = 0, prestado = 0;
+  for (const l of loans.filter(x => x.dir === dir)) {
+    if (l.date.startsWith(ym)) prestado += l.amount;
+    for (const p of l.payments) if (p.date.startsWith(ym)) { if (isMore(p)) prestado += p.amount; else abonado += p.amount; }
+  }
+  return { abonado, prestado };
+}
+
+/** Estado de cuenta en texto (para WhatsApp). */
+export function statementText(l: Loan, fmt: (n: number) => string) {
+  const when = (e: LoanEvent) => `${new Date(`${e.date}T12:00:00`).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}${e.at ? ' · ' + new Date(e.at).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' }) : ''}`;
+  const lines = loanHistory(l).slice().reverse().map(e =>
+    `${e.kind === 'abono' ? '🟢 Abono' : e.kind === 'mas' ? '🔴 Préstamo adicional' : '🟣 Préstamo inicial'} ${e.kind === 'abono' ? '−' : '+'}${fmt(e.amount)} · ${when(e)}${e.note ? ` (${e.note})` : ''} → quedó ${fmt(e.after)}`);
+  return [`📄 Estado de cuenta · ${l.reason || 'Préstamo'} con ${l.person}`, `Prestado: ${fmt(totalOf(l))} · Abonado: ${fmt(paidOf(l))} · Debe: ${fmt(leftOf(l))}`, '', ...lines, '', 'Hecho con Mi Finanzas · cuentas claras, amistades largas 💚'].join('\n');
+}
 
 /** Personas con las que ya hay préstamos (para escribir rápido). */
 export const knownPeople = () => [...new Set(load().map(l => l.person))].slice(0, 12);

@@ -18,7 +18,7 @@ import { motion, AnimatePresence, animate } from 'framer-motion';
 import { MessageCircle, Check, AlarmClock, ChevronLeft, ChevronRight, X, HandCoins } from 'lucide-react';
 import { formatCOP } from '../../utils/format';
 import { notify } from '../../services/notificationService';
-import { loanAlerts, alertLabel, snoozeLoan, isSnoozedToday, addPayment, leftOf, paidOf, reminderText, today, type LoanAlert } from '../../services/loansService';
+import { loanAlerts, alertLabel, snoozeLoan, isSnoozedToday, addPayment, leftOf, paidOf, pctPaid, totalOf, reminderText, today, type LoanAlert } from '../../services/loansService';
 
 const DAY_KEY = 'mf_loan_popup_day';
 const fmtDate = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
@@ -60,7 +60,7 @@ export default function LoanReminder({ ready }: { ready: boolean }) {
   const l = a.loan;
   const debo = l.dir === 'debo';
   const paid = paidOf(l);
-  const pct = Math.round((paid / l.amount) * 100);
+  const pct = pctPaid(l);
   const urgent = a.kind === 'vencido' || a.kind === 'hoy';
 
   const paidAll = () => {
@@ -107,7 +107,7 @@ export default function LoanReminder({ ready }: { ready: boolean }) {
               {paid > 0 && (
                 <div className="mt-3 text-left">
                   <div className="h-2 rounded-full bg-white/10 overflow-hidden"><motion.div className={`h-full rounded-full ${debo ? 'bg-orange-400' : 'bg-brand-lime'}`} initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ delay: 0.3, duration: 0.8 }} /></div>
-                  <p className="text-[11px] text-slate-400 mt-1">{debo ? 'Ya abonaste' : 'Ya te abonó'} {formatCOP(paid)} de {formatCOP(l.amount)}</p>
+                  <p className="text-[11px] text-slate-400 mt-1">{debo ? 'Ya abonaste' : 'Ya te abonó'} {formatCOP(paid)} de {formatCOP(totalOf(l))}</p>
                 </div>
               )}
 

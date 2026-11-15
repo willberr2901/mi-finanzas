@@ -6,7 +6,7 @@
  * Al publicar una versión nueva: sube APP_VERSION y cambia la lista de novedades.
  * ════════════════════════════════════════════════════════════════════
  */
-export const APP_VERSION = '1.21.2';
+export const APP_VERSION = '1.21.3';
 
 /**
  * Actualización silenciosa (regla de Gato: no acumular versiones):
@@ -18,6 +18,7 @@ export const SILENT_UPDATE = false;
 
 export const RELEASE_NOTES: string[] = [
   '🎡 Botón + nuevo: la rueda de Kai (tócalo y dicta)',
+  '🤝 Préstamos: verde abonos, rojo prestaste más',
   '🎄 Navidad con Kai Noel',
   '🤖 Kai reacciona y cuenta tu racha 🔥',
   '🛡️ Aviso si alguien intentó entrar',

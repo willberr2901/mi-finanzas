@@ -234,5 +234,26 @@ export function DemoShield() {
   );
 }
 
-export const DEMOS = { wheel: DemoWheel, xmas: DemoXmas, shield: DemoShield, kai: DemoKai, piggy: DemoPiggy, stars: DemoStars, notif: DemoNotif, debts: DemoDebts, recap: DemoRecap, rings: DemoRings, haptics: DemoHaptics, backup: DemoBackup, support: DemoSupport } as const;
+/** 🤝 Préstamos: verde abonos, rojo "le presté más", con fecha y hora. */
+export function DemoLoans() {
+  const rows: [string, string, string, string][] = [['#22C55E', '↓', 'Abonó', '−$70.000'], ['#F43F5E', '↑', 'Le prestaste más', '+$50.000'], ['#22C55E', '↓', 'Abonó', '−$130.000']];
+  return (
+    <Phone>
+      <p className="text-[9px] font-extrabold text-slate-400 tracking-wider">JUAN TE DEBE</p>
+      <p className="text-[20px] font-extrabold text-brand-lime leading-none">$100.000</p>
+      <div className="mt-2 space-y-1.5">
+        {rows.map(([c, ic, t, a], i) => (
+          <motion.div key={i} className="flex items-center gap-1.5 rounded-lg px-1.5 py-1" style={{ background: `${c}22`, border: `1px solid ${c}66` }}
+            animate={{ opacity: [0, 1, 1, 0], x: [-12, 0, 0, 0] }} transition={{ duration: 4.2, times: [0, 0.12 + i * 0.08, 0.9, 1], ...loop }}>
+            <span className="w-4 h-4 rounded-full text-[9px] font-black text-white flex items-center justify-center" style={{ background: c }}>{ic}</span>
+            <span className="flex-1 text-[9px] font-bold text-white">{t}<span className="block text-[7.5px] text-slate-400">14 nov · 9:40 p. m.</span></span>
+            <span className="text-[9.5px] font-extrabold" style={{ color: c }}>{a}</span>
+          </motion.div>
+        ))}
+      </div>
+    </Phone>
+  );
+}
+
+export const DEMOS = { loans: DemoLoans, wheel: DemoWheel, xmas: DemoXmas, shield: DemoShield, kai: DemoKai, piggy: DemoPiggy, stars: DemoStars, notif: DemoNotif, debts: DemoDebts, recap: DemoRecap, rings: DemoRings, haptics: DemoHaptics, backup: DemoBackup, support: DemoSupport } as const;
 export type DemoId = keyof typeof DEMOS;
